@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spearo Go — UI Mockups</title>
+  <style>
+    /* ─── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #000000;
+      --ocean:       #0077B6;
+      --teal:        #00B4D8;
+      --text:        #FFFFFF;
+      --sub:         #6B7D8E;
+      --go:          #2ECC71;
+      --maybe:       #F39C12;
+      --sketchy:     #E67E22;
+      --nogo:        #E74C3C;
+      --watch-w:     176px;
+      --watch-h:     215px;
+      --watch-r:     44px;
+    }
+
+    body {
+      background: #0D0D0D;
+      font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 48px 32px;
+    }
+
+    /* ─── Page header ───────────────────────────────────────────────── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    .page-header h1 span { color: var(--teal); }
+    .page-header p {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── Section layout ────────────────────────────────────────────── */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto 80px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--sub);
+      margin-bottom: 32px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    /* ─── Screens grid ──────────────────────────────────────────────── */
+    .screens-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 48px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* ─── Watch frame ───────────────────────────────────────────────── */
+    .watch-frame {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .watch-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--sub);
+    }
+    .watch-sublabel {
+      font-size: 10px;
+      color: #444;
+      margin-top: -10px;
+      letter-spacing: 0.5px;
+    }
+    .watch-body {
+      width: 210px;
+      height: 256px;
+      background: #1a1a1a;
+      border-radius: 54px;
+      padding: 3px;
+      box-shadow:
+        0 0 0 1px #333,
+        0 20px 60px rgba(0,0,0,0.8),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative;
+    }
+    /* Side button */
+    .watch-body::before {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: 72px;
+      width: 5px;
+      height: 40px;
+      background: #2a2a2a;
+      border-radius: 0 3px 3px 0;
+      box-shadow: 1px 0 0 #111;
+    }
+    /* Crown */
+    .watch-body::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      top: 30px;
+      width: 7px;
+      height: 34px;
+      background: #2a2a2a;
+      border-radius: 0 4px 4px 0;
+      box-shadow: 1px 0 0 #111;
+    }
+    .watch-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      border-radius: 52px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ─── Status bar ────────────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px 0;
+      flex-shrink: 0;
+    }
+    .status-time {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+    .status-icons {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .status-icons svg {
+      width: 10px;
+      height: 10px;
+      fill: var(--text);
+      opacity: 0.7;
+    }
+
+    /* ─── Page indicator dots ───────────────────────────────────────── */
+    .page-dots {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 0 4px;
+      flex-shrink: 0;
+    }
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #333;
+    }
+    .dot.active {
+      background: var(--text);
+      width: 6px;
+      height: 6px;
+    }
+
+    /* ─── Page content area ─────────────────────────────────────────── */
+    .page-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 14px 10px;
+      gap: 0;
+    }
+
+    /* ─── Shared text styles ────────────────────────────────────────── */
+    .section-hdr {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--sub);
+      margin-bottom: 10px;
+    }
+    .value-lg {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .unit-sm {
+      font-size: 9px;
+      color: var(--sub);
+      margin-left: 1px;
+    }
+    .label-xs {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--sub);
+    }
+    .caption {
+      font-size: 9px;
+      color: var(--sub);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ─── Page 1: Verdict ───────────────────────────────────────────── */
+    .verdict-label {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .verdict-copy {
+      font-size: 10px;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 10px;
+      padding: 0 6px;
+      opacity: 0.9;
+    }
+
+    /* Score ring */
+    .score-ring-wrap {
+      position: relative;
+      width: 58px;
+      height: 58px;
+    }
+    .score-ring-wrap svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transform: rotate(-90deg);
+    }
+    .score-ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ─── Page 2: Conditions ────────────────────────────────────────── */
+    .conditions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      width: 100%;
+    }
+    .cond-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+    .cond-icon {
+      font-size: 14px;
+      color: var(--ocean);
+      margin-bottom: 1px;
+      line-height: 1;
+    }
+    .cond-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1px;
+    }
+
+    /* ─── Page 3: Water ─────────────────────────────────────────────── */
+    .water-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .wetsuit-tip {
+      font-size: 9px;
+      color: var(--teal);
+      text-align: center;
+      background: rgba(0,180,216,0.08);
+      border: 1px solid rgba(0,180,216,0.15);
+      border-radius: 8px;
+      padding: 5px 8px;
+      width: 100%;
+      line-height: 1.4;
+    }
+
+    /* ─── Page 4: Tides ─────────────────────────────────────────────── */
+    .tide-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .tide-event {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .tide-time {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .tide-height {
+      font-size: 9px;
+      color: var(--teal);
+    }
+    .tide-dir {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 5px 10px;
+    }
+    .tide-dir-icon {
+      font-size: 18px;
+    }
+    .tide-dir-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .tide-dir-main {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .tide-dir-sub {
+      font-size: 8px;
+      color: var(--sub);
+    }
+
+    /* ─── Page 5: Fish Activity ─────────────────────────────────────── */
+    .fish-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .sol-period-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 6px;
+      padding: 4px 8px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+    }
+    .sol-period-label {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      width: 38px;
+    }
+    .sol-period-time {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      flex: 1;
+    }
+    .sol-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    /* ─── Loading state ─────────────────────────────────────────────── */
+    .spinner-ring {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #1a1a1a;
+      border-top-color: var(--ocean);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 10px;
+      color: var(--sub);
+      text-align: center;
+    }
+
+    /* ─── Divider ───────────────────────────────────────────────────── */
+    .watch-divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.05);
+      margin: 6px 0;
+    }
+
+    /* ─── Colour chip legend ────────────────────────────────────────── */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      max-width: 900px;
+    }
+    .chip {
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .chip-hex {
+      font-size: 11px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      opacity: 0.7;
+    }
+    .chip-name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ─── Typography scale ──────────────────────────────────────────── */
+    .type-table {
+      width: 100%;
+      max-width: 760px;
+      border-collapse: collapse;
+    }
+    .type-table th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--sub);
+      padding: 0 16px 10px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .type-table td {
+      padding: 10px 16px 10px 0;
+      font-size: 13px;
+      color: #ccc;
+      border-bottom: 1px solid #111;
+      vertical-align: middle;
+    }
+    .type-table td:first-child {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .type-preview { color: var(--text); }
+
+    /* ─── Score bands table ─────────────────────────────────────────── */
+    .score-table {
+      width: 100%;
+      max-width: 600px;
+      border-collapse: collapse;
+    }
+    .score-table th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--sub);
+      padding: 0 16px 10px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .score-table td {
+      padding: 10px 16px 10px 0;
+      font-size: 13px;
+      color: #ccc;
+      border-bottom: 1px solid #111;
+    }
+    .verdict-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── Annotation callouts ───────────────────────────────────────── */
+    .annotations {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .ann {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #aaa;
+      line-height: 1.5;
+    }
+    .ann strong { color: #fff; font-weight: 600; }
+
+    /* ─── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: 28px 16px; }
+      .screens-grid { gap: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ HEADER -->
+<div class="page-header">
+  <h1>Spearo <span>Go</span></h1>
+  <p>UI MOCKUPS · SPRINT 0 · watchOS 10 · Apple Watch Series 9 (44mm)</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 1: SCREENS -->
+<div class="section">
+  <div class="section-title">01 — Screen designs · all states</div>
+  <div class="screens-grid">
+
+    <!-- ── VERDICT: GO ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <!-- battery -->
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="8" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="verdict-label" style="color:var(--go)">GO</div>
+            <div class="verdict-copy">Why are you still reading this? GO!</div>
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 58 58">
+                <circle cx="29" cy="29" r="24" stroke="#6B7D8E" stroke-width="5" fill="none" opacity="0.3"/>
+                <circle cx="29" cy="29" r="24"
+                  stroke="#2ECC71" stroke-width="5" fill="none"
+                  stroke-dasharray="150.8"
+                  stroke-dashoffset="15"
+                  stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center">9.0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Verdict — GO</span>
+      <span class="watch-sublabel">Score 9.0</span>
+    </div>
+
+    <!-- ── VERDICT: MAYBE ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="6" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="verdict-label" style="color:var(--maybe)">MAYBE</div>
+            <div class="verdict-copy">Eh, you've dove in worse.</div>
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 58 58">
+                <circle cx="29" cy="29" r="24" stroke="#6B7D8E" stroke-width="5" fill="none" opacity="0.3"/>
+                <circle cx="29" cy="29" r="24"
+                  stroke="#F39C12" stroke-width="5" fill="none"
+                  stroke-dasharray="150.8"
+                  stroke-dashoffset="60"
+                  stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center">6.4</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Verdict — MAYBE</span>
+      <span class="watch-sublabel">Score 6.4</span>
+    </div>
+
+    <!-- ── VERDICT: SKETCHY ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="4" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="verdict-label" style="color:var(--sketchy)">SKETCHY</div>
+            <div class="verdict-copy">The ocean is in a mood.</div>
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 58 58">
+                <circle cx="29" cy="29" r="24" stroke="#6B7D8E" stroke-width="5" fill="none" opacity="0.3"/>
+                <circle cx="29" cy="29" r="24"
+                  stroke="#E67E22" stroke-width="5" fill="none"
+                  stroke-dasharray="150.8"
+                  stroke-dashoffset="83"
+                  stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center">4.5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Verdict — SKETCHY</span>
+      <span class="watch-sublabel">Score 4.5</span>
+    </div>
+
+    <!-- ── VERDICT: NO GO ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="1.5" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="verdict-label" style="color:var(--nogo)">NO GO</div>
+            <div class="verdict-copy">Nope. Netflix day.</div>
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 58 58">
+                <circle cx="29" cy="29" r="24" stroke="#6B7D8E" stroke-width="5" fill="none" opacity="0.3"/>
+                <circle cx="29" cy="29" r="24"
+                  stroke="#E74C3C" stroke-width="5" fill="none"
+                  stroke-dasharray="150.8"
+                  stroke-dashoffset="128"
+                  stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center">1.8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Verdict — NO GO</span>
+      <span class="watch-sublabel">Score 1.8</span>
+    </div>
+
+    <!-- ── LOADING ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="6" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="spinner-ring"></div>
+            <div class="loading-text">Consulting the fish...</div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Loading state</span>
+      <span class="watch-sublabel">Cold start / refresh</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 2: DETAIL PAGES -->
+<div class="section">
+  <div class="section-title">02 — Detail pages · pages 2–5</div>
+  <div class="screens-grid">
+
+    <!-- ── CONDITIONS (p2) ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="8" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="section-hdr">Conditions</div>
+            <div class="conditions-grid">
+              <div class="cond-item">
+                <div class="cond-icon">💨</div>
+                <div class="label-xs">Wind</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:18px">14</span>
+                  <span class="unit-sm">kn</span>
+                </div>
+              </div>
+              <div class="cond-item">
+                <div class="cond-icon">🌊</div>
+                <div class="label-xs">Swell</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:18px">1.2</span>
+                  <span class="unit-sm">m</span>
+                </div>
+              </div>
+              <div class="cond-item">
+                <div class="cond-icon" style="font-size:12px;color:var(--ocean)">↗</div>
+                <div class="label-xs">Direction</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:18px">NE</span>
+                </div>
+              </div>
+              <div class="cond-item">
+                <div class="cond-icon" style="font-size:12px">⏱</div>
+                <div class="label-xs">Period</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:18px">8</span>
+                  <span class="unit-sm">s</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Page 2 — Conditions</span>
+      <span class="watch-sublabel">Wind + swell</span>
+    </div>
+
+    <!-- ── WATER (p3) ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="8" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="section-hdr">Water</div>
+            <div class="water-grid">
+              <div class="cond-item">
+                <div class="cond-icon">🌡</div>
+                <div class="label-xs">Temp</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:18px">22</span>
+                  <span class="unit-sm">°C</span>
+                </div>
+              </div>
+              <div class="cond-item">
+                <div class="cond-icon">👁</div>
+                <div class="label-xs">Viz</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:18px;color:var(--go)">Good</span>
+                </div>
+              </div>
+            </div>
+            <div class="wetsuit-tip">Comfortable. 3mm wetsuit.</div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Page 3 — Water</span>
+      <span class="watch-sublabel">Temp + visibility</span>
+    </div>
+
+    <!-- ── TIDES (p4) ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="8" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="section-hdr">Tides</div>
+            <div class="tide-row">
+              <div class="tide-event">
+                <div class="label-xs">High</div>
+                <div class="tide-time">14:32</div>
+                <div class="tide-height">1.8m</div>
+              </div>
+              <div style="width:1px;background:rgba(255,255,255,0.08);height:44px"></div>
+              <div class="tide-event">
+                <div class="label-xs">Low</div>
+                <div class="tide-time">08:14</div>
+                <div class="tide-height">0.3m</div>
+              </div>
+            </div>
+            <div class="tide-dir">
+              <div class="tide-dir-icon" style="color:var(--maybe)">↑</div>
+              <div class="tide-dir-text">
+                <div class="tide-dir-main">Incoming</div>
+                <div class="tide-dir-sub">Flood tide</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Page 4 — Tides</span>
+      <span class="watch-sublabel">High/low + direction</span>
+    </div>
+
+    <!-- ── FISH ACTIVITY (p5) ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="8" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot active"></div>
+          </div>
+          <div class="page-content">
+            <div class="section-hdr">Fish Activity</div>
+            <div class="fish-top">
+              <div class="cond-item">
+                <div class="cond-icon">🌕</div>
+                <div class="label-xs">Moon</div>
+                <div class="cond-value-row">
+                  <span class="value-lg" style="font-size:16px">87</span>
+                  <span class="unit-sm">%</span>
+                </div>
+              </div>
+              <div class="cond-item">
+                <div class="cond-icon">🐟</div>
+                <div class="label-xs">Rating</div>
+                <div class="cond-value-row">
+                  <span style="font-size:11px;font-weight:700;color:var(--go)">Good</span>
+                </div>
+              </div>
+            </div>
+            <div class="sol-period-row" style="margin-bottom:5px">
+              <span class="sol-period-label" style="color:var(--go)">Major</span>
+              <span class="sol-period-time">14:47</span>
+              <span class="sol-dot" style="background:var(--go)"></span>
+            </div>
+            <div class="sol-period-row">
+              <span class="sol-period-label" style="color:var(--maybe)">Minor</span>
+              <span class="sol-period-time">11:23</span>
+              <span class="sol-dot" style="background:var(--maybe)"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Page 5 — Fish Activity</span>
+      <span class="watch-sublabel">Moon + solunar</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 3: EDGE CASES -->
+<div class="section">
+  <div class="section-title">03 — Edge cases &amp; error states</div>
+  <div class="screens-grid">
+
+    <!-- ── ERROR STATE ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="0.5" height="4" rx="0.5" fill="white" opacity="0.3"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content" style="gap:8px">
+            <div style="font-size:22px">🌊</div>
+            <div style="font-size:10px;color:var(--sub);text-align:center;line-height:1.5">Couldn't reach<br>the ocean.</div>
+            <div style="font-size:9px;color:var(--ocean);background:rgba(0,119,182,0.1);border:1px solid rgba(0,119,182,0.2);border-radius:8px;padding:5px 12px;">
+              Tap to retry
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Error state</span>
+      <span class="watch-sublabel">No network + no cache</span>
+    </div>
+
+    <!-- ── GPS DENIED ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="6" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content" style="gap:8px">
+            <div style="font-size:16px">📍</div>
+            <div style="font-size:9px;color:var(--sub);text-align:center;line-height:1.6">
+              Location needed<br>for conditions.
+            </div>
+            <div style="font-size:9px;color:var(--teal);text-align:center">
+              Using saved location:
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--text)">
+              Sydney, AU
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">GPS fallback</span>
+      <span class="watch-sublabel">Uses saved location</span>
+    </div>
+
+    <!-- ── STALE CACHE ── -->
+    <div class="watch-frame">
+      <div class="watch-body">
+        <div class="watch-screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 14 8"><rect x="0" y="1" width="11" height="6" rx="1.5" stroke="white" stroke-width="1" fill="none" opacity="0.7"/><rect x="11.5" y="2.5" width="2" height="3" rx="0.7" fill="white" opacity="0.5"/><rect x="1" y="2" width="8" height="4" rx="0.5" fill="white" opacity="0.7"/></svg>
+            </div>
+          </div>
+          <div class="page-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="page-content">
+            <div class="verdict-label" style="color:var(--maybe)">MAYBE</div>
+            <div class="verdict-copy" style="font-size:9px;color:var(--sub)">Eh, you've dove in worse.</div>
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 58 58">
+                <circle cx="29" cy="29" r="24" stroke="#6B7D8E" stroke-width="5" fill="none" opacity="0.3"/>
+                <circle cx="29" cy="29" r="24" stroke="#F39C12" stroke-width="5" fill="none" stroke-dasharray="150.8" stroke-dashoffset="60" stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-center">6.4</div>
+            </div>
+            <div style="font-size:8px;color:#555;margin-top:6px;background:#0d0d0d;border-radius:6px;padding:3px 8px">
+              ⚠ Data from 38 min ago
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="watch-label">Stale cache</span>
+      <span class="watch-sublabel">Sprint 2 indicator</span>
+    </div>
+
+  </div>
+
+  <div class="annotations" style="margin-top:32px">
+    <div class="ann"><strong>Cold start:</strong> GPS + API fetch ~3–8s on good connectivity.</div>
+    <div class="ann"><strong>Warm cache:</strong> Serve from in-memory cache in &lt;100ms.</div>
+    <div class="ann"><strong>No GPS:</strong> Falls back to saved location → San Diego default.</div>
+    <div class="ann"><strong>Landlocked:</strong> Marine API returns 400; neutral score (5.0) used.</div>
+    <div class="ann"><strong>Tap to refresh:</strong> Any tap on Verdict page triggers re-fetch.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 4: COLOURS -->
+<div class="section">
+  <div class="section-title">04 — Colour system</div>
+  <div class="palette-grid">
+    <div class="chip" style="background:#0d0d0d;border:1px solid #222">
+      <div class="chip-hex">#000000</div>
+      <div class="chip-name" style="color:#fff">Background</div>
+    </div>
+    <div class="chip" style="background:#0077B6">
+      <div class="chip-hex">#0077B6</div>
+      <div class="chip-name" style="color:#fff">Ocean Blue</div>
+    </div>
+    <div class="chip" style="background:#00B4D8">
+      <div class="chip-hex">#00B4D8</div>
+      <div class="chip-name" style="color:#000">Teal</div>
+    </div>
+    <div class="chip" style="background:#2ECC71">
+      <div class="chip-hex">#2ECC71</div>
+      <div class="chip-name" style="color:#000">GO</div>
+    </div>
+    <div class="chip" style="background:#F39C12">
+      <div class="chip-hex">#F39C12</div>
+      <div class="chip-name" style="color:#000">MAYBE</div>
+    </div>
+    <div class="chip" style="background:#E67E22">
+      <div class="chip-hex">#E67E22</div>
+      <div class="chip-name" style="color:#000">SKETCHY</div>
+    </div>
+    <div class="chip" style="background:#E74C3C">
+      <div class="chip-hex">#E74C3C</div>
+      <div class="chip-name" style="color:#fff">NO GO</div>
+    </div>
+    <div class="chip" style="background:#FFFFFF;border:1px solid #222">
+      <div class="chip-hex" style="color:#000">#FFFFFF</div>
+      <div class="chip-name" style="color:#000">Text Primary</div>
+    </div>
+    <div class="chip" style="background:#6B7D8E">
+      <div class="chip-hex">#6B7D8E</div>
+      <div class="chip-name" style="color:#fff">Text Secondary</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 5: SCORE BANDS -->
+<div class="section">
+  <div class="section-title">05 — Score bands &amp; verdict logic</div>
+  <table class="score-table">
+    <thead>
+      <tr>
+        <th>Range</th>
+        <th>Verdict</th>
+        <th>Meaning</th>
+        <th>Sample copy</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>8.0 – 10.0</td>
+        <td><span class="verdict-badge" style="background:rgba(46,204,113,0.15);color:#2ECC71;border:1px solid rgba(46,204,113,0.3)">GO</span></td>
+        <td>Drop everything</td>
+        <td style="color:#666;font-size:11px">"GET IN THE WATER!"</td>
+      </tr>
+      <tr>
+        <td>6.0 – 7.9</td>
+        <td><span class="verdict-badge" style="background:rgba(243,156,18,0.15);color:#F39C12;border:1px solid rgba(243,156,18,0.3)">MAYBE</span></td>
+        <td>Fishable, not perfect</td>
+        <td style="color:#666;font-size:11px">"Your call, chief."</td>
+      </tr>
+      <tr>
+        <td>4.0 – 5.9</td>
+        <td><span class="verdict-badge" style="background:rgba(230,126,34,0.15);color:#E67E22;border:1px solid rgba(230,126,34,0.3)">SKETCHY</span></td>
+        <td>Experienced only</td>
+        <td style="color:#666;font-size:11px">"Tell someone where you're going."</td>
+      </tr>
+      <tr>
+        <td>0.0 – 3.9</td>
+        <td><span class="verdict-badge" style="background:rgba(231,76,60,0.15);color:#E74C3C;border:1px solid rgba(231,76,60,0.3)">NO GO</span></td>
+        <td>Stay dry</td>
+        <td style="color:#666;font-size:11px">"The ocean said no."</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:28px;max-width:600px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--sub);margin-bottom:12px">Weight breakdown</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:12px;color:#888;width:80px">Weather</div>
+        <div style="flex:1;background:#111;border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:30%;height:100%;background:var(--ocean);border-radius:4px"></div>
+        </div>
+        <div style="font-size:12px;color:var(--ocean);width:32px">30%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:12px;color:#888;width:80px">Marine</div>
+        <div style="flex:1;background:#111;border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:30%;height:100%;background:var(--teal);border-radius:4px"></div>
+        </div>
+        <div style="font-size:12px;color:var(--teal);width:32px">30%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:12px;color:#888;width:80px">Solunar</div>
+        <div style="flex:1;background:#111;border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:25%;height:100%;background:var(--maybe);border-radius:4px"></div>
+        </div>
+        <div style="font-size:12px;color:var(--maybe);width:32px">25%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:12px;color:#888;width:80px">Tides</div>
+        <div style="flex:1;background:#111;border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:15%;height:100%;background:var(--sub);border-radius:4px"></div>
+        </div>
+        <div style="font-size:12px;color:var(--sub);width:32px">15%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 6: TYPE SCALE -->
+<div class="section">
+  <div class="section-title">06 — Typography scale</div>
+  <table class="type-table">
+    <thead>
+      <tr>
+        <th>Role</th><th>Size</th><th>Weight</th><th>Preview</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Verdict label</td>
+        <td>18pt</td><td>Black / 900</td>
+        <td><span class="type-preview" style="font-size:18px;font-weight:900;color:var(--go)">GO</span></td>
+      </tr>
+      <tr>
+        <td>Data value</td>
+        <td>18pt</td><td>Bold / 700</td>
+        <td><span class="type-preview" style="font-size:18px;font-weight:700">14</span><span style="font-size:9px;color:var(--sub)"> kn</span></td>
+      </tr>
+      <tr>
+        <td>Score ring center</td>
+        <td>14pt</td><td>Bold / 700</td>
+        <td><span class="type-preview" style="font-size:14px;font-weight:700">9.0</span></td>
+      </tr>
+      <tr>
+        <td>Personality copy</td>
+        <td>10–11pt</td><td>Regular / 400</td>
+        <td><span class="type-preview" style="font-size:10px">Why are you still reading this? GO!</span></td>
+      </tr>
+      <tr>
+        <td>Section header</td>
+        <td>9–10pt</td><td>Semibold / 600</td>
+        <td><span class="type-preview" style="font-size:9px;font-weight:600;letter-spacing:2px;color:var(--sub)">CONDITIONS</span></td>
+      </tr>
+      <tr>
+        <td>Tide time</td>
+        <td>16pt</td><td>Bold / 700</td>
+        <td><span class="type-preview" style="font-size:16px;font-weight:700">14:32</span></td>
+      </tr>
+      <tr>
+        <td>Solunar period</td>
+        <td>12pt</td><td>Medium / 500</td>
+        <td><span class="type-preview" style="font-size:12px;font-weight:500">14:47</span></td>
+      </tr>
+      <tr>
+        <td>Item label</td>
+        <td>8pt</td><td>Semibold / 600</td>
+        <td><span class="type-preview" style="font-size:8px;font-weight:600;letter-spacing:0.8px;color:var(--sub)">WIND</span></td>
+      </tr>
+      <tr>
+        <td>Unit / caption</td>
+        <td>9pt</td><td>Regular / 400</td>
+        <td><span class="type-preview" style="font-size:9px;color:var(--sub)">°C · kn · m · s</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ FOOTER -->
+<div style="text-align:center;padding:40px 0;color:#333;font-size:11px;letter-spacing:1px">
+  SPEARO GO · SPRINT 0 · VISIVO AGENCY · watchOS 10+
+</div>
+
+</body>
+</html>
