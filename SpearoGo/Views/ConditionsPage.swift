@@ -4,58 +4,44 @@ struct ConditionsPage: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        ZStack {
-            Color(hex: Constants.Colors.background).ignoresSafeArea()
+        VStack(spacing: Brand.Spacing.section) {
+            Text("Conditions")
+                .brandSectionHeader()
 
-            VStack(spacing: 10) {
-                Text("CONDITIONS")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
-                    .kerning(1.5)
-
-                if let weather = appState.weatherData, let marine = appState.marineData {
-                    HStack(spacing: 20) {
-                        ConditionItem(
-                            icon: "wind",
-                            label: "WIND",
-                            value: String(format: "%.0f", weather.windSpeed),
-                            unit: "kn"
-                        )
-                        ConditionItem(
-                            icon: "water.waves",
-                            label: "SWELL",
-                            value: String(format: "%.1f", marine.waveHeight),
-                            unit: "m"
-                        )
+            if let weather = appState.weatherData, let marine = appState.marineData {
+                Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
+                    GridRow {
+                        ConditionItem(icon: "wind",
+                                      label: "Wind",
+                                      value: String(format: "%.0f", weather.windSpeed),
+                                      unit: "kn")
+                        ConditionItem(icon: "water.waves",
+                                      label: "Swell",
+                                      value: String(format: "%.1f", marine.waveHeight),
+                                      unit: "m")
                     }
-
-                    HStack(spacing: 20) {
-                        ConditionItem(
-                            icon: "arrow.up.right",
-                            label: "DIRECTION",
-                            value: compassDirection(degrees: weather.windDirection),
-                            unit: ""
-                        )
-                        ConditionItem(
-                            icon: "timer",
-                            label: "PERIOD",
-                            value: String(format: "%.0f", marine.wavePeriod),
-                            unit: "s"
-                        )
+                    GridRow {
+                        ConditionItem(icon: "arrow.up.right",
+                                      label: "Dir",
+                                      value: compassDirection(weather.windDirection),
+                                      unit: "")
+                        ConditionItem(icon: "timer",
+                                      label: "Period",
+                                      value: String(format: "%.0f", marine.wavePeriod),
+                                      unit: "s")
                     }
-                } else {
-                    ProgressView()
-                        .tint(Color(hex: Constants.Colors.primaryAccent))
                 }
+            } else {
+                ProgressView().tint(Brand.Colors.primary)
             }
-            .padding()
         }
+        .padding(Brand.Spacing.page)
+        .brandPage()
     }
 
-    private func compassDirection(degrees: Double) -> String {
-        let directions = ["N","NE","E","SE","S","SW","W","NW"]
-        let index = Int((degrees + 22.5) / 45.0) % 8
-        return directions[index]
+    private func compassDirection(_ degrees: Double) -> String {
+        let dirs = ["N","NE","E","SE","S","SW","W","NW"]
+        return dirs[Int((degrees + 22.5) / 45.0) % 8]
     }
 }
 
@@ -66,25 +52,30 @@ struct ConditionItem: View {
     let unit: String
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: Brand.Spacing.micro) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(Color(hex: Constants.Colors.primaryAccent))
+                .foregroundStyle(Brand.Colors.primary)
+
             Text(label)
-                .font(.system(size: 8, weight: .medium))
-                .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
-                .kerning(0.8)
+                .itemLabelStyle()
+
             HStack(alignment: .lastTextBaseline, spacing: 1) {
                 Text(value)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Color(hex: Constants.Colors.textPrimary))
+                    .dataValueStyle()
                 if !unit.isEmpty {
-                    Text(unit)
-                        .font(.system(size: 9))
-                        .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
+                    Text(unit).unitStyle()
                 }
             }
         }
-        .frame(minWidth: 55)
+        .frame(minWidth: 60)
     }
+}
+
+// MARK: - Previews
+
+#Preview {
+    ConditionsPage()
+        .previewAsWatch()
+        .environment(AppState.preview())
 }

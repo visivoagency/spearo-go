@@ -3,28 +3,38 @@ import CoreLocation
 
 @Observable
 final class AppState {
-    var weatherData: WeatherData?
-    var marineData: MarineData?
-    var tideData: TideData?
-    var solunarData: SolunarData?
-    var diveScore: DiveScore?
-    var isLoading: Bool = false
-    var error: Error?
+    // ── Published state ──────────────────────────────────────────────────────
+    var weatherData:  WeatherData?
+    var marineData:   MarineData?
+    var tideData:     TideData?
+    var solunarData:  SolunarData?
+    var diveScore:    DiveScore?
+    var isLoading:    Bool = false
+    var error:        Error?
 
-    private let weatherService  = WeatherService()
-    private let marineService   = MarineService()
-    private let tideService     = TideService()
-    private let solunarService  = SolunarService()
-    private let scoreService    = ScoreService()
-    private let cache           = CacheService()
-    let locationService         = LocationService()
+    /// Set by ContentView when the user activates a saved location.
+    /// Nil means "use live GPS".
+    var activeOverrideCoordinate: CLLocationCoordinate2D?
 
-    // Default to San Diego until GPS resolves
-    private var activeCoordinate: CLLocationCoordinate2D {
-        locationService.currentCoordinate
-            ?? CLLocationCoordinate2D(latitude: 32.7, longitude: -117.2)
+    // ── Services ─────────────────────────────────────────────────────────────
+    let locationService  = LocationService()
+    private let weather  = WeatherService()
+    private let marine   = MarineService()
+    private let tides    = TideService()
+    private let solunar  = SolunarService()
+    private let scorer   = ScoreService()
+    private let cache    = CacheService()
+
+    // Default fallback if GPS unavailable and no saved location
+    private let defaultCoordinate = CLLocationCoordinate2D(latitude: 32.7, longitude: -117.2)
+
+    var activeCoordinate: CLLocationCoordinate2D {
+        activeOverrideCoordinate
+            ?? locationService.currentCoordinate
+            ?? defaultCoordinate
     }
 
+    // ── Refresh pipeline ──────────────────────────────────────────────────────
     func refresh() async {
         isLoading = true
         error = nil
@@ -33,34 +43,34 @@ final class AppState {
         do {
             let coord = activeCoordinate
 
-            // Check cache first
-            let weather: WeatherData
+            let weatherData: WeatherData
             if let cached = await cache.cachedWeather(for: coord) {
-                weather = cached
+                weatherData = cached
             } else {
-                weather = try await weatherService.fetch(coordinate: coord)
-                await cache.store(weather: weather, for: coord)
+                weatherData = try await weather.fetch(coordinate: coord)
+                await cache.store(weather: weatherData, for: coord)
             }
 
-            let marine: MarineData
+            let marineData: MarineData
             if let cached = await cache.cachedMarine(for: coord) {
-                marine = cached
+                marineData = cached
             } else {
-                marine = try await marineService.fetch(coordinate: coord)
-                await cache.store(marine: marine, for: coord)
+                marineData = try await marine.fetch(coordinate: coord)
+                await cache.store(marine: marineData, for: coord)
             }
 
-            // Pure math — no network needed
-            let tide    = tideService.calculate(coordinate: coord)
-            let solunar = solunarService.calculate(coordinate: coord)
-            let score   = scoreService.score(weather: weather, marine: marine,
-                                              tide: tide, solunar: solunar)
+            let tideData    = tides.calculate(coordinate: coord)
+            let solunarData = solunar.calculate(coordinate: coord)
+            let score       = scorer.score(weather: weatherData,
+                                           marine:  marineData,
+                                           tide:    tideData,
+                                           solunar: solunarData)
 
             await MainActor.run {
-                self.weatherData  = weather
-                self.marineData   = marine
-                self.tideData     = tide
-                self.solunarData  = solunar
+                self.weatherData  = weatherData
+                self.marineData   = marineData
+                self.tideData     = tideData
+                self.solunarData  = solunarData
                 self.diveScore    = score
                 self.isLoading    = false
             }

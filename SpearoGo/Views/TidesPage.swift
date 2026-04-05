@@ -4,31 +4,33 @@ struct TidesPage: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        ZStack {
-            Color(hex: Constants.Colors.background).ignoresSafeArea()
+        VStack(spacing: Brand.Spacing.section) {
+            Text("Tides")
+                .brandSectionHeader()
 
-            VStack(spacing: 10) {
-                Text("TIDES")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
-                    .kerning(1.5)
+            if let tide = appState.tideData {
+                HStack(spacing: 16) {
+                    TideEventView(label: "HIGH",
+                                  time: tide.nextHighTime,
+                                  height: tide.nextHighHeight)
 
-                if let tide = appState.tideData {
-                    VStack(spacing: 6) {
-                        HStack(spacing: 16) {
-                            TideEventView(label: "HIGH", time: tide.nextHighTime, height: tide.nextHighHeight)
-                            TideEventView(label: "LOW",  time: tide.nextLowTime,  height: tide.nextLowHeight)
-                        }
+                    Divider()
+                        .frame(height: 44)
+                        .background(Brand.Colors.textSecondary.opacity(Brand.Opacity.borderLine))
 
-                        TideDirectionView(isRising: tide.isRising, phase: tide.phase)
-                    }
-                } else {
-                    ProgressView()
-                        .tint(Color(hex: Constants.Colors.primaryAccent))
+                    TideEventView(label: "LOW",
+                                  time: tide.nextLowTime,
+                                  height: tide.nextLowHeight)
                 }
+
+                TideDirectionView(isRising: tide.isRising, phase: tide.phase)
+                    .brandCard(padding: Brand.Spacing.item)
+            } else {
+                ProgressView().tint(Brand.Colors.primary)
             }
-            .padding()
         }
+        .padding(Brand.Spacing.page)
+        .brandPage()
     }
 }
 
@@ -38,17 +40,10 @@ struct TideEventView: View {
     let height: Double
 
     var body: some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
-                .kerning(1)
-            Text(time, style: .time)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Color(hex: Constants.Colors.textPrimary))
-            Text(String(format: "%.1fm", height))
-                .font(.caption2)
-                .foregroundStyle(Color(hex: Constants.Colors.secondaryAccent))
+        VStack(spacing: Brand.Spacing.micro) {
+            Text(label).itemLabelStyle()
+            Text(time, style: .time).timeDisplayStyle()
+            Text(String(format: "%.1fm", height)).highlightCaptionStyle()
         }
     }
 }
@@ -58,20 +53,26 @@ struct TideDirectionView: View {
     let phase: String
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Brand.Spacing.item) {
             Image(systemName: isRising ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
-                .foregroundStyle(isRising
-                    ? Color(hex: Constants.Colors.Verdict.maybe)
-                    : Color(hex: Constants.Colors.primaryAccent))
-                .font(.system(size: 16))
+                .foregroundStyle(isRising ? Brand.Colors.maybe : Brand.Colors.primary)
+                .font(.system(size: 18))
+
             VStack(alignment: .leading, spacing: 0) {
                 Text(isRising ? "Incoming" : "Outgoing")
-                    .font(.caption2)
-                    .foregroundStyle(Color(hex: Constants.Colors.textPrimary))
+                    .font(Brand.Typography.personalityCopy)
+                    .foregroundStyle(Brand.Colors.textPrimary)
                 Text(phase)
-                    .font(.system(size: 8))
-                    .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
+                    .captionStyle()
             }
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview {
+    TidesPage()
+        .previewAsWatch()
+        .environment(AppState.preview())
 }

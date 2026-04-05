@@ -4,60 +4,59 @@ struct WaterPage: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        ZStack {
-            Color(hex: Constants.Colors.background).ignoresSafeArea()
+        VStack(spacing: Brand.Spacing.section) {
+            Text("Water")
+                .brandSectionHeader()
 
-            VStack(spacing: 10) {
-                Text("WATER")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
-                    .kerning(1.5)
-
-                if let marine = appState.marineData {
-                    HStack(spacing: 20) {
-                        ConditionItem(
-                            icon: "thermometer.medium",
-                            label: "TEMP",
-                            value: String(format: "%.0f", marine.seaSurfaceTemp),
-                            unit: "°C"
-                        )
-                        ConditionItem(
-                            icon: "eye",
-                            label: "VIZ",
-                            value: visibilityLabel(temp: marine.seaSurfaceTemp,
-                                                   waveHeight: marine.waveHeight),
-                            unit: ""
-                        )
+            if let marine = appState.marineData {
+                Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
+                    GridRow {
+                        ConditionItem(icon: "thermometer.medium",
+                                      label: "Temp",
+                                      value: String(format: "%.0f", marine.seaSurfaceTemp),
+                                      unit: "°C")
+                        ConditionItem(icon: "eye",
+                                      label: "Viz",
+                                      value: vizLabel(marine.waveHeight),
+                                      unit: "")
                     }
-
-                    Text(tempComment(temp: marine.seaSurfaceTemp))
-                        .font(.caption2)
-                        .foregroundStyle(Color(hex: Constants.Colors.textSecondary))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 8)
-                } else {
-                    ProgressView()
-                        .tint(Color(hex: Constants.Colors.primaryAccent))
                 }
+
+                Text(wetsuitTip(marine.seaSurfaceTemp))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Brand.Spacing.page)
+                    .infoPill()
+            } else {
+                ProgressView().tint(Brand.Colors.primary)
             }
-            .padding()
+        }
+        .padding(Brand.Spacing.page)
+        .brandPage()
+    }
+
+    private func vizLabel(_ waveHeight: Double) -> String {
+        switch waveHeight {
+        case ..<0.5: return "Great"
+        case 0.5..<1: return "Good"
+        case 1..<1.5: return "Fair"
+        default:     return "Poor"
         }
     }
 
-    // Estimated visibility based on temp + swell proxy
-    private func visibilityLabel(temp: Double, waveHeight: Double) -> String {
-        if waveHeight > 2.0 { return "Poor" }
-        if waveHeight > 1.0 { return "Fair" }
-        if temp > 22 { return "Good" }
-        return "OK"
-    }
-
-    private func tempComment(temp: Double) -> String {
+    private func wetsuitTip(_ temp: Double) -> String {
         switch temp {
         case ..<15: return "Cold. 7mm + gloves."
         case 15..<20: return "Chilly. 5mm wetsuit."
         case 20..<25: return "Comfortable. 3mm."
-        default:     return "Warm. 1-2mm or skin."
+        default:      return "Warm. 1–2mm or skin."
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview {
+    WaterPage()
+        .previewAsWatch()
+        .environment(AppState.preview())
 }
