@@ -1,23 +1,13 @@
 import SwiftUI
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants.swift — Non-visual constants: API URLs, score weights, app meta.
+//
+// For all colors, fonts, and spacing use Brand.swift instead.
+// ─────────────────────────────────────────────────────────────────────────────
+
 enum Constants {
-    // MARK: - Color palette
-    enum Colors {
-        static let background    = "#000000"
-        static let primaryAccent = "#0077B6"
-        static let secondaryAccent = "#00B4D8"
-        static let textPrimary   = "#FFFFFF"
-        static let textSecondary = "#6B7D8E"
-
-        enum Verdict {
-            static let go      = "#2ECC71"
-            static let maybe   = "#F39C12"
-            static let sketchy = "#E67E22"
-            static let noGo    = "#E74C3C"
-        }
-    }
-
-    // MARK: - Score weights
+    // MARK: - Score weights  (see also Brand.swift for visual tokens)
     enum Weights {
         static let weather: Double = 0.30
         static let marine:  Double = 0.30
@@ -39,7 +29,8 @@ enum Constants {
     }
 }
 
-// MARK: - Color(hex:) convenience init
+// MARK: - Color(hex:) — kept for legacy use & API validation spike only.
+// In views, always use Brand.Colors.* or Color("NamedColor") instead.
 
 extension Color {
     init(hex: String) {
