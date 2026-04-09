@@ -3,29 +3,32 @@
 <plist version="1.0">
 <dict>
 	<!-- ── Required by App Store ── -->
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+
 	<key>CFBundleName</key>
-	<string>Spearo Go</string>
+	<string>$(PRODUCT_NAME)</string>
 
 	<key>CFBundleDisplayName</key>
 	<string>Spearo Go</string>
 
 	<key>CFBundleIdentifier</key>
-	<string>agency.visivo.SpearoGo</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>$(MARKETING_VERSION)</string>
 
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 
-	<!-- ── watchOS ── -->
-	<key>WKWatchKitApp</key>
+	<!-- ── watchOS (standalone watch-only app, no companion iOS app) ── -->
+	<key>WKApplication</key>
 	<true/>
 
-	<key>WKApplication</key>
+	<key>WKWatchOnly</key>
 	<true/>
 
 	<!-- ── Minimum OS ── -->

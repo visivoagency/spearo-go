@@ -4,9 +4,17 @@ import CoreLocation
 struct WeatherService {
     // Open-Meteo weather API — free, no key, global coverage
     // Docs: https://open-meteo.com/en/docs
+
+    private let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForResource = 30
+        return URLSession(configuration: config)
+    }()
+
     func fetch(coordinate: CLLocationCoordinate2D) async throws -> WeatherData {
-        let url = buildURL(coordinate: coordinate)
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let url = try buildURL(coordinate: coordinate)
+        let (data, response) = try await session.data(from: url)
 
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw ServiceError.badResponse
@@ -29,8 +37,10 @@ struct WeatherService {
         )
     }
 
-    private func buildURL(coordinate: CLLocationCoordinate2D) -> URL {
-        var components = URLComponents(string: Constants.API.weatherBase)!
+    private func buildURL(coordinate: CLLocationCoordinate2D) throws -> URL {
+        guard var components = URLComponents(string: Constants.API.weatherBase) else {
+            throw ServiceError.invalidURL
+        }
         components.queryItems = [
             .init(name: "latitude",         value: String(coordinate.latitude)),
             .init(name: "longitude",        value: String(coordinate.longitude)),
@@ -39,7 +49,10 @@ struct WeatherService {
             .init(name: "timezone",         value: "auto"),
             .init(name: "forecast_days",    value: "1")
         ]
-        return components.url!
+        guard let url = components.url else {
+            throw ServiceError.invalidURL
+        }
+        return url
     }
 }
 
@@ -61,4 +74,5 @@ enum ServiceError: Error {
     case badResponse
     case missingData
     case invalidCoordinate
+    case invalidURL
 }

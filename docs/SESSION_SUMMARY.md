@@ -1,7 +1,7 @@
 # Spearo Go — Full Session Summary
-**Date:** April 5, 2026
-**Session:** Sprint 0 + Sprint 1 foundation
-**Status:** Ready to open in Xcode
+**Date:** April 5–8, 2026
+**Session:** Sprint 0 + Sprint 1 foundation + App Store Submission
+**Status:** Build uploaded to App Store Connect ✅
 
 ---
 
@@ -16,15 +16,15 @@ A complete, compilable Apple Watch app for spearfishers — from zero to a fully
 ```
 1. Finder → ~/Documents/spearo-go/
 2. Double-click SpearoGo.xcodeproj
-3. Xcode opens → set your Team (Signing & Capabilities)
-4. Scheme: SpearoGo → Apple Watch Series 9 (45mm)
-5. ⌘R to build and run
+3. Scheme: SpearoGo → Any iOS Device (for archive) or Apple Watch simulator (for debug)
+4. Team and signing are already configured (RBDNV7NG89 — VISIVO)
+5. ⌘R to build and run on simulator
 ```
 
 First-launch checklist in Xcode:
-- [ ] Signing & Capabilities → Team → select your Apple ID
-- [ ] Confirm deployment target is watchOS 10.0
-- [ ] Run on simulator to verify data loads
+- [x] Signing & Capabilities → Team = RBDNV7NG89 (VISIVO) — automatic
+- [x] Deployment target watchOS 10.0
+- [x] Build uploaded to App Store Connect
 
 ---
 
@@ -47,11 +47,13 @@ spearo-go/
 │   │
 │   ├── Views/
 │   │   ├── VerdictPage.swift         ← GO/MAYBE/SKETCHY/NO GO + score ring (animated)
-│   │   ├── ConditionsPage.swift      ← Wind speed/dir, swell height/period
-│   │   ├── WaterPage.swift           ← Sea temp, visibility, wetsuit tip
-│   │   ├── TidesPage.swift           ← Next high/low times + tide direction
-│   │   ├── FishActivityPage.swift    ← Moon phase, solunar major/minor periods
-│   │   └── LocationsView.swift       ← Saved locations CRUD + AddLocationView sheet
+│   │   ├── ConditionsPage.swift      ← Wind speed/dir, swell height/period + shimmer
+│   │   ├── WaterPage.swift           ← Sea temp, visibility, wetsuit tip + shimmer
+│   │   ├── TidesPage.swift           ← Next high/low times + Digital Crown scroll
+│   │   ├── FishActivityPage.swift    ← Moon phase, solunar periods + Digital Crown scroll
+│   │   ├── LocationsView.swift       ← Saved locations CRUD + privacy link + version
+│   │   ├── OnboardingView.swift      ← 3-page swipeable first-launch onboarding
+│   │   └── PrivacyPolicyView.swift   ← In-app privacy policy (scrollable)
 │   │
 │   ├── Models/
 │   │   ├── WeatherData.swift         ← Wind, gusts, visibility struct
@@ -59,7 +61,8 @@ spearo-go/
 │   │   ├── TideData.swift            ← High/low times, phase, direction struct
 │   │   ├── SolunarData.swift         ← Moon phase, illumination, periods struct
 │   │   ├── DiveScore.swift           ← Verdict enum + weighted DiveScore.calculate()
-│   │   └── SavedLocation.swift       ← @Model (SwiftData) — name, lat, lon, isActive
+│   │   ├── SavedLocation.swift       ← @Model (SwiftData) — name, lat, lon, isActive
+│   │   └── SharedScore.swift         ← Codable model for app → widget data via UserDefaults
 │   │
 │   ├── Services/
 │   │   ├── WeatherService.swift      ← Open-Meteo /v1/forecast (URLSession, no key)
@@ -78,9 +81,14 @@ spearo-go/
 │   │   ├── PersonalityCopy.swift     ← All verdict messages (GO×8, MAYBE×7, SKETCHY×8, NO GO×8, loading×4)
 │   │   └── PreviewHelpers.swift      ← .previewAsWatch(), AppState.preview(), MockData, WatchSize enum
 │   │
+│   ├── Widget/
+│   │   ├── SpearoGoWidget.swift      ← Widget config, TimelineProvider, entry model
+│   │   └── WidgetViews.swift         ← Rectangular, Circular, Corner complication views
+│   │
 │   └── Assets.xcassets/
 │       ├── Contents.json
-│       ├── AppIcon.appiconset/       ← Slots ready — add PNG artwork (see icon sizes below)
+│       ├── AppIcon.appiconset/       ← 1024×1024 universal watchOS icon
+│       │   ├── AppIcon.png
 │       │   └── Contents.json
 │       └── Colors/
 │           ├── Background/           ← #000000
@@ -93,6 +101,17 @@ spearo-go/
 │           ├── VerdictSketchy/       ← #E67E22
 │           └── VerdictNoGo/          ← #E74C3C
 │
+├── SpearoGoiOS/                      ← iOS stub app (watch-only container for App Store)
+│   ├── SpearoGoiOSApp.swift          ← @main — displays "watch-only" message
+│   ├── Info.plist                    ← LSApplicationLaunchProhibited + ITSWatchOnlyContainer
+│   └── Assets.xcassets/
+│       ├── Contents.json
+│       └── AppIcon.appiconset/       ← 1024×1024 universal iOS icon
+│           ├── AppIcon-1024.png
+│           └── Contents.json
+│
+├── Graphics/                         ← App Store screenshots (watch simulator)
+│
 ├── mockups/
 │   └── index.html                    ← Interactive HTML mockups (open in browser)
 │
@@ -104,7 +123,8 @@ spearo-go/
 │   ├── SCORE_ALGORITHM.md            ← Weighted scoring breakdown + worked example
 │   ├── API_REFERENCE.md              ← Open-Meteo endpoints, cache strategy, rate limits
 │   ├── USER_FLOWS.md                 ← 7 user flows (cold start, offline, GPS fallback, etc.)
-│   └── XCODE_SETUP.md                ← Step-by-step Xcode wiring guide
+│   ├── XCODE_SETUP.md                ← Step-by-step Xcode wiring guide
+│   └── APP_STORE_METADATA.md         ← App Store listing: name, subtitle, description, keywords
 │
 ├── Package.swift                     ← SPM definition (watchOS 10 target)
 ├── generate_xcodeproj.py             ← Run to regenerate SpearoGo.xcodeproj if needed
@@ -357,22 +377,60 @@ Design brief:
 - `SpearoGoApp` — background refresh every 30 min via `WKApplicationRefreshBackgroundTask`
 - `#Preview` macros on every view
 
-### Sprint 2 — Polish (next)
-- [ ] Score ring spring animation (scaffolded, needs `.animation` trigger)
-- [ ] Haptic feedback on verdict change (`WKHapticType.success / .failure`)
-- [ ] Smart Stack complication
-- [ ] Digital Crown scrolling on Tides + Fish pages
-- [ ] Loading skeletons / shimmer placeholders
-- [ ] Stale cache indicator ("> 30 min ago")
-- [ ] VoiceOver labels on all views
+### Sprint 2 — Polish & UX ✅ Complete
+- Shimmer/skeleton loading on all data pages (Conditions, Water, Tides, Fish Activity)
+- Haptic feedback on verdict change (success/click/directionUp/failure per verdict)
+- Haptic on first load (click) and on error (failure)
+- Digital Crown scrolling on Tides + Fish Activity pages
+- VoiceOver accessibility labels on all views
+- Stale cache indicator ("Just now" / "X min ago" / "Stale" — orange when >30min)
+- Long-press gesture on Verdict page → opens Locations sheet
+- Last-refreshed timestamp tracking in AppState
+- `#if os(watchOS)` guards for WatchKit APIs (SPM compatibility)
 
-### Sprint 3 — App Store (final)
-- [ ] App Icon artwork (all 6 sizes)
-- [ ] App Store screenshots (6 watch sizes)
-- [ ] App Store description + keywords
-- [ ] Privacy policy URL
-- [ ] TestFlight build
-- [ ] App Store submission
+### Sprint 3 — Store prep ✅ Complete
+- Fixed DiveScore.swift bug (`Constants.Colors.Verdict` → `Brand.Colors.forVerdict()`)
+- Onboarding flow — 3-page swipeable welcome with `@AppStorage` gate
+- Smart Stack complication widget (WidgetKit)
+  - SharedScore model for app → widget data via UserDefaults (App Group)
+  - AccessoryRectangular, AccessoryCircular, AccessoryCorner views
+  - Timeline provider with 30-minute refresh cadence
+- App Store metadata file (name, subtitle, description, keywords, pricing)
+- Privacy policy view — accessible from Locations sheet
+- Version info in Locations view
+
+### App Store Submission — April 8, 2026 ✅ Complete
+- **Team ID configured:** RBDNV7NG89 (VISIVO) in generate_xcodeproj.py
+- **URLs updated:** Privacy policy, contact, terms → spearotracker.com
+- **App icon added:** 1024×1024 PNG from Spearo Vision project
+- **iOS stub app created** (`SpearoGoiOS/`):
+  - Required because standalone watchOS archives have NO App Store distribution method
+  - Xcode only offers WatchOSAdHoc/Enterprise/Development for watchOS-only archives
+  - Solution: thin iOS app wraps the watchOS app via "Embed Watch Content" build phase
+  - `SpearoGoiOSApp.swift` — minimal @main displaying "watch-only" message
+  - `Info.plist` — declares `LSApplicationLaunchProhibited` + `ITSWatchOnlyContainer`
+  - `Assets.xcassets` — iOS app icon (same artwork as watch icon)
+- **Two-target project structure:**
+  - **SpearoGo** (iOS) — SKIP_INSTALL=NO, embeds watch app, bundle ID `agency.visivo.SpearoGo`
+  - **SpearoGo Watch App** (watchOS) — SKIP_INSTALL=YES, embedded target, bundle ID `agency.visivo.SpearoGo.watchkitapp`
+  - PBXTargetDependency + PBXContainerItemProxy links iOS → watchOS
+  - PBXCopyFilesBuildPhase "Embed Watch Content" copies watch .app into iOS bundle
+- **generate_xcodeproj.py rewritten** to produce both targets with correct dependencies
+- **Privacy manifest** (`PrivacyInfo.xcprivacy`) — declares UserDefaults API usage
+- **Entitlements** (`SpearoGo.entitlements`) — App Group for widget data sharing
+- **Debug print wrapped** in `#if DEBUG` in SpearoGoApp.swift
+- **Fallback coordinates documented** — San Diego (32.7, -117.2) in AppState.swift
+- **pbxproj syntax fix:** Comma added to special chars in `q()` function — unquoted `1,2` in `TARGETED_DEVICE_FAMILY` caused "Unable to read project" error
+- **Archive + export succeeded** with `app-store-connect` method
+- **Build uploaded to App Store Connect** via `xcodebuild -exportArchive` with `destination=upload`
+
+#### Key discovery: watchOS App Store distribution
+Standalone watchOS archives do NOT have an App Store distribution method. The Xcode Organizer only shows:
+- `WatchOSAdHoc`
+- `WatchOSEnterprise`
+- `WatchOSDevelopmentSigned`
+
+There is no `WatchOSAppStoreDistribution`. Apple requires watchOS apps to be submitted inside an iOS app container, even for watch-only apps. The iOS container declares `LSApplicationLaunchProhibited=true` and `ITSWatchOnlyContainer=true`.
 
 ---
 
@@ -389,6 +447,10 @@ Design brief:
 5. **Background refresh in simulator:** Background tasks don't fire automatically in the simulator. Test by calling `AppState().refresh()` directly from Xcode's debug console.
 
 6. **Re-generating the project file:** If you add new Swift files, run `python3 generate_xcodeproj.py` from the repo root to regenerate the `.xcodeproj`. Then re-open in Xcode. Alternatively, just drag new files into the Xcode project navigator as normal.
+
+7. **Archiving for App Store:** Select the **SpearoGo** scheme (iOS), destination **Any iOS Device**, then Product → Archive. The archive contains both the iOS stub and the embedded watchOS app. Use Distribute → App Store Connect to upload.
+
+8. **Re-uploading a build:** Bump `CURRENT_PROJECT_VERSION` in `generate_xcodeproj.py` (both iOS and watchOS targets), regenerate, archive, and upload. App Store Connect rejects duplicate build numbers.
 
 ---
 
@@ -419,4 +481,8 @@ f0be317  Sprint 0: project scaffold, all services, API validation spike
 | Change solunar calculation | `SolunarService.swift` |
 | Add a new saved location field | `SavedLocation.swift` (add SwiftData migration) |
 | Add a new preview | Bottom of any View file, use `AppState.preview()` |
+| Edit widget views | `Widget/SpearoGoWidget.swift` + `Widget/WidgetViews.swift` |
+| Edit onboarding | `Views/OnboardingView.swift` |
+| Edit privacy policy | `Views/PrivacyPolicyView.swift` |
+| Edit App Store copy | `docs/APP_STORE_METADATA.md` |
 | See all mockups | Open `mockups/index.html` in browser |

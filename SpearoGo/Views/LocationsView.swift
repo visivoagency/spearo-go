@@ -26,6 +26,33 @@ struct LocationsView: View {
                         .onTapGesture { activate(location) }
                 }
                 .onDelete(perform: delete)
+
+                // App info & privacy
+                Section {
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        HStack(spacing: Brand.Spacing.item) {
+                            Image(systemName: "hand.raised.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Brand.Colors.textSecondary)
+                                .frame(width: 18)
+                            Text("Privacy Policy")
+                                .font(Brand.Typography.personalityCopy)
+                                .foregroundStyle(Brand.Colors.textSecondary)
+                        }
+                    }
+
+                    HStack(spacing: Brand.Spacing.item) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Brand.Colors.textSecondary)
+                            .frame(width: 18)
+                        Text("v\(Constants.App.version)")
+                            .font(Brand.Typography.caption)
+                            .foregroundStyle(Brand.Colors.textSecondary)
+                    }
+                }
             }
             .listStyle(.plain)
             .background(Brand.Colors.background)
@@ -71,6 +98,9 @@ struct LocationsView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { deactivateAll() }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Current GPS location")
+        .accessibilityHint("Double tap to use current location")
     }
 
     // MARK: - Helpers
@@ -132,6 +162,9 @@ struct LocationRow: View {
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(location.name), \(coordString(location))")
+        .accessibilityHint(isActive ? "Currently active" : "Double tap to activate")
     }
 
     private func coordString(_ loc: SavedLocation) -> String {

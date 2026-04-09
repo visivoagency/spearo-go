@@ -54,10 +54,9 @@ struct ScoreService {
     private func tideScore(_ d: TideData) -> Double {
         // Slack water and incoming tide are generally better for viz & fish movement
         switch d.phase {
-        case "Slack":   return 9
-        case "Flood":   return 7.5
-        case "Ebb":     return 6
-        default:        return 7
+        case .slack: return 9
+        case .flood: return 7.5
+        case .ebb:   return 6
         }
     }
 

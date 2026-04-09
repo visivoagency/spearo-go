@@ -27,7 +27,7 @@
 
 ---
 
-## Sprint 0 — Foundation (current)
+## Sprint 0 — Foundation ✅
 
 - [x] Project structure & GitHub repo
 - [x] Package.swift (watchOS 10 target)
@@ -42,36 +42,53 @@
 
 ---
 
-## Sprint 1 — Xcode project + Core data flow
+## Sprint 1 — Xcode project + Core data flow ✅
 
-- [ ] Create Xcode project (watchOS App, SwiftUI, SwiftData)
-- [ ] Wire SPM sources into Xcode target
-- [ ] Live GPS → coordinate flow
-- [ ] End-to-end data fetch → score → verdict display
-- [ ] Saved locations (SwiftData CRUD)
-- [ ] 30-minute cache with background refresh
-
----
-
-## Sprint 2 — Polish & UX
-
-- [ ] Loading skeletons / shimmer
-- [ ] Haptic feedback on verdict change
-- [ ] Complications (Smart Stack widget)
-- [ ] Digital Crown scroll on Tides / Solunar pages
-- [ ] Accessibility: Dynamic Type, VoiceOver labels
-- [ ] Onboarding flow (first launch)
+- [x] Create Xcode project (watchOS App, SwiftUI, SwiftData)
+- [x] Wire SPM sources into Xcode target
+- [x] Live GPS → coordinate flow
+- [x] End-to-end data fetch → score → verdict display
+- [x] Saved locations (SwiftData CRUD)
+- [x] 30-minute cache with background refresh
 
 ---
 
-## Sprint 3 — Store prep
+## Sprint 2 — Polish & UX ✅
 
-- [ ] App Icon (all sizes)
-- [ ] Screenshot set (6 sizes)
-- [ ] App Store description + keywords
-- [ ] Privacy policy (location only, no tracking)
-- [ ] TestFlight beta
-- [ ] App Store submission
+- [x] Loading skeletons / shimmer (all data pages: Conditions, Water, Tides, Fish Activity)
+- [x] Haptic feedback on verdict change (success/click/directionUp/failure per verdict)
+- [x] Haptic on first load (click) and on error (failure)
+- [x] Digital Crown scroll on Tides + Fish Activity pages (ScrollView + focusable + digitalCrownRotation)
+- [x] VoiceOver accessibility labels on all views (Verdict, Conditions, Water, Tides, Fish, Locations)
+- [x] Stale cache indicator ("Just now" / "X min ago" / "Stale" — turns orange when >30min)
+- [x] Long-press gesture on Verdict page → opens Locations sheet
+- [x] Last-refreshed timestamp tracking in AppState
+- [x] `#if os(watchOS)` guards for WatchKit APIs (SPM compatibility)
+- [ ] Complications (Smart Stack widget) — deferred to Sprint 3
+- [ ] Onboarding flow (first launch) — deferred to Sprint 3
+
+---
+
+## Sprint 3 — Store prep ✅
+
+- [x] Fix DiveScore.swift bug — `Constants.Colors.Verdict` → `Brand.Colors.forVerdict()`
+- [x] Onboarding flow — 3-page swipeable welcome (Welcome → How It Works → Location + "Let's Go")
+- [x] `@AppStorage("hasCompletedOnboarding")` gate in ContentView
+- [x] Smart Stack complication widget (WidgetKit)
+  - SharedScore model for app → widget data via UserDefaults (App Group)
+  - AppState writes score + reloads widget timeline after each refresh
+  - AccessoryRectangular: verdict + score gauge + relative time
+  - AccessoryCircular: score gauge with fish icon
+  - AccessoryCorner: score number + gauge arc (watchOS only)
+  - Widget previews for all families
+  - NOTE: Widget extension target must be added via Xcode GUI
+- [x] App Store metadata file (name, subtitle, description, keywords, category, pricing)
+- [x] Privacy policy view — accessible from Locations sheet, covers location/data/analytics
+- [x] Version info in Locations view
+- [ ] App Icon (all sizes) — requires PNG artwork
+- [ ] Screenshot set (6 sizes) — requires simulator
+- [ ] TestFlight beta — requires Xcode GUI
+- [ ] App Store submission — requires Xcode GUI
 
 ---
 

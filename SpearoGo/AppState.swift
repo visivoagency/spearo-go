@@ -1,7 +1,11 @@
 import Foundation
 import CoreLocation
+import WidgetKit
+#if os(watchOS)
+import WatchKit
+#endif
 
-@Observable
+@MainActor @Observable
 final class AppState {
     // ── Published state ──────────────────────────────────────────────────────
     var weatherData:  WeatherData?
@@ -11,6 +15,9 @@ final class AppState {
     var diveScore:    DiveScore?
     var isLoading:    Bool = false
     var error:        Error?
+
+    /// Tracks when data was last successfully refreshed.
+    var lastRefreshed: Date?
 
     /// Set by ContentView when the user activates a saved location.
     /// Nil means "use live GPS".
@@ -25,7 +32,7 @@ final class AppState {
     private let scorer   = ScoreService()
     private let cache    = CacheService()
 
-    // Default fallback if GPS unavailable and no saved location
+    // Default fallback (San Diego, CA) if GPS unavailable and no saved location
     private let defaultCoordinate = CLLocationCoordinate2D(latitude: 32.7, longitude: -117.2)
 
     var activeCoordinate: CLLocationCoordinate2D {
@@ -34,11 +41,29 @@ final class AppState {
             ?? defaultCoordinate
     }
 
+    /// Formatted relative time since last refresh, e.g. "2 min ago" or "stale".
+    var lastRefreshedLabel: String? {
+        guard let lastRefreshed else { return nil }
+        let elapsed = Date().timeIntervalSince(lastRefreshed)
+        if elapsed < 60 { return "Just now" }
+        let minutes = Int(elapsed / 60)
+        if minutes < 60 { return "\(minutes) min ago" }
+        return "Stale"
+    }
+
+    /// True if cached data is older than 30 minutes.
+    var isStale: Bool {
+        guard let lastRefreshed else { return false }
+        return Date().timeIntervalSince(lastRefreshed) > 1800
+    }
+
     // ── Refresh pipeline ──────────────────────────────────────────────────────
     func refresh() async {
         isLoading = true
         error = nil
         locationService.requestLocation()
+
+        let previousVerdict = diveScore?.verdict
 
         do {
             let coord = activeCoordinate
@@ -66,19 +91,54 @@ final class AppState {
                                            tide:    tideData,
                                            solunar: solunarData)
 
-            await MainActor.run {
-                self.weatherData  = weatherData
-                self.marineData   = marineData
-                self.tideData     = tideData
-                self.solunarData  = solunarData
-                self.diveScore    = score
-                self.isLoading    = false
+            self.weatherData  = weatherData
+            self.marineData   = marineData
+            self.tideData     = tideData
+            self.solunarData  = solunarData
+            self.diveScore    = score
+            self.lastRefreshed = Date()
+            self.isLoading    = false
+
+            // Push latest score to widget via shared UserDefaults
+            SharedScore(
+                composite: score.composite,
+                verdict: score.verdict.rawValue,
+                updatedAt: Date()
+            ).save()
+            WidgetCenter.shared.reloadAllTimelines()
+
+            // Haptic feedback on verdict change
+            #if os(watchOS)
+            if let prev = previousVerdict, prev != score.verdict {
+                playVerdictHaptic(score.verdict)
+            } else if previousVerdict == nil {
+                WKInterfaceDevice.current().play(.click)
             }
+            #endif
         } catch {
-            await MainActor.run {
-                self.error     = error
-                self.isLoading = false
-            }
+            self.error     = error
+            self.isLoading = false
+            #if os(watchOS)
+            WKInterfaceDevice.current().play(.failure)
+            #endif
         }
     }
+
+    // ── Haptics ───────────────────────────────────────────────────────────────
+
+    #if os(watchOS)
+    private func playVerdictHaptic(_ verdict: Verdict) {
+        let device = WKInterfaceDevice.current()
+        switch verdict {
+        case .go:
+            device.play(.success)
+        case .maybe:
+            device.play(.click)
+        case .sketchy:
+            device.play(.directionUp)
+        case .noGo:
+            device.play(.failure)
+        }
+    }
+    #endif
 }

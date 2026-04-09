@@ -7,12 +7,7 @@ enum Verdict: String {
     case noGo    = "NO GO"
 
     var color: Color {
-        switch self {
-        case .go:      return Color(hex: Constants.Colors.Verdict.go)
-        case .maybe:   return Color(hex: Constants.Colors.Verdict.maybe)
-        case .sketchy: return Color(hex: Constants.Colors.Verdict.sketchy)
-        case .noGo:    return Color(hex: Constants.Colors.Verdict.noGo)
-        }
+        Brand.Colors.forVerdict(self)
     }
 }
 

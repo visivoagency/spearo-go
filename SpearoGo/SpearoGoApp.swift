@@ -1,10 +1,14 @@
 import SwiftUI
 import SwiftData
+#if os(watchOS)
 import WatchKit
+#endif
 
 @main
 struct SpearoGoApp: App {
+    #if os(watchOS)
     @WKApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    #endif
 
     var body: some Scene {
         WindowGroup {
@@ -16,13 +20,13 @@ struct SpearoGoApp: App {
 
 // MARK: - App delegate (background refresh)
 
+#if os(watchOS)
 final class AppDelegate: NSObject, WKApplicationDelegate {
     func handle(_ backgroundTasks: Set<WKRefreshBackgroundTask>) {
         for task in backgroundTasks {
             switch task {
             case let refreshTask as WKApplicationRefreshBackgroundTask:
                 Task {
-                    // Re-fetch conditions silently every 30 minutes
                     let state = AppState()
                     await state.refresh()
                     scheduleNextRefresh()
@@ -45,15 +49,16 @@ final class AppDelegate: NSObject, WKApplicationDelegate {
     }
 }
 
-// MARK: - Background refresh scheduling
-
 private func scheduleNextRefresh() {
     WKApplication.shared().scheduleBackgroundRefresh(
         withPreferredDate: Date().addingTimeInterval(1800), // 30 min
         userInfo: nil
     ) { error in
+        #if DEBUG
         if let error {
             print("[SpearoGo] Background refresh scheduling failed: \(error)")
         }
+        #endif
     }
 }
+#endif

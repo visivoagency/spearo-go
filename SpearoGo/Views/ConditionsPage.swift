@@ -31,8 +31,21 @@ struct ConditionsPage: View {
                                       unit: "s")
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(conditionsAccessibilityLabel(weather: weather, marine: marine))
             } else {
-                ProgressView().tint(Brand.Colors.primary)
+                // Shimmer skeleton
+                Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
+                    GridRow {
+                        ConditionItemSkeleton()
+                        ConditionItemSkeleton()
+                    }
+                    GridRow {
+                        ConditionItemSkeleton()
+                        ConditionItemSkeleton()
+                    }
+                }
+                .accessibilityLabel("Loading conditions")
             }
         }
         .padding(Brand.Spacing.page)
@@ -42,6 +55,12 @@ struct ConditionsPage: View {
     private func compassDirection(_ degrees: Double) -> String {
         let dirs = ["N","NE","E","SE","S","SW","W","NW"]
         return dirs[Int((degrees + 22.5) / 45.0) % 8]
+    }
+
+    private func conditionsAccessibilityLabel(weather: WeatherData, marine: MarineData) -> String {
+        let wind = String(format: "Wind %.0f knots %@", weather.windSpeed, compassDirection(weather.windDirection))
+        let swell = String(format: "Swell %.1f metres, period %.0f seconds", marine.waveHeight, marine.wavePeriod)
+        return "\(wind). \(swell)"
     }
 }
 
@@ -69,6 +88,8 @@ struct ConditionItem: View {
             }
         }
         .frame(minWidth: 60)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) \(value) \(unit)")
     }
 }
 
@@ -78,4 +99,10 @@ struct ConditionItem: View {
     ConditionsPage()
         .previewAsWatch()
         .environment(AppState.preview())
+}
+
+#Preview("Loading") {
+    ConditionsPage()
+        .previewAsWatch()
+        .environment(AppState.previewLoading())
 }

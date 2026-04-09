@@ -163,3 +163,67 @@ extension View {
         modifier(LoadingOverlayModifier(isLoading: isLoading, message: message))
     }
 }
+
+// MARK: - Shimmer / skeleton loading placeholder
+
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        Brand.Colors.textSecondary.opacity(0.15),
+                        .clear
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .offset(x: phase)
+                .onAppear {
+                    withAnimation(
+                        .linear(duration: 1.2)
+                        .repeatForever(autoreverses: false)
+                    ) {
+                        phase = 200
+                    }
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: Brand.Radius.chip))
+    }
+}
+
+extension View {
+    /// Applies a shimmer animation — use on skeleton placeholder shapes.
+    func shimmer() -> some View {
+        modifier(ShimmerModifier())
+    }
+}
+
+// MARK: - Skeleton placeholder shape
+
+struct SkeletonBlock: View {
+    var width: CGFloat = 50
+    var height: CGFloat = 14
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: Brand.Radius.badge)
+            .fill(Brand.Colors.textSecondary.opacity(0.12))
+            .frame(width: width, height: height)
+            .shimmer()
+    }
+}
+
+/// A skeleton version of a ConditionItem — icon + two placeholder bars.
+struct ConditionItemSkeleton: View {
+    var body: some View {
+        VStack(spacing: Brand.Spacing.micro) {
+            SkeletonBlock(width: 14, height: 14)
+            SkeletonBlock(width: 30, height: 8)
+            SkeletonBlock(width: 40, height: 18)
+        }
+        .frame(minWidth: 60)
+    }
+}

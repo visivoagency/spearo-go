@@ -2,35 +2,67 @@ import SwiftUI
 
 struct TidesPage: View {
     @Environment(AppState.self) private var appState
+    @State private var crownOffset: Double = 0
 
     var body: some View {
-        VStack(spacing: Brand.Spacing.section) {
-            Text("Tides")
-                .brandSectionHeader()
+        ScrollView {
+            VStack(spacing: Brand.Spacing.section) {
+                Text("Tides")
+                    .brandSectionHeader()
 
-            if let tide = appState.tideData {
-                HStack(spacing: 16) {
-                    TideEventView(label: "HIGH",
-                                  time: tide.nextHighTime,
-                                  height: tide.nextHighHeight)
+                if let tide = appState.tideData {
+                    HStack(spacing: 16) {
+                        TideEventView(label: "HIGH",
+                                      time: tide.nextHighTime,
+                                      height: tide.nextHighHeight)
 
-                    Divider()
-                        .frame(height: 44)
-                        .background(Brand.Colors.textSecondary.opacity(Brand.Opacity.borderLine))
+                        Divider()
+                            .frame(height: 44)
+                            .background(Brand.Colors.textSecondary.opacity(Brand.Opacity.borderLine))
 
-                    TideEventView(label: "LOW",
-                                  time: tide.nextLowTime,
-                                  height: tide.nextLowHeight)
+                        TideEventView(label: "LOW",
+                                      time: tide.nextLowTime,
+                                      height: tide.nextLowHeight)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(tideTimesLabel(tide))
+
+                    TideDirectionView(isRising: tide.isRising, phase: tide.phase)
+                        .brandCard(padding: Brand.Spacing.item)
+                        .accessibilityLabel("Tide is \(tide.isRising ? "incoming" : "outgoing"), phase: \(tide.phase.rawValue)")
+
+                    // Current height
+                    HStack(spacing: Brand.Spacing.micro) {
+                        Text("Now")
+                            .itemLabelStyle()
+                        Text(String(format: "%.1fm", tide.currentHeight))
+                            .highlightCaptionStyle()
+                    }
+                    .accessibilityLabel(String(format: "Current tide height %.1f metres", tide.currentHeight))
+                } else {
+                    // Shimmer skeleton
+                    HStack(spacing: 16) {
+                        TideEventSkeleton()
+                        SkeletonBlock(width: 1, height: 44)
+                        TideEventSkeleton()
+                    }
+                    SkeletonBlock(width: 120, height: 30)
+                    .accessibilityLabel("Loading tide data")
                 }
-
-                TideDirectionView(isRising: tide.isRising, phase: tide.phase)
-                    .brandCard(padding: Brand.Spacing.item)
-            } else {
-                ProgressView().tint(Brand.Colors.primary)
             }
+            .padding(Brand.Spacing.page)
         }
-        .padding(Brand.Spacing.page)
+        .focusable()
+        .digitalCrownRotation($crownOffset)
         .brandPage()
+    }
+
+    private func tideTimesLabel(_ tide: TideData) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        let high = "High tide at \(formatter.string(from: tide.nextHighTime)), \(String(format: "%.1f", tide.nextHighHeight)) metres"
+        let low = "Low tide at \(formatter.string(from: tide.nextLowTime)), \(String(format: "%.1f", tide.nextLowHeight)) metres"
+        return "\(high). \(low)"
     }
 }
 
@@ -45,12 +77,24 @@ struct TideEventView: View {
             Text(time, style: .time).timeDisplayStyle()
             Text(String(format: "%.1fm", height)).highlightCaptionStyle()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) tide: \(String(format: "%.1f", height)) metres")
+    }
+}
+
+struct TideEventSkeleton: View {
+    var body: some View {
+        VStack(spacing: Brand.Spacing.micro) {
+            SkeletonBlock(width: 30, height: 8)
+            SkeletonBlock(width: 50, height: 16)
+            SkeletonBlock(width: 35, height: 9)
+        }
     }
 }
 
 struct TideDirectionView: View {
     let isRising: Bool
-    let phase: String
+    let phase: TidePhase
 
     var body: some View {
         HStack(spacing: Brand.Spacing.item) {
@@ -62,7 +106,7 @@ struct TideDirectionView: View {
                 Text(isRising ? "Incoming" : "Outgoing")
                     .font(Brand.Typography.personalityCopy)
                     .foregroundStyle(Brand.Colors.textPrimary)
-                Text(phase)
+                Text(phase.rawValue)
                     .captionStyle()
             }
         }
@@ -75,4 +119,10 @@ struct TideDirectionView: View {
     TidesPage()
         .previewAsWatch()
         .environment(AppState.preview())
+}
+
+#Preview("Loading") {
+    TidesPage()
+        .previewAsWatch()
+        .environment(AppState.previewLoading())
 }

@@ -6,10 +6,19 @@ struct ContentView: View {
     @Query(sort: \SavedLocation.createdAt, order: .reverse)
     private var savedLocations: [SavedLocation]
 
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var appState = AppState()
-    @State private var showLocations = false
 
     var body: some View {
+        if hasCompletedOnboarding {
+            mainContent
+        } else {
+            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                .environment(appState)
+        }
+    }
+
+    private var mainContent: some View {
         TabView {
             VerdictPage()
                 .tag(0)
@@ -25,12 +34,7 @@ struct ContentView: View {
         .tabViewStyle(.page)
         .background(Brand.Colors.background)
         .environment(appState)
-        .sheet(isPresented: $showLocations) {
-            LocationsView()
-                .environment(appState)
-        }
         .task {
-            // Activate the first saved location if one exists
             if let active = savedLocations.first(where: { $0.isActive }) {
                 appState.activeOverrideCoordinate = active.coordinate
             }

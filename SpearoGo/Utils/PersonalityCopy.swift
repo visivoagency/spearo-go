@@ -57,14 +57,14 @@ enum PersonalityCopy {
 
     static func message(for verdict: Verdict) -> String {
         switch verdict {
-        case .go:      return goMessages.randomElement()!
-        case .maybe:   return maybeMessages.randomElement()!
-        case .sketchy: return sketchyMessages.randomElement()!
-        case .noGo:    return noGoMessages.randomElement()!
+        case .go:      return goMessages.randomElement() ?? "GO!"
+        case .maybe:   return maybeMessages.randomElement() ?? "Your call."
+        case .sketchy: return sketchyMessages.randomElement() ?? "Be careful."
+        case .noGo:    return noGoMessages.randomElement() ?? "Not today."
         }
     }
 
     static func loading() -> String {
-        loadingMessages.randomElement()!
+        loadingMessages.randomElement() ?? "Loading..."
     }
 }

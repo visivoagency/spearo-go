@@ -1,6 +1,5 @@
 import Foundation
 import CoreLocation
-import SwiftData
 
 @Observable
 final class LocationService: NSObject, CLLocationManagerDelegate {
@@ -18,6 +17,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     }
 
     func requestLocation() {
+        error = nil
         switch manager.authorizationStatus {
         case .notDetermined:
             manager.requestWhenInUseAuthorization()

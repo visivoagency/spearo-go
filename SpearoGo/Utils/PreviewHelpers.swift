@@ -47,12 +47,13 @@ extension AppState {
     /// Returns a fully-populated AppState for use in Xcode Previews.
     static func preview(verdict: Verdict = .go) -> AppState {
         let state = AppState()
-        state.weatherData = MockData.weather
-        state.marineData  = MockData.marine
-        state.tideData    = MockData.tide
-        state.solunarData = MockData.solunar
-        state.diveScore   = MockData.score(verdict: verdict)
-        state.isLoading   = false
+        state.weatherData   = MockData.weather
+        state.marineData    = MockData.marine
+        state.tideData      = MockData.tide
+        state.solunarData   = MockData.solunar
+        state.diveScore     = MockData.score(verdict: verdict)
+        state.lastRefreshed = Date().addingTimeInterval(-120) // "2 min ago"
+        state.isLoading     = false
         return state
     }
 
@@ -87,7 +88,7 @@ enum MockData {
     static let tide = TideData(
         currentHeight:  1.1,
         isRising:       true,
-        phase:          "Flood",
+        phase:          .flood,
         nextHighTime:   Date().addingTimeInterval(3600 * 2.5),
         nextHighHeight: 1.8,
         nextLowTime:    Date().addingTimeInterval(-3600 * 4),

@@ -21,13 +21,24 @@ struct WaterPage: View {
                                       unit: "")
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(waterAccessibilityLabel(marine: marine))
 
                 Text(wetsuitTip(marine.seaSurfaceTemp))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, Brand.Spacing.page)
                     .infoPill()
+                    .accessibilityLabel("Wetsuit tip: \(wetsuitTip(marine.seaSurfaceTemp))")
             } else {
-                ProgressView().tint(Brand.Colors.primary)
+                // Shimmer skeleton
+                Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
+                    GridRow {
+                        ConditionItemSkeleton()
+                        ConditionItemSkeleton()
+                    }
+                }
+                SkeletonBlock(width: 120, height: 24)
+                    .accessibilityLabel("Loading water conditions")
             }
         }
         .padding(Brand.Spacing.page)
@@ -51,6 +62,12 @@ struct WaterPage: View {
         default:      return "Warm. 1–2mm or skin."
         }
     }
+
+    private func waterAccessibilityLabel(marine: MarineData) -> String {
+        let temp = String(format: "Water temperature %.0f degrees celsius", marine.seaSurfaceTemp)
+        let viz = "Visibility \(vizLabel(marine.waveHeight))"
+        return "\(temp). \(viz)"
+    }
 }
 
 // MARK: - Previews
@@ -59,4 +76,10 @@ struct WaterPage: View {
     WaterPage()
         .previewAsWatch()
         .environment(AppState.preview())
+}
+
+#Preview("Loading") {
+    WaterPage()
+        .previewAsWatch()
+        .environment(AppState.previewLoading())
 }

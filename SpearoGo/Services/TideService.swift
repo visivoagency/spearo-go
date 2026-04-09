@@ -63,10 +63,10 @@ struct TideService {
         let deltaT: Double = 1800
         let isRising = height(at: t + deltaT) > current
 
-        // Tide phase label
-        let phase: String = {
-            if abs(current) < 0.2 * springScale { return "Slack" }
-            return isRising ? "Flood" : "Ebb"
+        // Tide phase
+        let phase: TidePhase = {
+            if abs(current) < 0.2 * springScale { return .slack }
+            return isRising ? .flood : .ebb
         }()
 
         // Scale to a realistic tidal range (e.g. 0–3 m normalised)

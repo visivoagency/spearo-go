@@ -2,6 +2,7 @@ import SwiftUI
 
 struct VerdictPage: View {
     @Environment(AppState.self) private var appState
+    @State private var showLocations = false
 
     var body: some View {
         ZStack {
@@ -13,10 +14,12 @@ struct VerdictPage: View {
                         .captionStyle()
                         .multilineTextAlignment(.center)
                 }
+                .accessibilityLabel("Loading dive conditions")
             } else if let score = appState.diveScore {
                 VStack(spacing: Brand.Spacing.item) {
                     Text(score.verdict.rawValue)
                         .verdictStyle(color: Brand.Colors.forVerdict(score.verdict))
+                        .accessibilityLabel("Verdict: \(score.verdict.rawValue)")
 
                     Text(PersonalityCopy.message(for: score.verdict))
                         .personalityStyle()
@@ -25,16 +28,34 @@ struct VerdictPage: View {
                     Spacer().frame(height: Brand.Spacing.micro)
 
                     ScoreRingView(score: score.composite, verdict: score.verdict)
+                        .accessibilityLabel(String(format: "Dive score %.1f out of 10", score.composite))
+
+                    // Stale cache indicator
+                    if let label = appState.lastRefreshedLabel {
+                        Text(label)
+                            .font(Brand.Typography.caption)
+                            .foregroundStyle(appState.isStale ? Brand.Colors.sketchy : Brand.Colors.textSecondary)
+                            .accessibilityLabel("Last updated: \(label)")
+                    }
                 }
                 .padding(Brand.Spacing.page)
+                .accessibilityElement(children: .contain)
             } else {
                 Text("Tap to load conditions")
                     .captionStyle()
+                    .accessibilityHint("Double tap to refresh dive conditions")
             }
         }
         .brandPage()
         .onTapGesture {
             Task { await appState.refresh() }
+        }
+        .onLongPressGesture {
+            showLocations = true
+        }
+        .sheet(isPresented: $showLocations) {
+            LocationsView()
+                .environment(appState)
         }
     }
 }

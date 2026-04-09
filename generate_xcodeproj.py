@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 generate_xcodeproj.py — Generates SpearoGo.xcodeproj for the Spearo Go watchOS app.
+
+Produces two targets:
+  1. SpearoGo Watch App  — the real watchOS app (all Swift code + assets)
+  2. SpearoGo            — a thin iOS stub that embeds the Watch App
+                           (required for App Store distribution)
+
 Run once from the repo root:  python3 generate_xcodeproj.py
 Then open SpearoGo.xcodeproj in Xcode.
 """
@@ -12,6 +18,17 @@ WS      = os.path.join(PROJ, "project.xcworkspace")
 
 def uid():
     return uuid.uuid4().hex[:24].upper()
+
+def q(v):
+    """Quote a plist value if it contains special chars."""
+    if v.startswith('"') and v.endswith('"'):
+        return v
+    if v.startswith('(') or v.startswith('{'):
+        return v
+    special = set('$()./- +@,')
+    if any(c in special for c in v):
+        return f'"{v}"'
+    return v
 
 # ─── File inventory ──────────────────────────────────────────────────────────
 # (display_name, SpearoGo-relative path, is_resource)
@@ -26,6 +43,8 @@ SOURCES = [
     ("TidesPage.swift",        "Views/TidesPage.swift",           False),
     ("FishActivityPage.swift", "Views/FishActivityPage.swift",    False),
     ("LocationsView.swift",    "Views/LocationsView.swift",       False),
+    ("OnboardingView.swift",   "Views/OnboardingView.swift",      False),
+    ("PrivacyPolicyView.swift","Views/PrivacyPolicyView.swift",   False),
     # Models
     ("WeatherData.swift",      "Models/WeatherData.swift",        False),
     ("MarineData.swift",       "Models/MarineData.swift",         False),
@@ -33,6 +52,7 @@ SOURCES = [
     ("SolunarData.swift",      "Models/SolunarData.swift",        False),
     ("DiveScore.swift",        "Models/DiveScore.swift",          False),
     ("SavedLocation.swift",    "Models/SavedLocation.swift",      False),
+    ("SharedScore.swift",      "Models/SharedScore.swift",        False),
     # Services
     ("WeatherService.swift",   "Services/WeatherService.swift",   False),
     ("MarineService.swift",    "Services/MarineService.swift",    False),
@@ -48,27 +68,58 @@ SOURCES = [
     ("Modifiers.swift",        "Utils/Modifiers.swift",           False),
     ("PersonalityCopy.swift",  "Utils/PersonalityCopy.swift",     False),
     ("PreviewHelpers.swift",   "Utils/PreviewHelpers.swift",      False),
+    # Widget (not compiled in main app target — needs a Widget Extension target)
+    ("SpearoGoWidget.swift",   "Widget/SpearoGoWidget.swift",     "none"),
+    ("WidgetViews.swift",      "Widget/WidgetViews.swift",        "none"),
     # Resources
     ("Assets.xcassets",        "Assets.xcassets",                 True),
+    ("PrivacyInfo.xcprivacy",  "PrivacyInfo.xcprivacy",           True),
 ]
 
 # ─── Generate UUIDs ───────────────────────────────────────────────────────────
+
+# Project
 PROJ_UUID      = uid()
 MAIN_GRP       = uid()
 PRODUCTS_GRP   = uid()
-SOURCES_PHASE  = uid()
-RESOURCES_PHASE = uid()
-FRAMEWORKS_PHASE = uid()
-TARGET_UUID    = uid()
 PROJ_CFG_LIST  = uid()
-TARGET_CFG_LIST = uid()
 DEBUG_PROJ     = uid()
 RELEASE_PROJ   = uid()
-DEBUG_TARGET   = uid()
-RELEASE_TARGET = uid()
-PRODUCT_REF    = uid()
 
-# Per-file UUIDs
+# watchOS target
+W_TARGET       = uid()
+W_SOURCES_PH   = uid()
+W_RESOURCES_PH = uid()
+W_FRAMEWORKS_PH = uid()
+W_CFG_LIST     = uid()
+W_DEBUG_CFG    = uid()
+W_RELEASE_CFG  = uid()
+W_PRODUCT_REF  = uid()
+
+# iOS stub target
+I_TARGET       = uid()
+I_SOURCES_PH   = uid()
+I_RESOURCES_PH = uid()
+I_FRAMEWORKS_PH = uid()
+I_EMBED_WATCH  = uid()   # Copy Files phase to embed watch app
+I_CFG_LIST     = uid()
+I_DEBUG_CFG    = uid()
+I_RELEASE_CFG  = uid()
+I_PRODUCT_REF  = uid()
+
+# iOS stub file refs
+I_APP_SWIFT_REF = uid()
+I_APP_SWIFT_BF  = uid()
+I_ASSETS_REF    = uid()
+I_ASSETS_BF     = uid()
+I_PLIST_REF     = uid()
+
+# Dependency / container
+I_DEP_UUID     = uid()    # PBXTargetDependency
+I_DEP_PROXY    = uid()    # PBXContainerItemProxy
+W_IN_EMBED_BF  = uid()    # PBXBuildFile for watch app in embed phase
+
+# Per-file UUIDs (watchOS target)
 files = []
 for name, path, is_res in SOURCES:
     files.append({
@@ -76,14 +127,17 @@ for name, path, is_res in SOURCES:
         "path":   path,
         "is_res": is_res,
         "ref":    uid(),
-        "bf":     uid(),   # PBXBuildFile
+        "bf":     uid(),
     })
 
 # Groups
+SOURCES_GRP  = uid()
 VIEWS_GRP    = uid()
 MODELS_GRP   = uid()
 SERVICES_GRP = uid()
 UTILS_GRP    = uid()
+WIDGET_GRP   = uid()
+IOS_STUB_GRP = uid()
 
 def pbxproj():
     lines = []
@@ -99,62 +153,113 @@ def pbxproj():
 
     # ── PBXBuildFile ──────────────────────────────────────────────────────────
     a("/* Begin PBXBuildFile section */")
+    # watchOS target files
     for f in files:
-        phase = "PBXResourcesBuildPhase" if f["is_res"] else "PBXSourcesBuildPhase"
-        a(f"    {f['bf']} /* {f['name']} in {'Resources' if f['is_res'] else 'Sources'} */ = {{isa = PBXBuildFile; fileRef = {f['ref']} /* {f['name']} */; }};")
+        if f["is_res"] == "none":
+            continue
+        phase_name = "Resources" if f["is_res"] else "Sources"
+        a(f"    {f['bf']} /* {f['name']} in {phase_name} */ = {{isa = PBXBuildFile; fileRef = {f['ref']} /* {f['name']} */; }};")
+    # iOS stub source
+    a(f"    {I_APP_SWIFT_BF} /* SpearoGoiOSApp.swift in Sources */ = {{isa = PBXBuildFile; fileRef = {I_APP_SWIFT_REF} /* SpearoGoiOSApp.swift */; }};")
+    # iOS stub assets
+    a(f"    {I_ASSETS_BF} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {I_ASSETS_REF} /* Assets.xcassets */; }};")
+    # Watch app embedded in iOS app
+    a(f"    {W_IN_EMBED_BF} /* SpearoGo Watch App.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {W_PRODUCT_REF} /* SpearoGo Watch App.app */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};")
     a("/* End PBXBuildFile section */")
+    a("")
+
+    # ── PBXContainerItemProxy ─────────────────────────────────────────────────
+    a("/* Begin PBXContainerItemProxy section */")
+    a(f"    {I_DEP_PROXY} /* PBXContainerItemProxy */ = {{")
+    a("        isa = PBXContainerItemProxy;")
+    a(f"        containerPortal = {PROJ_UUID} /* Project object */;")
+    a("        proxyType = 1;")
+    a(f"        remoteGlobalIDString = {W_TARGET};")
+    a("        remoteInfo = \"SpearoGo Watch App\";")
+    a("    };")
+    a("/* End PBXContainerItemProxy section */")
+    a("")
+
+    # ── PBXCopyFilesBuildPhase (Embed Watch Content) ──────────────────────────
+    a("/* Begin PBXCopyFilesBuildPhase section */")
+    a(f"    {I_EMBED_WATCH} /* Embed Watch Content */ = {{")
+    a("        isa = PBXCopyFilesBuildPhase;")
+    a("        buildActionMask = 2147483647;")
+    a("        dstPath = \"$(CONTENTS_FOLDER_PATH)/Watch\";")
+    a("        dstSubfolderSpec = 16;")
+    a("        files = (")
+    a(f"            {W_IN_EMBED_BF} /* SpearoGo Watch App.app in Embed Watch Content */,")
+    a("        );")
+    a("        name = \"Embed Watch Content\";")
+    a("        runOnlyForDeploymentPostprocessing = 0;")
+    a("    };")
+    a("/* End PBXCopyFilesBuildPhase section */")
     a("")
 
     # ── PBXFileReference ─────────────────────────────────────────────────────
     a("/* Begin PBXFileReference section */")
-    a(f"    {PRODUCT_REF} /* SpearoGo.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpearoGo.app; sourceTree = BUILT_PRODUCTS_DIR; }};")
+    # iOS stub product
+    a(f"    {I_PRODUCT_REF} /* SpearoGo.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = \"SpearoGo.app\"; sourceTree = BUILT_PRODUCTS_DIR; }};")
+    # watchOS product
+    a(f"    {W_PRODUCT_REF} /* SpearoGo Watch App.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = \"SpearoGo Watch App.app\"; sourceTree = BUILT_PRODUCTS_DIR; }};")
+    # iOS stub swift file
+    a(f"    {I_APP_SWIFT_REF} /* SpearoGoiOSApp.swift */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoiOSApp.swift; sourceTree = \"<group>\"; }};")
+    # iOS stub assets
+    a(f"    {I_ASSETS_REF} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = \"<group>\"; }};")
+    # iOS stub Info.plist
+    a(f"    {I_PLIST_REF} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
+    # watchOS files
     for f in files:
-        if f["is_res"] and f["name"].endswith(".xcassets"):
+        if f["is_res"] == "none":
+            ftype = "sourcecode.swift"
+        elif f["is_res"] and f["name"].endswith(".xcassets"):
             ftype = "folder.assetcatalog"
-            last  = f["name"]
-            src   = "\"<group>\""
+        elif f["name"].endswith(".xcprivacy"):
+            ftype = "text.xml"
         elif f["name"] == "Info.plist":
             ftype = "text.plist.xml"
-            last  = f["name"]
-            src   = "\"<group>\""
         else:
             ftype = "sourcecode.swift"
-            last  = f["name"]
-            src   = "\"<group>\""
-        a(f"    {f['ref']} /* {f['name']} */ = {{isa = PBXFileReference; lastKnownFileType = {ftype}; path = {last}; sourceTree = {src}; }};")
+        a(f"    {f['ref']} /* {f['name']} */ = {{isa = PBXFileReference; lastKnownFileType = {ftype}; path = {f['name']}; sourceTree = \"<group>\"; }};")
     a("/* End PBXFileReference section */")
     a("")
 
     # ── PBXFrameworksBuildPhase ───────────────────────────────────────────────
     a("/* Begin PBXFrameworksBuildPhase section */")
-    a(f"    {FRAMEWORKS_PHASE} /* Frameworks */ = {{")
-    a("        isa = PBXFrameworksBuildPhase;")
-    a("        buildActionMask = 2147483647;")
-    a("        files = (")
-    a("        );")
-    a("        runOnlyForDeploymentPostprocessing = 0;")
-    a("    };")
+    for ph_uuid, name in [(W_FRAMEWORKS_PH, "Watch App"), (I_FRAMEWORKS_PH, "iOS Stub")]:
+        a(f"    {ph_uuid} /* Frameworks */ = {{")
+        a("        isa = PBXFrameworksBuildPhase;")
+        a("        buildActionMask = 2147483647;")
+        a("        files = (")
+        a("        );")
+        a("        runOnlyForDeploymentPostprocessing = 0;")
+        a("    };")
     a("/* End PBXFrameworksBuildPhase section */")
     a("")
 
     # ── PBXGroup ─────────────────────────────────────────────────────────────
-    def group_children(names):
-        matched = [f for f in files if f["name"] in names]
-        return "\n".join(f"                {f['ref']} /* {f['name']} */," for f in matched)
-
     root_files   = [f for f in files if "/" not in f["path"]]
     views_files  = [f for f in files if f["path"].startswith("Views/")]
     models_files = [f for f in files if f["path"].startswith("Models/")]
     svc_files    = [f for f in files if f["path"].startswith("Services/")]
     util_files   = [f for f in files if f["path"].startswith("Utils/")]
-
-    def file_refs(lst):
-        return "\n".join(f"                {f['ref']} /* {f['name']} */," for f in lst)
+    widget_files = [f for f in files if f["path"].startswith("Widget/")]
 
     a("/* Begin PBXGroup section */")
 
     # Root group
     a(f"    {MAIN_GRP} = {{")
+    a("        isa = PBXGroup;")
+    a("        children = (")
+    a(f"            {SOURCES_GRP} /* SpearoGo */,")
+    a(f"            {IOS_STUB_GRP} /* iOS Stub */,")
+    a(f"            {PRODUCTS_GRP} /* Products */,")
+    a("        );")
+    a("        sourceTree = \"<group>\";")
+    a("    };")
+
+    # SpearoGo source group (watchOS files, path = SpearoGo)
+    a(f"    {SOURCES_GRP} /* SpearoGo */ = {{")
     a("        isa = PBXGroup;")
     a("        children = (")
     for f in root_files:
@@ -163,8 +268,22 @@ def pbxproj():
     a(f"            {MODELS_GRP} /* Models */,")
     a(f"            {SERVICES_GRP} /* Services */,")
     a(f"            {UTILS_GRP} /* Utils */,")
-    a(f"            {PRODUCTS_GRP} /* Products */,")
+    a(f"            {WIDGET_GRP} /* Widget */,")
     a("        );")
+    a("        path = SpearoGo;")
+    a("        sourceTree = \"<group>\";")
+    a("    };")
+
+    # iOS Stub group
+    a(f"    {IOS_STUB_GRP} /* iOS Stub */ = {{")
+    a("        isa = PBXGroup;")
+    a("        children = (")
+    a(f"            {I_APP_SWIFT_REF} /* SpearoGoiOSApp.swift */,")
+    a(f"            {I_ASSETS_REF} /* Assets.xcassets */,")
+    a(f"            {I_PLIST_REF} /* Info.plist */,")
+    a("        );")
+    a("        name = \"iOS Stub\";")
+    a("        path = \"SpearoGoiOS\";")
     a("        sourceTree = \"<group>\";")
     a("    };")
 
@@ -172,7 +291,8 @@ def pbxproj():
     a(f"    {PRODUCTS_GRP} /* Products */ = {{")
     a("        isa = PBXGroup;")
     a("        children = (")
-    a(f"            {PRODUCT_REF} /* SpearoGo.app */,")
+    a(f"            {I_PRODUCT_REF} /* SpearoGo.app */,")
+    a(f"            {W_PRODUCT_REF} /* SpearoGo Watch App.app */,")
     a("        );")
     a("        name = Products;")
     a("        sourceTree = \"<group>\";")
@@ -183,6 +303,7 @@ def pbxproj():
         (MODELS_GRP,   "Models",   models_files),
         (SERVICES_GRP, "Services", svc_files),
         (UTILS_GRP,    "Utils",    util_files),
+        (WIDGET_GRP,   "Widget",   widget_files),
     ]:
         a(f"    {grp_uuid} /* {grp_name} */ = {{")
         a("        isa = PBXGroup;")
@@ -191,7 +312,7 @@ def pbxproj():
             a(f"            {f['ref']} /* {f['name']} */,")
         a("        );")
         a(f"        name = {grp_name};")
-        a("        path = \"" + grp_name + "\";")
+        a(f"        path = \"{grp_name}\";")
         a("        sourceTree = \"<group>\";")
         a("    };")
 
@@ -200,23 +321,47 @@ def pbxproj():
 
     # ── PBXNativeTarget ───────────────────────────────────────────────────────
     a("/* Begin PBXNativeTarget section */")
-    a(f"    {TARGET_UUID} /* SpearoGo */ = {{")
+
+    # watchOS Watch App target
+    a(f"    {W_TARGET} /* SpearoGo Watch App */ = {{")
     a("        isa = PBXNativeTarget;")
-    a("        buildConfigurationList = " + TARGET_CFG_LIST + " /* Build configuration list for PBXNativeTarget \"SpearoGo\" */;")
+    a(f"        buildConfigurationList = {W_CFG_LIST} /* Build configuration list for PBXNativeTarget \"SpearoGo Watch App\" */;")
     a("        buildPhases = (")
-    a(f"            {SOURCES_PHASE} /* Sources */,")
-    a(f"            {FRAMEWORKS_PHASE} /* Frameworks */,")
-    a(f"            {RESOURCES_PHASE} /* Resources */,")
+    a(f"            {W_SOURCES_PH} /* Sources */,")
+    a(f"            {W_FRAMEWORKS_PH} /* Frameworks */,")
+    a(f"            {W_RESOURCES_PH} /* Resources */,")
     a("        );")
     a("        buildRules = (")
     a("        );")
     a("        dependencies = (")
     a("        );")
-    a("        name = SpearoGo;")
-    a("        productName = SpearoGo;")
-    a(f"        productReference = {PRODUCT_REF} /* SpearoGo.app */;")
+    a("        name = \"SpearoGo Watch App\";")
+    a("        productName = \"SpearoGo Watch App\";")
+    a(f"        productReference = {W_PRODUCT_REF} /* SpearoGo Watch App.app */;")
     a("        productType = \"com.apple.product-type.application\";")
     a("    };")
+
+    # iOS stub target
+    a(f"    {I_TARGET} /* SpearoGo */ = {{")
+    a("        isa = PBXNativeTarget;")
+    a(f"        buildConfigurationList = {I_CFG_LIST} /* Build configuration list for PBXNativeTarget \"SpearoGo\" */;")
+    a("        buildPhases = (")
+    a(f"            {I_SOURCES_PH} /* Sources */,")
+    a(f"            {I_FRAMEWORKS_PH} /* Frameworks */,")
+    a(f"            {I_RESOURCES_PH} /* Resources */,")
+    a(f"            {I_EMBED_WATCH} /* Embed Watch Content */,")
+    a("        );")
+    a("        buildRules = (")
+    a("        );")
+    a("        dependencies = (")
+    a(f"            {I_DEP_UUID} /* PBXTargetDependency */,")
+    a("        );")
+    a("        name = SpearoGo;")
+    a("        productName = SpearoGo;")
+    a(f"        productReference = {I_PRODUCT_REF} /* SpearoGo.app */;")
+    a("        productType = \"com.apple.product-type.application\";")
+    a("    };")
+
     a("/* End PBXNativeTarget section */")
     a("")
 
@@ -229,7 +374,10 @@ def pbxproj():
     a("            LastSwiftUpdateCheck = 1500;")
     a("            LastUpgradeCheck = 1500;")
     a("            TargetAttributes = {")
-    a(f"                {TARGET_UUID} = {{")
+    a(f"                {W_TARGET} = {{")
+    a("                    CreatedOnToolsVersion = 15.0;")
+    a("                };")
+    a(f"                {I_TARGET} = {{")
     a("                    CreatedOnToolsVersion = 15.0;")
     a("                };")
     a("            };")
@@ -247,7 +395,8 @@ def pbxproj():
     a("        projectDirPath = \"\";")
     a("        projectRoot = \"\";")
     a("        targets = (")
-    a(f"            {TARGET_UUID} /* SpearoGo */,")
+    a(f"            {I_TARGET} /* SpearoGo */,")
+    a(f"            {W_TARGET} /* SpearoGo Watch App */,")
     a("        );")
     a("    };")
     a("/* End PBXProject section */")
@@ -255,13 +404,23 @@ def pbxproj():
 
     # ── PBXResourcesBuildPhase ────────────────────────────────────────────────
     a("/* Begin PBXResourcesBuildPhase section */")
-    a(f"    {RESOURCES_PHASE} /* Resources */ = {{")
+    # watchOS resources
+    a(f"    {W_RESOURCES_PH} /* Resources */ = {{")
     a("        isa = PBXResourcesBuildPhase;")
     a("        buildActionMask = 2147483647;")
     a("        files = (")
     for f in files:
-        if f["is_res"]:
+        if f["is_res"] is True:
             a(f"            {f['bf']} /* {f['name']} in Resources */,")
+    a("        );")
+    a("        runOnlyForDeploymentPostprocessing = 0;")
+    a("    };")
+    # iOS stub resources
+    a(f"    {I_RESOURCES_PH} /* Resources */ = {{")
+    a("        isa = PBXResourcesBuildPhase;")
+    a("        buildActionMask = 2147483647;")
+    a("        files = (")
+    a(f"            {I_ASSETS_BF} /* Assets.xcassets in Resources */,")
     a("        );")
     a("        runOnlyForDeploymentPostprocessing = 0;")
     a("    };")
@@ -270,17 +429,37 @@ def pbxproj():
 
     # ── PBXSourcesBuildPhase ──────────────────────────────────────────────────
     a("/* Begin PBXSourcesBuildPhase section */")
-    a(f"    {SOURCES_PHASE} /* Sources */ = {{")
+    # watchOS sources
+    a(f"    {W_SOURCES_PH} /* Sources */ = {{")
     a("        isa = PBXSourcesBuildPhase;")
     a("        buildActionMask = 2147483647;")
     a("        files = (")
     for f in files:
-        if not f["is_res"]:
+        if f["is_res"] is False:
             a(f"            {f['bf']} /* {f['name']} in Sources */,")
     a("        );")
     a("        runOnlyForDeploymentPostprocessing = 0;")
     a("    };")
+    # iOS stub sources
+    a(f"    {I_SOURCES_PH} /* Sources */ = {{")
+    a("        isa = PBXSourcesBuildPhase;")
+    a("        buildActionMask = 2147483647;")
+    a("        files = (")
+    a(f"            {I_APP_SWIFT_BF} /* SpearoGoiOSApp.swift in Sources */,")
+    a("        );")
+    a("        runOnlyForDeploymentPostprocessing = 0;")
+    a("    };")
     a("/* End PBXSourcesBuildPhase section */")
+    a("")
+
+    # ── PBXTargetDependency ───────────────────────────────────────────────────
+    a("/* Begin PBXTargetDependency section */")
+    a(f"    {I_DEP_UUID} /* PBXTargetDependency */ = {{")
+    a("        isa = PBXTargetDependency;")
+    a(f"        target = {W_TARGET} /* SpearoGo Watch App */;")
+    a(f"        targetProxy = {I_DEP_PROXY} /* PBXContainerItemProxy */;")
+    a("    };")
+    a("/* End PBXTargetDependency section */")
     a("")
 
     # ── XCBuildConfiguration ──────────────────────────────────────────────────
@@ -321,9 +500,7 @@ def pbxproj():
         ("GCC_WARN_UNINITIALIZED_AUTOS", "YES_AGGRESSIVE"),
         ("GCC_WARN_UNUSED_FUNCTION", "YES"),
         ("GCC_WARN_UNUSED_VARIABLE", "YES"),
-        ("SDKROOT", "watchos"),
         ("SWIFT_VERSION", "5.0"),
-        ("WATCHOS_DEPLOYMENT_TARGET", "10.0"),
     ]
 
     a("/* Begin XCBuildConfiguration section */")
@@ -333,7 +510,7 @@ def pbxproj():
     a("        isa = XCBuildConfiguration;")
     a("        buildSettings = {")
     for k, v in base_settings:
-        a(f"            {k} = {v};")
+        a(f"            {k} = {q(v)};")
     a("            DEBUG_INFORMATION_FORMAT = dwarf;")
     a("            ENABLE_TESTABILITY = YES;")
     a("            GCC_DYNAMIC_NO_PIC = NO;")
@@ -353,7 +530,7 @@ def pbxproj():
     a("        isa = XCBuildConfiguration;")
     a("        buildSettings = {")
     for k, v in base_settings:
-        a(f"            {k} = {v};")
+        a(f"            {k} = {q(v)};")
     a("            COPY_PHASE_STRIP = NO;")
     a("            DEBUG_INFORMATION_FORMAT = \"dwarf-with-dsym\";")
     a("            ENABLE_NS_ASSERTIONS = NO;")
@@ -365,41 +542,89 @@ def pbxproj():
     a("        name = Release;")
     a("    };")
 
-    target_settings = [
+    # ── watchOS target settings ─────────────────────────────────────────────
+    watch_settings = [
         ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
         ("ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME", "OceanBlue"),
+        ("CODE_SIGN_ENTITLEMENTS", "SpearoGo/SpearoGo.entitlements"),
         ("CODE_SIGN_STYLE", "Automatic"),
         ("CURRENT_PROJECT_VERSION", "1"),
+        ("DEVELOPMENT_TEAM", "RBDNV7NG89"),
         ("ENABLE_PREVIEWS", "YES"),
         ("GENERATE_INFOPLIST_FILE", "NO"),
         ("INFOPLIST_FILE", "SpearoGo/Info.plist"),
         ("MARKETING_VERSION", "1.0.0"),
-        ("PRODUCT_BUNDLE_IDENTIFIER", "agency.visivo.SpearoGo"),
+        ("PRODUCT_BUNDLE_IDENTIFIER", "agency.visivo.SpearoGo.watchkitapp"),
         ("PRODUCT_NAME", "$(TARGET_NAME)"),
+        ("SDKROOT", "watchos"),
         ("SKIP_INSTALL", "YES"),
+        ("SUPPORTED_PLATFORMS", "watchos"),
+        ("SUPPORTS_MACCATALYST", "NO"),
         ("SWIFT_EMIT_LOC_STRINGS", "YES"),
         ("SWIFT_VERSION", "5.0"),
         ("TARGETED_DEVICE_FAMILY", "4"),
         ("WATCHOS_DEPLOYMENT_TARGET", "10.0"),
     ]
 
-    # Target Debug
-    a(f"    {DEBUG_TARGET} /* Debug */ = {{")
+    # Watch App Debug
+    a(f"    {W_DEBUG_CFG} /* Debug */ = {{")
     a("        isa = XCBuildConfiguration;")
     a("        buildSettings = {")
-    for k, v in target_settings:
-        a(f"            {k} = {v};")
+    for k, v in watch_settings:
+        a(f"            {k} = {q(v)};")
     a("            SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;")
     a("        };")
     a("        name = Debug;")
     a("    };")
 
-    # Target Release
-    a(f"    {RELEASE_TARGET} /* Release */ = {{")
+    # Watch App Release
+    a(f"    {W_RELEASE_CFG} /* Release */ = {{")
     a("        isa = XCBuildConfiguration;")
     a("        buildSettings = {")
-    for k, v in target_settings:
-        a(f"            {k} = {v};")
+    for k, v in watch_settings:
+        a(f"            {k} = {q(v)};")
+    a("        };")
+    a("        name = Release;")
+    a("    };")
+
+    # ── iOS stub target settings ────────────────────────────────────────────
+    ios_settings = [
+        ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
+        ("CODE_SIGN_STYLE", "Automatic"),
+        ("CURRENT_PROJECT_VERSION", "1"),
+        ("DEVELOPMENT_TEAM", "RBDNV7NG89"),
+        ("GENERATE_INFOPLIST_FILE", "NO"),
+        ("INFOPLIST_FILE", "SpearoGoiOS/Info.plist"),
+        ("MARKETING_VERSION", "1.0.0"),
+        ("PRODUCT_BUNDLE_IDENTIFIER", "agency.visivo.SpearoGo"),
+        ("PRODUCT_NAME", "$(TARGET_NAME)"),
+        ("SDKROOT", "iphoneos"),
+        ("SKIP_INSTALL", "NO"),
+        ("SUPPORTED_PLATFORMS", "iphoneos"),
+        ("SUPPORTS_MACCATALYST", "NO"),
+        ("SWIFT_EMIT_LOC_STRINGS", "YES"),
+        ("SWIFT_VERSION", "5.0"),
+        ("TARGETED_DEVICE_FAMILY", "1,2"),
+        ("IPHONEOS_DEPLOYMENT_TARGET", "17.0"),
+    ]
+
+    # iOS Stub Debug
+    a(f"    {I_DEBUG_CFG} /* Debug */ = {{")
+    a("        isa = XCBuildConfiguration;")
+    a("        buildSettings = {")
+    for k, v in ios_settings:
+        a(f"            {k} = {q(v)};")
+    a("            SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;")
+    a("        };")
+    a("        name = Debug;")
+    a("    };")
+
+    # iOS Stub Release
+    a(f"    {I_RELEASE_CFG} /* Release */ = {{")
+    a("        isa = XCBuildConfiguration;")
+    a("        buildSettings = {")
+    for k, v in ios_settings:
+        a(f"            {k} = {q(v)};")
     a("        };")
     a("        name = Release;")
     a("    };")
@@ -418,11 +643,20 @@ def pbxproj():
     a("        defaultConfigurationIsVisible = 0;")
     a("        defaultConfigurationName = Release;")
     a("    };")
-    a(f"    {TARGET_CFG_LIST} /* Build configuration list for PBXNativeTarget \"SpearoGo\" */ = {{")
+    a(f"    {W_CFG_LIST} /* Build configuration list for PBXNativeTarget \"SpearoGo Watch App\" */ = {{")
     a("        isa = XCConfigurationList;")
     a("        buildConfigurations = (")
-    a(f"            {DEBUG_TARGET} /* Debug */,")
-    a(f"            {RELEASE_TARGET} /* Release */,")
+    a(f"            {W_DEBUG_CFG} /* Debug */,")
+    a(f"            {W_RELEASE_CFG} /* Release */,")
+    a("        );")
+    a("        defaultConfigurationIsVisible = 0;")
+    a("        defaultConfigurationName = Release;")
+    a("    };")
+    a(f"    {I_CFG_LIST} /* Build configuration list for PBXNativeTarget \"SpearoGo\" */ = {{")
+    a("        isa = XCConfigurationList;")
+    a("        buildConfigurations = (")
+    a(f"            {I_DEBUG_CFG} /* Debug */,")
+    a(f"            {I_RELEASE_CFG} /* Release */,")
     a("        );")
     a("        defaultConfigurationIsVisible = 0;")
     a("        defaultConfigurationName = Release;")
@@ -458,7 +692,30 @@ def workspace_settings():
     </plist>
     """)
 
-# ─── Write files ─────────────────────────────────────────────────────────────
+# ─── Create iOS stub source file ─────────────────────────────────────────────
+IOS_STUB_DIR = os.path.join(BASE, "SpearoGoiOS")
+os.makedirs(IOS_STUB_DIR, exist_ok=True)
+
+ios_app_swift = os.path.join(IOS_STUB_DIR, "SpearoGoiOSApp.swift")
+if not os.path.exists(ios_app_swift):
+    with open(ios_app_swift, "w") as f:
+        f.write(textwrap.dedent("""\
+        import SwiftUI
+
+        @main
+        struct SpearoGoiOSApp: App {
+            var body: some Scene {
+                WindowGroup {
+                    Text("Spearo Go is a watch-only app.\\nPlease open it on your Apple Watch.")
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+            }
+        }
+        """))
+    print(f"✓ {ios_app_swift}")
+
+# ─── Write project files ─────────────────────────────────────────────────────
 os.makedirs(PROJ, exist_ok=True)
 os.makedirs(WS,   exist_ok=True)
 
@@ -480,4 +737,4 @@ with open(ws_settings_path, "w") as f:
 print(f"✓ {ws_settings_path}")
 
 print("\nDone. Open SpearoGo.xcodeproj in Xcode.")
-print("Select scheme → Apple Watch Series 9 (45mm) → ⌘R")
+print("Select scheme SpearoGo → Any iOS Device → Product → Archive")
