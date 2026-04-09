@@ -85,9 +85,18 @@ final class AppState {
             let marineData: MarineData
             if let cached = await cache.cachedMarine(for: coord) {
                 marineData = cached
-            } else {
-                marineData = try await marine.fetch(coordinate: coord)
+            } else if let fetched = try? await marine.fetch(coordinate: coord) {
+                marineData = fetched
                 await cache.store(marine: marineData, for: coord)
+            } else {
+                // Marine API can fail for landlocked coordinates (HTTP 400)
+                // or transient network issues — use neutral defaults so the
+                // app still produces a score from weather/tides/solunar.
+                marineData = MarineData(
+                    waveHeight: 0, wavePeriod: 10,
+                    waveDirection: 0, seaSurfaceTemp: 22,
+                    fetchedAt: Date()
+                )
             }
 
             let tideData    = tides.calculate(coordinate: coord)
