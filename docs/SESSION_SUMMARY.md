@@ -1,7 +1,7 @@
 # Spearo Go — Full Session Summary
-**Date:** April 5–8, 2026
-**Session:** Sprint 0 + Sprint 1 foundation + App Store Submission
-**Status:** Build uploaded to App Store Connect ✅
+**Date:** April 5–9, 2026
+**Session:** Sprint 0 + Sprint 1 foundation + App Store Submission + Post-submission fixes
+**Status:** Build 2 (1.0.0) uploaded to App Store Connect ✅
 
 ---
 
@@ -432,6 +432,18 @@ Standalone watchOS archives do NOT have an App Store distribution method. The Xc
 
 There is no `WatchOSAppStoreDistribution`. Apple requires watchOS apps to be submitted inside an iOS app container, even for watch-only apps. The iOS container declares `LSApplicationLaunchProhibited=true` and `ITSWatchOnlyContainer=true`.
 
+### Post-Submission Fixes — April 9, 2026 ✅ Complete
+Code review identified and fixed several issues before App Store review:
+
+- **Error UI added** (`VerdictPage.swift`): When API calls fail, users now see a warning triangle, "Couldn't load conditions", and "Tap to retry" — previously the error was silent with only a haptic buzz
+- **GPS fallback indicator** (`AppState.swift` + `VerdictPage.swift`): Added `isUsingFallbackLocation` computed property; VerdictPage shows "Default location" warning when neither GPS nor a saved location is available
+- **Marine API graceful fallback** (`AppState.swift`): Marine fetch now uses `try?` with neutral defaults (0m waves, 10s period, 22°C SST) instead of failing the entire refresh pipeline — handles landlocked coordinates and transient network failures
+- **Widget reference removed** (`APP_STORE_METADATA.md`): "Smart Stack widget" line removed from FEATURES since no Widget Extension target exists in v1.0
+- **Copyright year fixed** (`APP_STORE_METADATA.md`): Updated from 2025 to 2026
+- **Open-Meteo API verified**: Both weather and marine endpoints tested live — all field names, response structures, and unit conversions confirmed correct
+- **Build number bumped** to 2 (`generate_xcodeproj.py`): Both iOS and watchOS targets updated
+- **Build 2 uploaded** to App Store Connect
+
 ---
 
 ## Known Xcode first-run notes
@@ -442,7 +454,7 @@ There is no `WatchOSAppStoreDistribution`. Apple requires watchOS apps to be sub
 
 3. **GPS in simulator:** The watch simulator defaults to Apple HQ (Cupertino). Go to Simulator → Features → Location → Custom Location to test a specific coordinate.
 
-4. **Marine API miss:** If you test with a landlocked coordinate, the marine API returns a 400. The app falls back to a neutral marine score (5.0) and continues.
+4. **Marine API miss:** If you test with a landlocked coordinate, the marine API returns a 400. The app gracefully falls back to neutral marine defaults (flat water, 22°C) and still produces a score from weather/tides/solunar.
 
 5. **Background refresh in simulator:** Background tasks don't fire automatically in the simulator. Test by calling `AppState().refresh()` directly from Xcode's debug console.
 
@@ -457,6 +469,10 @@ There is no `WatchOSAppStoreDistribution`. Apple requires watchOS apps to be sub
 ## Git log (this session)
 
 ```
+8d706da  Graceful marine API fallback for landlocked/network-failure cases
+83bdc43  Fix error UI, GPS fallback indicator, and metadata accuracy
+1ad9dbd  App Store submission: iOS wrapper, two-target project, build uploaded
+f215522  Add SESSION_SUMMARY.md — complete reference for Xcode handoff
 28baa26  Sprint 1: xcodeproj, Brand token migration, saved locations, background refresh
 9229f5f  Add Xcode brand system: xcassets, Brand.swift, Typography, Modifiers, PreviewHelpers
 898014a  Add full documentation suite and interactive UI mockups

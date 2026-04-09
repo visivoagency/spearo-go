@@ -548,7 +548,7 @@ def pbxproj():
         ("ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME", "OceanBlue"),
         ("CODE_SIGN_ENTITLEMENTS", "SpearoGo/SpearoGo.entitlements"),
         ("CODE_SIGN_STYLE", "Automatic"),
-        ("CURRENT_PROJECT_VERSION", "1"),
+        ("CURRENT_PROJECT_VERSION", "2"),
         ("DEVELOPMENT_TEAM", "RBDNV7NG89"),
         ("ENABLE_PREVIEWS", "YES"),
         ("GENERATE_INFOPLIST_FILE", "NO"),
@@ -591,7 +591,7 @@ def pbxproj():
     ios_settings = [
         ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
         ("CODE_SIGN_STYLE", "Automatic"),
-        ("CURRENT_PROJECT_VERSION", "1"),
+        ("CURRENT_PROJECT_VERSION", "2"),
         ("DEVELOPMENT_TEAM", "RBDNV7NG89"),
         ("GENERATE_INFOPLIST_FILE", "NO"),
         ("INFOPLIST_FILE", "SpearoGoiOS/Info.plist"),
