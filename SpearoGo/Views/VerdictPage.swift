@@ -37,9 +37,30 @@ struct VerdictPage: View {
                             .foregroundStyle(appState.isStale ? Brand.Colors.sketchy : Brand.Colors.textSecondary)
                             .accessibilityLabel("Last updated: \(label)")
                     }
+
+                    // GPS fallback indicator
+                    if appState.isUsingFallbackLocation {
+                        Text("📍 Default location")
+                            .font(Brand.Typography.caption)
+                            .foregroundStyle(Brand.Colors.sketchy)
+                            .accessibilityLabel("Using default location. Save a dive spot for accurate conditions.")
+                    }
                 }
                 .padding(Brand.Spacing.page)
                 .accessibilityElement(children: .contain)
+            } else if appState.error != nil {
+                VStack(spacing: Brand.Spacing.item) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.title3)
+                        .foregroundStyle(Brand.Colors.noGo)
+                    Text("Couldn't load conditions")
+                        .captionStyle()
+                    Text("Tap to retry")
+                        .font(Brand.Typography.caption)
+                        .foregroundStyle(Brand.Colors.textSecondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Failed to load conditions. Double tap to retry.")
             } else {
                 Text("Tap to load conditions")
                     .captionStyle()

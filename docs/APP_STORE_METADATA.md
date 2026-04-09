@@ -30,7 +30,6 @@ FEATURES
 • One-tap verdict — GO, MAYBE, SKETCHY, or NO GO
 • Composite score from 0 to 10 with animated score ring
 • Five detailed pages: Verdict, Conditions, Water, Tides, Fish Activity
-• Smart Stack widget for at-a-glance score on your watch face
 • Save multiple dive spots and switch between them
 • Background refresh every 30 minutes — always current
 • Offline tide and solunar calculations — no API key needed
@@ -56,7 +55,7 @@ $2.99 (Tier 1)
 4+ (No objectionable content)
 
 ## Copyright
-© 2025 Visivo Agency
+© 2026 Visivo Agency
 
 ## Support URL
 https://spearotracker.com/contact

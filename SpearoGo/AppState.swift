@@ -51,6 +51,12 @@ final class AppState {
         return "Stale"
     }
 
+    /// True when neither a saved location nor live GPS is available,
+    /// meaning conditions are for the San Diego fallback coordinates.
+    var isUsingFallbackLocation: Bool {
+        activeOverrideCoordinate == nil && locationService.currentCoordinate == nil
+    }
+
     /// True if cached data is older than 30 minutes.
     var isStale: Bool {
         guard let lastRefreshed else { return false }
