@@ -4,18 +4,25 @@
 
 **Spearo Go** is a standalone Apple Watch app for spearfishers. It pulls weather, marine, tide, and solunar data and returns a single, opinionated verdict: **GO / MAYBE / SKETCHY / NO GO** — with personality.
 
+**Status:** v1.0.0 (Build 2) submitted to App Store Connect — pending Apple review.
+
 ---
 
 ## Features
 
-- 5-page horizontal TabView (swipe through conditions)
-- Weighted composite score from 4 data sources
-- Offline tide calculator (synthetic harmonic model)
-- Offline solunar calculator (Meeus orbital math)
-- Saved locations via SwiftData
-- 30-minute cache — works in poor connectivity
-- Pure black OLED UI — battery-friendly on Apple Watch
-- Standalone — no iPhone required
+- One-tap verdict — GO, MAYBE, SKETCHY, or NO GO
+- Composite score from 0 to 10 with animated score ring
+- 5-page horizontal TabView: Verdict, Conditions, Water, Tides, Fish Activity
+- Save multiple dive spots and switch between them
+- Background refresh every 30 minutes — always current
+- Offline tide and solunar calculations — no API key needed
+- Haptic feedback when conditions change
+- Fully accessible with VoiceOver support
+- 3-page swipeable onboarding flow
+- Error UI with tap-to-retry
+- GPS fallback indicator when no saved location or GPS is available
+- Graceful marine API fallback for landlocked/offline scenarios
+- No subscriptions, no ads, no account required
 
 ---
 
@@ -46,13 +53,14 @@
 
 ## Tech Stack
 
-- **Platform:** watchOS 10+ standalone
+- **Platform:** watchOS 10+ standalone (watch-only, no iPhone companion)
 - **Language:** Swift 5.9
 - **UI:** SwiftUI
 - **State:** `@Observable` macro
-- **Persistence:** SwiftData
-- **Networking:** URLSession
-- **Package manager:** Swift Package Manager
+- **Persistence:** SwiftData (saved locations)
+- **Networking:** URLSession (HTTPS, no API keys)
+- **Dependencies:** None — zero third-party packages
+- **Distribution:** iOS stub wrapper with `LSApplicationLaunchProhibited` + `ITSWatchOnlyContainer`
 
 ---
 
@@ -60,33 +68,59 @@
 
 ```
 SpearoGo/
-├── SpearoGoApp.swift          # @main entry, modelContainer
-├── AppState.swift             # @Observable coordinator
-├── ContentView.swift          # 5-page TabView
+├── SpearoGoApp.swift          # @main entry, WKApplicationDelegate, 30-min background refresh
+├── AppState.swift             # @Observable coordinator, refresh pipeline, location override
+├── ContentView.swift          # 5-page TabView, wires saved locations into AppState
+├── Info.plist                 # Bundle ID, location permission, dark mode lock
+├── PrivacyInfo.xcprivacy      # Privacy manifest (UserDefaults API usage)
+├── SpearoGo.entitlements      # App Group for widget data sharing
+│
 ├── Views/
-│   ├── VerdictPage.swift      # Score ring + personality copy
-│   ├── ConditionsPage.swift   # Wind + swell
-│   ├── WaterPage.swift        # Temp + viz + wetsuit tip
-│   ├── TidesPage.swift        # High/low times + direction
-│   └── FishActivityPage.swift # Moon + solunar periods
+│   ├── VerdictPage.swift      # Score ring + personality copy + error UI
+│   ├── ConditionsPage.swift   # Wind + swell + shimmer loading
+│   ├── WaterPage.swift        # Temp + viz + wetsuit tip + shimmer
+│   ├── TidesPage.swift        # High/low times + Digital Crown scroll
+│   ├── FishActivityPage.swift # Moon + solunar periods + Digital Crown scroll
+│   ├── LocationsView.swift    # Saved locations CRUD + privacy link + version
+│   ├── OnboardingView.swift   # 3-page swipeable first-launch onboarding
+│   └── PrivacyPolicyView.swift# In-app privacy policy (scrollable)
+│
 ├── Models/
-│   ├── WeatherData.swift
-│   ├── MarineData.swift
-│   ├── TideData.swift
-│   ├── SolunarData.swift
-│   ├── DiveScore.swift        # Verdict enum + weighted calc
-│   └── SavedLocation.swift    # @Model (SwiftData)
+│   ├── WeatherData.swift      # Wind, gusts, visibility struct
+│   ├── MarineData.swift       # Wave height, period, direction, SST struct
+│   ├── TideData.swift         # High/low times, phase, direction struct
+│   ├── SolunarData.swift      # Moon phase, illumination, periods struct
+│   ├── DiveScore.swift        # Verdict enum + weighted scoring
+│   ├── SavedLocation.swift    # @Model (SwiftData) — name, lat, lon, isActive
+│   └── SharedScore.swift      # Codable model for app → widget data via UserDefaults
+│
 ├── Services/
-│   ├── WeatherService.swift   # Open-Meteo weather fetch
-│   ├── MarineService.swift    # Open-Meteo marine fetch
-│   ├── TideService.swift      # Synthetic lunar tide calculator
-│   ├── SolunarService.swift   # Moon/sun position math
-│   ├── LocationService.swift  # CoreLocation + saved spots
-│   ├── ScoreService.swift     # Weighted composite scorer
-│   └── CacheService.swift     # 30-min in-memory TTL cache
-└── Utils/
-    ├── Constants.swift        # Colors, weights, API URLs
-    └── PersonalityCopy.swift  # All verdict messages
+│   ├── WeatherService.swift   # Open-Meteo /v1/forecast (URLSession, no key)
+│   ├── MarineService.swift    # Open-Meteo /v1/marine (URLSession, no key)
+│   ├── TideService.swift      # Synthetic M2+S2 harmonic tide calculator (offline)
+│   ├── SolunarService.swift   # Meeus orbital math — moon, sun, solunar periods (offline)
+│   ├── LocationService.swift  # CoreLocation, @Observable, GPS fallback
+│   ├── ScoreService.swift     # Weighted composite score (W30% M30% T15% S25%)
+│   └── CacheService.swift     # actor, 30-min TTL, keyed by lat/lon grid
+│
+├── Utils/
+│   ├── Brand.swift            # ALL design tokens (Colors, Typography, Spacing, Radius, Opacity)
+│   ├── Typography.swift       # Text extensions (.verdictStyle, .dataValueStyle, etc.)
+│   ├── Modifiers.swift        # ViewModifiers (.brandPage, .brandCard, .infoPill, etc.)
+│   ├── Constants.swift        # Non-visual constants: API URLs, score weights, app meta
+│   ├── PersonalityCopy.swift  # 27 verdict messages + 4 loading messages
+│   └── PreviewHelpers.swift   # .previewAsWatch(), AppState.preview(), MockData
+│
+├── Widget/
+│   ├── SpearoGoWidget.swift   # Widget config, TimelineProvider, entry model
+│   └── WidgetViews.swift      # Rectangular, Circular, Corner complication views
+│
+└── Assets.xcassets/           # 9 named color sets + AppIcon (1024×1024)
+
+SpearoGoiOS/                   # iOS stub app (watch-only container for App Store)
+├── SpearoGoiOSApp.swift       # @main — displays "watch-only" message
+├── Info.plist                 # LSApplicationLaunchProhibited + ITSWatchOnlyContainer
+└── Assets.xcassets/           # iOS app icon
 ```
 
 ---
@@ -98,25 +132,36 @@ SpearoGo/
 - Apple Watch Series 4+ (watchOS 10)
 - macOS 14+ (Sonoma)
 
-### Build
+### Build & Run
 
 ```bash
 git clone https://github.com/visivoagency/spearo-go.git
 cd spearo-go
-open SpearoGo.xcodeproj   # (created in Sprint 1)
+open SpearoGo.xcodeproj
 ```
 
-Select the **SpearoGo Watch App** scheme → your Apple Watch simulator or device → **Run**.
+1. Scheme: **SpearoGo** → Apple Watch simulator → **Run** (for debug)
+2. Scheme: **SpearoGo** → Any iOS Device → Product → **Archive** (for App Store)
+
+Team and signing are pre-configured (RBDNV7NG89 — VISIVO).
+
+### Regenerating the Xcode project
+
+If you add new Swift files, run from the repo root:
+
+```bash
+python3 generate_xcodeproj.py
+```
+
+Then re-open `SpearoGo.xcodeproj` in Xcode.
 
 ### API validation spike
 
-Run the validation script to confirm all 6 global locations return data:
+Confirm all 6 global locations return data:
 
 ```bash
 swift docs/api_validation_spike.swift
 ```
-
-Expected output: weather + marine data for San Diego, Sydney, Marseille, Bali, Cape Town, Cancun; synthetic tide heights; solunar ratings.
 
 ---
 
@@ -134,25 +179,46 @@ Expected output: weather + marine data for San Diego, Sydney, Marseille, Bali, C
 | Text primary | `#FFFFFF` | Values, labels |
 | Text secondary | `#6B7D8E` | Subtitles, units |
 
----
-
-## Roadmap
-
-See [docs/SPRINT_PLAN.md](docs/SPRINT_PLAN.md) for the full sprint breakdown.
-
-- **Sprint 0** — Foundation ✅
-- **Sprint 1** — Xcode project + live data flow
-- **Sprint 2** — Polish, complications, haptics
-- **Sprint 3** — App Store submission
+All colors are in `Assets.xcassets` — reference via `Brand.Colors.*` in code.
 
 ---
 
-## Pricing
+## Privacy
 
-$2.99 one-time purchase. No subscription, no ads, no data collection.
+- Location data is used **only** to fetch weather/marine conditions — never stored or shared
+- No analytics, no tracking, no user accounts
+- Open-Meteo APIs are free and keyless — no API secrets in the codebase
+- Privacy manifest (`PrivacyInfo.xcprivacy`) declares UserDefaults API usage
+- Full privacy policy at [spearotracker.com/privacy-policy](https://spearotracker.com/privacy-policy)
+
+---
+
+## App Store
+
+- **Price:** $2.99 (one-time, Tier 1)
+- **Category:** Sports / Weather
+- **Age Rating:** 4+
+- **Bundle ID:** `agency.visivo.SpearoGo`
+- **App Store metadata:** See [docs/APP_STORE_METADATA.md](docs/APP_STORE_METADATA.md)
+
+---
+
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [SESSION_SUMMARY.md](docs/SESSION_SUMMARY.md) | Full build log, architecture, design system, sprint history |
+| [SPRINT_PLAN.md](docs/SPRINT_PLAN.md) | Sprint roadmap (Sprint 0–3) |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, data flow, concurrency model |
+| [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Color palette, typography scale, component specs |
+| [SCORE_ALGORITHM.md](docs/SCORE_ALGORITHM.md) | Weighted scoring breakdown + worked example |
+| [API_REFERENCE.md](docs/API_REFERENCE.md) | Open-Meteo endpoints, cache strategy, rate limits |
+| [USER_FLOWS.md](docs/USER_FLOWS.md) | 7 user flows (cold start, offline, GPS fallback, etc.) |
+| [XCODE_SETUP.md](docs/XCODE_SETUP.md) | Step-by-step Xcode wiring guide |
+| [APP_STORE_METADATA.md](docs/APP_STORE_METADATA.md) | App Store listing: name, subtitle, description, keywords |
 
 ---
 
 ## License
 
-Proprietary — © Visivo Agency. All rights reserved.
+Proprietary — © 2026 Visivo Agency. All rights reserved.

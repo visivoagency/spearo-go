@@ -1,7 +1,7 @@
 # Spearo Go — Full Session Summary
 **Date:** April 5–9, 2026
-**Session:** Sprint 0 + Sprint 1 foundation + App Store Submission + Post-submission fixes
-**Status:** Build 2 (1.0.0) uploaded to App Store Connect ✅
+**Session:** Sprint 0 + Sprint 1 foundation + App Store Submission + Post-submission fixes + App Store Connect walkthrough
+**Status:** Build 2 (1.0.0) uploaded to App Store Connect, submission forms completed ✅
 
 ---
 
@@ -444,6 +444,37 @@ Code review identified and fixed several issues before App Store review:
 - **Build number bumped** to 2 (`generate_xcodeproj.py`): Both iOS and watchOS targets updated
 - **Build 2 uploaded** to App Store Connect
 
+### App Store Connect Walkthrough — April 9, 2026 ✅ Complete
+Completed all App Store Connect submission forms step by step:
+
+#### Age Ratings
+- All content categories set to **None** (no violence, profanity, horror, alcohol, gambling, etc.)
+- Calculated age rating: **4+**
+- Age Categories: Not Applicable
+- Made for Kids: No
+
+#### App Privacy
+- Privacy Policy URL: `https://spearotracker.com/privacy-policy`
+- Only data type collected: **Location → Precise Location**
+  - Purpose: **App Functionality** (used solely to fetch weather/marine conditions)
+  - Linked to identity: **No**
+  - Used for tracking: **No**
+- No other data collected (no name, email, phone, usage data, analytics, etc.)
+
+#### Pricing & Availability
+- Price: **$2.99 USD** (Tier 1)
+- Availability: **All Countries and Regions**
+- Tax Category: default App Store Software
+
+#### Export Compliance
+- App uses **no custom encryption algorithms** — only Apple's built-in HTTPS via URLSession
+- Selected "None of the algorithms mentioned above"
+- Added `ITSAppUsesNonExemptEncryption = NO` to both Info.plist files to bypass this dialog on future builds
+
+#### Submission Blockers Resolved
+1. "This build is missing export compliance information" → Answered encryption question on build
+2. "An Admin must provide information about the app's privacy practices" → Published App Privacy section
+
 ---
 
 ## Known Xcode first-run notes
@@ -469,6 +500,8 @@ Code review identified and fixed several issues before App Store review:
 ## Git log (this session)
 
 ```
+<latest>  Document App Store Connect walkthrough, add export compliance key
+5ca3acf  Bump build to 2, update session docs for App Store resubmission
 8d706da  Graceful marine API fallback for landlocked/network-failure cases
 83bdc43  Fix error UI, GPS fallback indicator, and metadata accuracy
 1ad9dbd  App Store submission: iOS wrapper, two-target project, build uploaded

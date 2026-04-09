@@ -55,5 +55,9 @@
 	<!-- ── App appearance — always dark ── -->
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
+
+	<!-- ── Export compliance — app uses only Apple's built-in HTTPS ── -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
