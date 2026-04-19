@@ -34,3 +34,8 @@ Icon
 *.env
 Secrets.swift
 APIKeys.swift
+
+# Android signing / local config
+*.keystore
+*.jks
+local.properties

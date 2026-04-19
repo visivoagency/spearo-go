@@ -1,9 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+}
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -13,15 +20,25 @@ android {
     defaultConfig {
         applicationId = "com.spearotracker.spearogo"
         minSdk = 30
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 34
+        versionCode = 13
+        versionName = "2.0.9"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(localProps.getProperty("RELEASE_STORE_FILE", "release.keystore"))
+            storePassword = localProps.getProperty("RELEASE_STORE_PASSWORD", "")
+            keyAlias = localProps.getProperty("RELEASE_KEY_ALIAS", "")
+            keyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD", "")
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -62,6 +79,8 @@ dependencies {
     implementation("androidx.wear.tiles:tiles-material:1.4.1")
     implementation("androidx.wear.tiles:tiles-tooling-preview:1.4.1")
     debugImplementation("androidx.wear.tiles:tiles-tooling:1.4.1")
+    implementation("androidx.wear.protolayout:protolayout:1.2.1")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.2.1")
 
     // Lifecycle + ViewModel
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
@@ -104,4 +123,7 @@ dependencies {
     // Wear OS core
     implementation("androidx.wear:wear:1.3.0")
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
+
+    // Splash screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

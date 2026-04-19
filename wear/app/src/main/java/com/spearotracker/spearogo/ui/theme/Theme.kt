@@ -1,8 +1,8 @@
 package com.spearotracker.spearogo.ui.theme
 
 import androidx.compose.runtime.Composable
-import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ColorScheme
+import androidx.wear.compose.material3.MaterialTheme
 
 @Composable
 fun SpearoGoTheme(content: @Composable () -> Unit) {
@@ -13,7 +13,7 @@ fun SpearoGoTheme(content: @Composable () -> Unit) {
         onBackground = Brand.Colors.textPrimary,
         onPrimary = Brand.Colors.textPrimary,
         onSecondary = Brand.Colors.textPrimary,
-        surface = Brand.Colors.background,
+        surfaceContainer = Brand.Colors.background,
         onSurface = Brand.Colors.textPrimary
     )
 

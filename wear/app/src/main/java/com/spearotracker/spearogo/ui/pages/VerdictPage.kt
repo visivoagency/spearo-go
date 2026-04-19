@@ -3,8 +3,12 @@ package com.spearotracker.spearogo.ui.pages
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.models.Verdict
 import com.spearotracker.spearogo.ui.AppUiState
@@ -22,16 +27,25 @@ import com.spearotracker.spearogo.ui.AppViewModel
 import com.spearotracker.spearogo.ui.theme.Brand
 import com.spearotracker.spearogo.utils.PersonalityCopy
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VerdictPage(
     uiState: AppUiState,
     onRefresh: () -> Unit,
+    onInfoTap: () -> Unit = {},
     viewModel: AppViewModel
 ) {
+    val scrollState = rememberScrollState()
+    ScreenScaffold(scrollState = scrollState) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable { onRefresh() },
+            .verticalScroll(scrollState)
+            .padding(horizontal = 24.dp, vertical = 32.dp)
+            .combinedClickable(
+                onClick = { onRefresh() },
+                onLongClick = { onInfoTap() }
+            ),
         contentAlignment = Alignment.Center
     ) {
         when {
@@ -68,6 +82,8 @@ fun VerdictPage(
                         color = Brand.Colors.forVerdict(score.verdict)
                     )
 
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
                         text = PersonalityCopy.message(score.verdict),
                         style = Brand.Typography.personalityCopy,
@@ -76,9 +92,11 @@ fun VerdictPage(
                         modifier = Modifier.padding(horizontal = Brand.Spacing.item)
                     )
 
-                    Spacer(modifier = Modifier.height(Brand.Spacing.micro))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     ScoreRing(score = score.composite, verdict = score.verdict)
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Stale cache indicator
                     uiState.lastRefreshedLabel?.let { label ->
@@ -89,12 +107,13 @@ fun VerdictPage(
                         )
                     }
 
-                    // GPS fallback indicator
-                    if (uiState.isUsingFallbackLocation) {
+                    // Location label
+                    uiState.locationLabel?.let { label ->
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Default location",
+                            text = label,
                             style = Brand.Typography.caption,
-                            color = Brand.Colors.sketchy
+                            color = if (uiState.isUsingFallbackLocation) Brand.Colors.sketchy else Brand.Colors.textSecondary
                         )
                     }
                 }
@@ -127,6 +146,7 @@ fun VerdictPage(
                 )
             }
         }
+    }
     }
 }
 

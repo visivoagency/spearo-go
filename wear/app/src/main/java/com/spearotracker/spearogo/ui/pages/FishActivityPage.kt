@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.ui.AppUiState
 import com.spearotracker.spearogo.ui.components.ConditionItem
@@ -24,6 +25,7 @@ import java.util.*
 fun FishActivityPage(uiState: AppUiState) {
     val scrollState = rememberScrollState()
 
+    ScreenScaffold(scrollState = scrollState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,6 +70,7 @@ fun FishActivityPage(uiState: AppUiState) {
                 ConditionItemSkeleton()
             }
         }
+    }
     }
 }
 

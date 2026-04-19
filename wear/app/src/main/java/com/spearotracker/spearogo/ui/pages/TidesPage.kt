@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.models.TidePhase
 import com.spearotracker.spearogo.ui.AppUiState
@@ -21,6 +22,7 @@ import java.util.*
 fun TidesPage(uiState: AppUiState) {
     val scrollState = rememberScrollState()
 
+    ScreenScaffold(scrollState = scrollState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -133,5 +135,6 @@ fun TidesPage(uiState: AppUiState) {
                 color = Brand.Colors.textSecondary
             )
         }
+    }
     }
 }

@@ -1,14 +1,14 @@
 package com.spearotracker.spearogo.tiles
 
-import androidx.wear.tiles.*
-import androidx.wear.tiles.material.*
-import androidx.wear.tiles.material.layouts.*
+import androidx.wear.protolayout.LayoutElementBuilders
+import androidx.wear.protolayout.ResourceBuilders
+import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.tiles.RequestBuilders
+import androidx.wear.tiles.TileBuilders
+import androidx.wear.tiles.TileService
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
-// Tile service placeholder — provides a basic dive verdict tile
-// Full implementation requires TileService API which needs the tile to be
-// registered in AndroidManifest.xml (already done)
 class SpearoGoTileService : TileService() {
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {

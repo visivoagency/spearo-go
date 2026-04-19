@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+build/
+local.properties
+
+# Keystore (never commit)
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store

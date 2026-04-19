@@ -3,12 +3,15 @@ package com.spearotracker.spearogo.ui.pages
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.ui.AppUiState
 import com.spearotracker.spearogo.ui.components.ConditionItem
@@ -17,56 +20,61 @@ import com.spearotracker.spearogo.ui.theme.Brand
 
 @Composable
 fun WaterPage(uiState: AppUiState) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Brand.Spacing.page),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "WATER",
-            style = Brand.Typography.sectionHeader,
-            color = Brand.Colors.textSecondary,
-            modifier = Modifier.padding(bottom = Brand.Spacing.item)
-        )
+    val scrollState = rememberScrollState()
 
-        val marine = uiState.marineData
+    ScreenScaffold(scrollState = scrollState) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(Brand.Spacing.page),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "WATER",
+                style = Brand.Typography.sectionHeader,
+                color = Brand.Colors.textSecondary,
+                modifier = Modifier.padding(bottom = Brand.Spacing.item)
+            )
 
-        if (marine != null) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier.padding(bottom = Brand.Spacing.section)
-            ) {
-                ConditionItem(icon = "temp", label = "Temp", value = "%.0f".format(marine.seaSurfaceTemp), unit = "\u00B0C")
-                ConditionItem(icon = "eye", label = "Viz", value = vizLabel(marine.waveHeight), unit = "")
-            }
+            val marine = uiState.marineData
 
-            // Wetsuit tip
-            Box(
-                modifier = Modifier
-                    .background(
-                        Brand.Colors.secondary.copy(alpha = 0.08f),
-                        RoundedCornerShape(Brand.Radius.chip)
+            if (marine != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.padding(bottom = Brand.Spacing.section)
+                ) {
+                    ConditionItem(icon = "temp", label = "Temp", value = "%.0f".format(marine.seaSurfaceTemp), unit = "\u00B0C")
+                    ConditionItem(icon = "eye", label = "Viz", value = vizLabel(marine.waveHeight), unit = "")
+                }
+
+                // Wetsuit tip
+                Box(
+                    modifier = Modifier
+                        .background(
+                            Brand.Colors.secondary.copy(alpha = 0.08f),
+                            RoundedCornerShape(Brand.Radius.chip)
+                        )
+                        .border(
+                            1.dp,
+                            Brand.Colors.secondary.copy(alpha = 0.15f),
+                            RoundedCornerShape(Brand.Radius.chip)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        text = wetsuitTip(marine.seaSurfaceTemp),
+                        style = Brand.Typography.caption,
+                        color = Brand.Colors.secondary,
+                        textAlign = TextAlign.Center
                     )
-                    .border(
-                        1.dp,
-                        Brand.Colors.secondary.copy(alpha = 0.15f),
-                        RoundedCornerShape(Brand.Radius.chip)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 5.dp)
-            ) {
-                Text(
-                    text = wetsuitTip(marine.seaSurfaceTemp),
-                    style = Brand.Typography.caption,
-                    color = Brand.Colors.secondary,
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.padding(bottom = Brand.Spacing.section)) {
-                ConditionItemSkeleton()
-                ConditionItemSkeleton()
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.padding(bottom = Brand.Spacing.section)) {
+                    ConditionItemSkeleton()
+                    ConditionItemSkeleton()
+                }
             }
         }
     }

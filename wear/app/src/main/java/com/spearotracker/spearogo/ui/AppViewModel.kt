@@ -1,14 +1,18 @@
 package com.spearotracker.spearogo.ui
 
+import android.content.Context
+import android.location.Geocoder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spearotracker.spearogo.models.*
 import com.spearotracker.spearogo.services.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 data class AppUiState(
@@ -21,7 +25,8 @@ data class AppUiState(
     val error: String? = null,
     val lastRefreshed: Long? = null,
     val isUsingFallbackLocation: Boolean = false,
-    val hasLocationPermission: Boolean = false
+    val hasLocationPermission: Boolean = false,
+    val locationLabel: String? = null
 ) {
     val lastRefreshedLabel: String?
         get() {
@@ -43,6 +48,7 @@ data class AppUiState(
 
 @HiltViewModel
 class AppViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val locationService: LocationService,
     private val weatherService: WeatherService,
     private val marineService: MarineService,
@@ -62,6 +68,7 @@ class AppViewModel @Inject constructor(
 
     private var activeOverrideLat: Double? = null
     private var activeOverrideLon: Double? = null
+    private var activeOverrideName: String? = null
 
     init {
         viewModelScope.launch {
@@ -73,6 +80,7 @@ class AppViewModel @Inject constructor(
             if (active != null) {
                 activeOverrideLat = active.latitude
                 activeOverrideLon = active.longitude
+                activeOverrideName = active.name
             }
         }
     }
@@ -89,9 +97,12 @@ class AppViewModel @Inject constructor(
                 var lon: Double
                 var usingFallback = false
 
+                var label: String? = null
+
                 if (overrideLat != null && overrideLon != null) {
                     lat = overrideLat
                     lon = overrideLon
+                    label = activeOverrideName
                 } else {
                     val location = locationService.getLocation()
                     if (location != null) {
@@ -102,6 +113,11 @@ class AppViewModel @Inject constructor(
                         lon = defaultLon
                         usingFallback = true
                     }
+                }
+
+                // Resolve location name if we don't have one yet
+                if (label == null) {
+                    label = resolveLocationName(lat, lon)
                 }
 
                 // Fetch weather (with cache)
@@ -137,7 +153,8 @@ class AppViewModel @Inject constructor(
                     isLoading = false,
                     lastRefreshed = System.currentTimeMillis(),
                     isUsingFallbackLocation = usingFallback,
-                    hasLocationPermission = locationService.hasPermission()
+                    hasLocationPermission = locationService.hasPermission(),
+                    locationLabel = label
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -155,11 +172,36 @@ class AppViewModel @Inject constructor(
                 locationDao.activateLocation(location.id)
                 activeOverrideLat = location.latitude
                 activeOverrideLon = location.longitude
+                activeOverrideName = location.name
             } else {
                 activeOverrideLat = null
                 activeOverrideLon = null
+                activeOverrideName = null
             }
             refresh()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun resolveLocationName(lat: Double, lon: Double): String {
+        return try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            val addresses = geocoder.getFromLocation(lat, lon, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val addr = addresses[0]
+                val city = addr.locality ?: addr.subAdminArea
+                val region = addr.adminArea
+                when {
+                    city != null && region != null -> "$city, $region"
+                    city != null -> city
+                    region != null -> region
+                    else -> "%.1f\u00b0, %.1f\u00b0".format(lat, lon)
+                }
+            } else {
+                "%.1f\u00b0, %.1f\u00b0".format(lat, lon)
+            }
+        } catch (e: Exception) {
+            "%.1f\u00b0, %.1f\u00b0".format(lat, lon)
         }
     }
 

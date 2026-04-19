@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.spearotracker.spearogo.ui.AppViewModel
 import com.spearotracker.spearogo.ui.SpearoGoWearApp
 import com.spearotracker.spearogo.ui.theme.SpearoGoTheme
@@ -19,13 +20,14 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.values.any { it }
+        viewModel.updatePermissionState()
         if (granted) {
-            viewModel.updatePermissionState()
             viewModel.refresh()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -35,7 +37,6 @@ class MainActivity : ComponentActivity() {
                     onRequestPermission = {
                         locationPermissionLauncher.launch(
                             arrayOf(
-                                android.Manifest.permission.ACCESS_FINE_LOCATION,
                                 android.Manifest.permission.ACCESS_COARSE_LOCATION
                             )
                         )

@@ -1,23 +1,26 @@
 package com.spearotracker.spearogo.ui.pages
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.Image
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Text
+import com.spearotracker.spearogo.R
 import com.spearotracker.spearogo.ui.theme.Brand
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(
     onRequestPermission: () -> Unit,
@@ -46,11 +49,18 @@ private fun WelcomePage() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(Brand.Spacing.page)
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp)
     ) {
-        Text(text = "\uD83D\uDC1F", fontSize = 32.sp)
+        Image(
+            painter = painterResource(id = R.drawable.splash_icon),
+            contentDescription = "Spearo Go",
+            modifier = Modifier.size(48.dp)
+        )
 
-        Spacer(modifier = Modifier.height(Brand.Spacing.section))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Spearo Go",
@@ -58,19 +68,21 @@ private fun WelcomePage() {
             color = Brand.Colors.textPrimary
         )
 
+        Spacer(modifier = Modifier.height(4.dp))
+
         Text(
-            text = "Your dive-day verdict\nin one glance.",
+            text = "Your dive-day verdict\nat a glance.",
             style = Brand.Typography.personalityCopy,
             color = Brand.Colors.textSecondary,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(Brand.Spacing.section))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Swipe to continue \u2192",
+            text = "Swipe \u2192",
             style = Brand.Typography.caption,
-            color = Brand.Colors.textSecondary
+            color = Brand.Colors.accent
         )
     }
 }
@@ -79,37 +91,33 @@ private fun WelcomePage() {
 private fun HowItWorksPage() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(Brand.Spacing.page)
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp)
     ) {
         Text(
             text = "HOW IT WORKS",
             style = Brand.Typography.sectionHeader,
-            color = Brand.Colors.textSecondary,
-            modifier = Modifier.padding(bottom = Brand.Spacing.item)
+            color = Brand.Colors.textSecondary
         )
 
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Brand.Spacing.item),
-            modifier = Modifier.padding(bottom = Brand.Spacing.item)
-        ) {
-            OnboardingBullet("\uD83D\uDCA8", "Weather & wind")
-            OnboardingBullet("\uD83C\uDF0A", "Swell & marine data")
-            OnboardingBullet("\u2195\uFE0F", "Tide phases")
-            OnboardingBullet("\uD83C\uDF19", "Solunar fish activity")
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            OnboardingBullet("\uD83D\uDCA8", "Wind & weather")
+            OnboardingBullet("\uD83C\uDF0A", "Swell & marine")
+            OnboardingBullet("\u2195\uFE0F", "Tides")
+            OnboardingBullet("\uD83C\uDF19", "Solunar activity")
         }
 
-        Text(
-            text = "Combined into one score\nfrom 0 to 10.",
-            style = Brand.Typography.personalityCopy,
-            color = Brand.Colors.textSecondary,
-            textAlign = TextAlign.Center
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(Brand.Spacing.item))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(Brand.Spacing.item)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             VerdictBadge("GO", Brand.Colors.go)
             VerdictBadge("MAYBE", Brand.Colors.maybe)
+            VerdictBadge("SKETCHY", Brand.Colors.sketchy)
             VerdictBadge("NO GO", Brand.Colors.noGo)
         }
     }
@@ -120,40 +128,53 @@ private fun LocationPage(onRequestPermission: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(Brand.Spacing.page)
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 28.dp, vertical = 32.dp)
     ) {
-        Text(text = "\uD83D\uDCCD", fontSize = 28.sp)
+        Text(text = "\uD83D\uDCCD", fontSize = 24.sp)
 
-        Spacer(modifier = Modifier.height(Brand.Spacing.section))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Location Access",
+            text = "Location",
             style = Brand.Typography.dataValue,
             color = Brand.Colors.textPrimary
         )
 
+        Spacer(modifier = Modifier.height(4.dp))
+
         Text(
-            text = "Spearo Go needs your location to fetch conditions for your dive spot.",
+            text = "Needed to fetch conditions\nfor your dive spot.",
             style = Brand.Typography.caption,
             color = Brand.Colors.textSecondary,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = Brand.Spacing.item)
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(Brand.Spacing.section))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Button(
             onClick = onRequestPermission,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Brand.Colors.primary,
-                contentColor = Brand.Colors.background
+                contentColor = Brand.Colors.textPrimary
             ),
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(Brand.Radius.pill),
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(36.dp)
         ) {
-            Text(
-                text = "Let's Go",
-                style = Brand.Typography.scoreNumber
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Let's Go",
+                    style = Brand.Typography.scoreNumber,
+                    color = Brand.Colors.textPrimary
+                )
+            }
         }
     }
 }
@@ -161,10 +182,10 @@ private fun LocationPage(onRequestPermission: () -> Unit) {
 @Composable
 private fun OnboardingBullet(icon: String, text: String) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(Brand.Spacing.item),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = icon, fontSize = 12.sp)
+        Text(text = icon, fontSize = 11.sp)
         Text(
             text = text,
             style = Brand.Typography.personalityCopy,
@@ -178,11 +199,11 @@ private fun VerdictBadge(text: String, color: androidx.compose.ui.graphics.Color
     Box(
         modifier = Modifier
             .background(color.copy(alpha = 0.15f), RoundedCornerShape(Brand.Radius.badge))
-            .padding(horizontal = 6.dp, vertical = 3.dp)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Text(
             text = text,
-            style = Brand.Typography.itemLabel.copy(fontSize = 7.sp),
+            style = Brand.Typography.itemLabel.copy(fontSize = 6.sp),
             color = color
         )
     }

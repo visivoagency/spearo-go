@@ -24,9 +24,6 @@ class LocationService @Inject constructor(
 
     fun hasPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
     }
@@ -37,7 +34,7 @@ class LocationService @Inject constructor(
         return try {
             val cancellationToken = CancellationTokenSource()
             fusedClient.getCurrentLocation(
-                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                Priority.PRIORITY_LOW_POWER,
                 cancellationToken.token
             ).await()
         } catch (e: Exception) {
