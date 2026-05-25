@@ -1,0 +1,21 @@
+[project]
+name = "appstore-mcp"
+version = "1.0.0"
+description = "MCP server for Google Play Console and Apple App Store Connect analytics"
+requires-python = ">=3.9"
+dependencies = [
+    "mcp>=1.0.0",
+    "google-auth>=2.0.0",
+    "google-api-python-client>=2.0.0",
+    "pyjwt>=2.0.0",
+    "cryptography>=41.0.0",
+    "httpx>=0.25.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+appstore-mcp = "appstore_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
