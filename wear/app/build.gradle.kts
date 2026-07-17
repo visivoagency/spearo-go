@@ -23,8 +23,8 @@ android {
         // Google Play requires Wear OS apps to target API 35+ from 2026-08-31.
         // (Handheld apps need 36; Wear OS and Automotive are carved out at 35.)
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.0.9"
+        versionCode = 14
+        versionName = "2.0.10"
     }
 
     signingConfigs {
