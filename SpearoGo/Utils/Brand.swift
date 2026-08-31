@@ -40,6 +40,19 @@ enum Brand {
         static let accent    = secondary
 
         // Convenience: verdict color from DiveScore.Verdict
+        /// Verdict gradients, matched to Spearo Vision's dive score card so the
+        /// two apps read as one product. Source of truth for these values is
+        /// spearo-vision `lib/config/dive_messages.dart` (`styleForTier`);
+        /// change them there and here together.
+        static func gradientForVerdict(_ verdict: Verdict) -> [Color] {
+            switch verdict {
+            case .go:      return [Color(hex: 0x2ECC71), Color(hex: 0x27AE60)]
+            case .maybe:   return [Color(hex: 0x0077B6), Color(hex: 0x00B4D8)]
+            case .sketchy: return [Color(hex: 0xF39C12), Color(hex: 0xE67E22)]
+            case .noGo:    return [Color(hex: 0xE74C3C), Color(hex: 0xC0392B)]
+            }
+        }
+
         static func forVerdict(_ verdict: Verdict) -> Color {
             switch verdict {
             case .go:      return go
@@ -145,5 +158,17 @@ enum Brand {
         static let size:        CGFloat = 58
         static let strokeWidth: CGFloat = 5
         static let radius:      CGFloat = 24
+    }
+}
+
+extension Color {
+    /// 0xRRGGBB literal, for the few colours shared verbatim with Spearo Vision
+    /// rather than defined in the asset catalogue.
+    init(hex: UInt32) {
+        self.init(
+            red:   Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue:  Double(hex & 0xFF) / 255
+        )
     }
 }

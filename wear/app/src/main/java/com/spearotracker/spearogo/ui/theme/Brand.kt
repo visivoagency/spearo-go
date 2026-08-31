@@ -32,6 +32,19 @@ object Brand {
         val danger = noGo
         val accent = secondary
 
+        /**
+         * Verdict gradients, matched to Spearo Vision's dive score card so the
+         * two apps read as one product. Source of truth for these values is
+         * spearo-vision `lib/config/dive_messages.dart` (`styleForTier`);
+         * change them there and here together.
+         */
+        fun gradientForVerdict(verdict: Verdict): List<Color> = when (verdict) {
+            Verdict.GO -> listOf(Color(0xFF2ECC71), Color(0xFF27AE60))
+            Verdict.MAYBE -> listOf(Color(0xFF0077B6), Color(0xFF00B4D8))
+            Verdict.SKETCHY -> listOf(Color(0xFFF39C12), Color(0xFFE67E22))
+            Verdict.NO_GO -> listOf(Color(0xFFE74C3C), Color(0xFFC0392B))
+        }
+
         fun forVerdict(verdict: Verdict): Color = when (verdict) {
             Verdict.GO -> go
             Verdict.MAYBE -> maybe
