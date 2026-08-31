@@ -35,18 +35,18 @@ struct OnboardingView: View {
                 .foregroundStyle(Brand.Colors.primary)
 
             Text("Spearo Go")
-                .font(Brand.Typography.verdictLabel)
+                .brandFont(Brand.Typography.verdictLabel)
                 .foregroundStyle(Brand.Colors.textPrimary)
 
             Text("Your dive-day verdict\nin one glance.")
-                .font(Brand.Typography.personalityCopy)
+                .brandFont(Brand.Typography.personalityCopy)
                 .foregroundStyle(Brand.Colors.textSecondary)
                 .multilineTextAlignment(.center)
 
             Spacer()
 
             Text("Swipe to continue →")
-                .font(Brand.Typography.caption)
+                .brandFont(Brand.Typography.caption)
                 .foregroundStyle(Brand.Colors.textSecondary)
         }
         .padding(Brand.Spacing.page)
@@ -70,7 +70,7 @@ struct OnboardingView: View {
             }
 
             Text("Combined into one score\nfrom 0 to 10.")
-                .font(Brand.Typography.personalityCopy)
+                .brandFont(Brand.Typography.personalityCopy)
                 .foregroundStyle(Brand.Colors.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.top, Brand.Spacing.micro)
@@ -98,11 +98,11 @@ struct OnboardingView: View {
                 .foregroundStyle(Brand.Colors.secondary)
 
             Text("Location Access")
-                .font(Brand.Typography.dataValue)
+                .brandFont(Brand.Typography.dataValue)
                 .foregroundStyle(Brand.Colors.textPrimary)
 
             Text("Spearo Go needs your location to fetch conditions for your dive spot.")
-                .font(Brand.Typography.caption)
+                .brandFont(Brand.Typography.caption)
                 .foregroundStyle(Brand.Colors.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Brand.Spacing.item)
@@ -114,7 +114,7 @@ struct OnboardingView: View {
                 hasCompletedOnboarding = true
             } label: {
                 Text("Let's Go")
-                    .font(Brand.Typography.scoreNumber)
+                    .brandFont(Brand.Typography.scoreNumber)
                     .foregroundStyle(Brand.Colors.background)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Brand.Spacing.item)
@@ -142,7 +142,7 @@ private struct OnboardingBullet: View {
                 .foregroundStyle(Brand.Colors.primary)
                 .frame(width: 16)
             Text(text)
-                .font(Brand.Typography.personalityCopy)
+                .brandFont(Brand.Typography.personalityCopy)
                 .foregroundStyle(Brand.Colors.textPrimary)
         }
     }

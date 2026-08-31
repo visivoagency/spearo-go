@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct TidesPage: View {
+    // Matched to the high/low columns, which are taller now the type is bigger.
+    @ScaledMetric(relativeTo: .title3) private var dividerHeight: CGFloat = 52
+
     @Environment(AppState.self) private var appState
     @State private var crownOffset: Double = 0
 
@@ -17,7 +20,7 @@ struct TidesPage: View {
                                       height: tide.nextHighHeight)
 
                         Divider()
-                            .frame(height: 44)
+                            .frame(height: dividerHeight)
                             .background(Brand.Colors.textSecondary.opacity(Brand.Opacity.borderLine))
 
                         TideEventView(label: "LOW",
@@ -104,7 +107,7 @@ struct TideDirectionView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(isRising ? "Incoming" : "Outgoing")
-                    .font(Brand.Typography.personalityCopy)
+                    .brandFont(Brand.Typography.personalityCopy)
                     .foregroundStyle(Brand.Colors.textPrimary)
                 Text(phase.rawValue)
                     .captionStyle()

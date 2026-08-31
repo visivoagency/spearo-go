@@ -41,16 +41,25 @@ object Brand {
     }
 
     object Typography {
-        val verdictLabel = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Black)
-        val dataValue = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        val scoreNumber = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        val timeDisplay = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        val periodTime = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium)
-        val personalityCopy = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Normal)
-        val sectionHeader = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
-        val itemLabel = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
-        val unit = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Normal)
-        val caption = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Normal)
+        // Sizes raised 2026-08-31 after a field report that the watch UI was too
+        // small to read. Nothing sits below 11.sp now; the old scale bottomed out
+        // at 8.sp, well under the Wear Material legibility floor. Prior values
+        // are noted so the hierarchy stays auditable, and these must stay in
+        // lockstep with SpearoGo/Utils/Brand.swift — the two scales are the same
+        // design and have already drifted into the same bug once.
+        //
+        // These are `sp`, not `dp`, so they follow the wearer's Settings ->
+        // Display -> Font size. SpearoGoTheme bounds how far that goes.
+        val verdictLabel = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Black)        // was 20
+        val dataValue = TextStyle(fontSize = 21.sp, fontWeight = FontWeight.Bold)            // was 18
+        val scoreNumber = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold)          // was 14
+        val timeDisplay = TextStyle(fontSize = 19.sp, fontWeight = FontWeight.Bold)          // was 16
+        val periodTime = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)         // was 12
+        val personalityCopy = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Normal)    // was 11
+        val sectionHeader = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)  // was 10
+        val itemLabel = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)      // was 8
+        val unit = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Normal)               // was 9
+        val caption = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Normal)            // was 9
     }
 
     object Spacing {

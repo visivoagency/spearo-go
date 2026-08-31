@@ -13,6 +13,13 @@ struct SpearoGoApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                // Type now scales with Accessibility -> Larger Text (see
+                // Brand.Typography). Bounded at accessibility2 because a watch
+                // face is 1.5 inches wide: past this point the verdict ring and
+                // the two-column condition rows truncate rather than reflow,
+                // which reads as broken rather than as large. Everything below
+                // this ceiling is honoured.
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         }
         .modelContainer(for: SavedLocation.self)
     }

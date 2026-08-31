@@ -20,6 +20,7 @@ import com.spearotracker.spearogo.ui.components.ConditionItemSkeleton
 import com.spearotracker.spearogo.ui.theme.Brand
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun FishActivityPage(uiState: AppUiState) {
@@ -87,11 +88,16 @@ private fun SolunarPeriodRow(label: String, time: String, color: Color) {
             .padding(horizontal = Brand.Spacing.page, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Was a hard 40.dp, sized when itemLabel was 8.sp. It has to track the
+        // font scale or "MAJOR" truncates. Mirrors the @ScaledMetric labelWidth
+        // in SpearoGo/Views/FishActivityPage.swift.
+        val labelWidth = (52 * LocalDensity.current.fontScale).dp
         Text(
             text = label.uppercase(),
             style = Brand.Typography.itemLabel,
             color = color,
-            modifier = Modifier.width(40.dp)
+            maxLines = 1,
+            modifier = Modifier.width(labelWidth)
         )
         Text(
             text = time,

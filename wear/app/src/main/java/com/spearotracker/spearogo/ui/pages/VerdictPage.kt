@@ -195,10 +195,14 @@ fun ScoreRing(score: Double, verdict: Verdict) {
             )
         }
 
+        // ringSize is a fixed 58.dp, so the score must stay on one line rather
+        // than wrap or overflow the ring at large font scales.
         Text(
             text = "%.1f".format(score),
             style = Brand.Typography.scoreNumber,
-            color = Brand.Colors.textPrimary
+            color = Brand.Colors.textPrimary,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

@@ -62,8 +62,8 @@ struct VerdictChipModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(Brand.Typography.itemLabel)
             .kerning(Brand.Kerning.itemLabel)
+            .brandFont(Brand.Typography.itemLabel)
             .foregroundStyle(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -90,7 +90,7 @@ extension View {
 struct InfoPillModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(Brand.Typography.caption)
+            .brandFont(Brand.Typography.caption)
             .foregroundStyle(Brand.Colors.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
@@ -117,7 +117,7 @@ extension View {
 struct SectionHeaderModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(Brand.Typography.sectionHeader)
+            .brandFont(Brand.Typography.sectionHeader)
             .foregroundStyle(Brand.Colors.textSecondary)
             .kerning(Brand.Kerning.sectionHeader)
             .textCase(.uppercase)
@@ -146,7 +146,7 @@ struct LoadingOverlayModifier: ViewModifier {
                     ProgressView()
                         .tint(Brand.Colors.primary)
                     Text(message)
-                        .font(Brand.Typography.caption)
+                        .brandFont(Brand.Typography.caption)
                         .foregroundStyle(Brand.Colors.textSecondary)
                         .multilineTextAlignment(.center)
                 }

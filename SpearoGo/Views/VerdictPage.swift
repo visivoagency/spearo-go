@@ -33,7 +33,7 @@ struct VerdictPage: View {
                     // Stale cache indicator
                     if let label = appState.lastRefreshedLabel {
                         Text(label)
-                            .font(Brand.Typography.caption)
+                            .brandFont(Brand.Typography.caption)
                             .foregroundStyle(appState.isStale ? Brand.Colors.sketchy : Brand.Colors.textSecondary)
                             .accessibilityLabel("Last updated: \(label)")
                     }
@@ -41,7 +41,7 @@ struct VerdictPage: View {
                     // GPS fallback indicator
                     if appState.isUsingFallbackLocation {
                         Text("📍 Default location")
-                            .font(Brand.Typography.caption)
+                            .brandFont(Brand.Typography.caption)
                             .foregroundStyle(Brand.Colors.sketchy)
                             .accessibilityLabel("Using default location. Save a dive spot for accurate conditions.")
                     }
@@ -56,7 +56,7 @@ struct VerdictPage: View {
                     Text("Couldn't load conditions")
                         .captionStyle()
                     Text("Tap to retry")
-                        .font(Brand.Typography.caption)
+                        .brandFont(Brand.Typography.caption)
                         .foregroundStyle(Brand.Colors.textSecondary)
                 }
                 .accessibilityElement(children: .combine)
@@ -101,8 +101,12 @@ struct ScoreRingView: View {
                 .animation(.spring(duration: 0.7), value: score)
 
             Text(String(format: "%.1f", score))
-                .font(Brand.Typography.scoreNumber)
+                .brandFont(Brand.Typography.scoreNumber)
                 .foregroundStyle(Brand.Colors.textPrimary)
+                // Brand.Ring.size is a fixed 58pt, so the score has to shrink
+                // to fit rather than overflow the ring at large text sizes.
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
     }
 }

@@ -363,7 +363,49 @@ Neither blocks implementation; both block the golden fixture and the deploy.
 
 ---
 
-## 8. Order of work
+## 8. Typography — shipped in the same release
+
+Reported alongside the tide complaint: the watch UI is too small to read. It was
+three problems, not one.
+
+1. **The scale bottomed out below the legibility floor.** `itemLabel` was 8pt/sp
+   and `unit`/`caption` were 9, against a watchOS and Wear Material floor of
+   roughly 12. Raised so nothing sits below 11, hierarchy preserved:
+   20→24, 18→21, 16→19, 14→17, 12→14, 11→13, 10→12, 9→12, 9→11, 8→11.
+
+2. **watchOS ignored the wearer's text-size setting entirely.**
+   `Font.system(size:)` is a fixed point size — Accessibility → Larger Text did
+   nothing. Anyone who had already turned text up to cope got the same 8pt
+   labels as everyone else. `Brand.Typography` now holds `Token(size, weight,
+   relativeTo)` values that `brandFont` resolves per-view through
+   `@ScaledMetric`, which is the watchOS-supported route (`UIFontMetrics` is
+   unavailable there). Wear was already fine: `sp` follows Settings → Display →
+   Font size, and nothing suppressed it.
+
+3. **Scaling had no ceiling, and the layouts were built against fixed sizes.**
+   Bounded at `DynamicTypeSize.accessibility2` on watchOS and `fontScale` 1.3 on
+   Wear. Past that the verdict ring and the two-column rows truncate rather than
+   reflow, which reads as broken rather than as large.
+
+Raising the sizes exposed three layouts sized against the old, smaller type.
+All three fixed in both languages:
+
+| Layout | Problem |
+|---|---|
+| `FishActivityPage` | "MAJOR"/"MINOR" in a hard 40pt column sized for 8pt type |
+| `VerdictPage` | Score inside a fixed 58pt ring that cannot grow |
+| `TidesPage` | Divider height matched to the old, shorter columns |
+
+**Verified:** both targets compile — `xcodebuild` against the watchOS SDK, and
+`:app:compileDebugKotlin` for Wear.
+
+**Not verified:** how any of this actually looks. No watchOS simulator runtime
+is installed and the Wear build was not run on a device or emulator. The three
+layouts above were found by reading, and reading does not find the fourth. A
+visual pass on a small watch at the maximum text size is still outstanding
+before submission.
+
+## 9. Order of work
 
 1. `tidesGo` function, App Check, rate limit, budget ceiling — deploy by name.
 2. Golden fixture JSON from the Lagos table.
@@ -374,5 +416,7 @@ Neither blocks implementation; both block the golden fixture and the deploy.
 7. Verdict and Tides page states — unavailable, stale, grid-model provenance.
 8. `antiTransit` fix, both languages.
 9. Listing and README copy.
-10. Tests green on both platforms against the same fixture, then ship as one
-    version to both stores.
+10. Tests green on both platforms against the same fixture.
+11. Typography (§8) — already implemented; still needs the visual pass on a
+    small watch at maximum text size.
+12. Ship as one version to both stores.

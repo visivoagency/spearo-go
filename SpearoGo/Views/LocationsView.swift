@@ -38,7 +38,7 @@ struct LocationsView: View {
                                 .foregroundStyle(Brand.Colors.textSecondary)
                                 .frame(width: 18)
                             Text("Privacy Policy")
-                                .font(Brand.Typography.personalityCopy)
+                                .brandFont(Brand.Typography.personalityCopy)
                                 .foregroundStyle(Brand.Colors.textSecondary)
                         }
                     }
@@ -49,7 +49,7 @@ struct LocationsView: View {
                             .foregroundStyle(Brand.Colors.textSecondary)
                             .frame(width: 18)
                         Text("v\(Constants.App.version)")
-                            .font(Brand.Typography.caption)
+                            .brandFont(Brand.Typography.caption)
                             .foregroundStyle(Brand.Colors.textSecondary)
                     }
                 }
@@ -83,7 +83,7 @@ struct LocationsView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Current Location")
-                    .font(Brand.Typography.personalityCopy)
+                    .brandFont(Brand.Typography.personalityCopy)
                     .foregroundStyle(Brand.Colors.textPrimary)
                 Text("GPS")
                     .captionStyle()
@@ -147,7 +147,7 @@ struct LocationRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(location.name)
-                    .font(Brand.Typography.personalityCopy)
+                    .brandFont(Brand.Typography.personalityCopy)
                     .foregroundStyle(Brand.Colors.textPrimary)
                 Text(coordString(location))
                     .captionStyle()
@@ -191,18 +191,18 @@ struct AddLocationView: View {
                     .captionStyle()
 
                 TextField("Spot name", text: $name)
-                    .font(Brand.Typography.personalityCopy)
+                    .brandFont(Brand.Typography.personalityCopy)
                     .foregroundStyle(Brand.Colors.textPrimary)
                     .padding(Brand.Spacing.item)
                     .brandCard()
 
                 HStack(spacing: Brand.Spacing.item) {
                     Button("Cancel") { dismiss() }
-                        .font(Brand.Typography.itemLabel)
+                        .brandFont(Brand.Typography.itemLabel)
                         .foregroundStyle(Brand.Colors.textSecondary)
 
                     Button("Save") { save(coord) }
-                        .font(Brand.Typography.itemLabel)
+                        .brandFont(Brand.Typography.itemLabel)
                         .foregroundStyle(Brand.Colors.primary)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
@@ -210,7 +210,7 @@ struct AddLocationView: View {
                 Text("GPS not available")
                     .captionStyle()
                 Button("Dismiss") { dismiss() }
-                    .font(Brand.Typography.itemLabel)
+                    .brandFont(Brand.Typography.itemLabel)
                     .foregroundStyle(Brand.Colors.textSecondary)
             }
         }

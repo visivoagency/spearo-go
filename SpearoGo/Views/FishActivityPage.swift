@@ -82,16 +82,22 @@ struct SolunarPeriodRow: View {
     let time: Date
     let color: Color
 
+    // The label column was a hard 40pt, sized when itemLabel was 8pt. It has to
+    // grow with the type or "MAJOR" truncates.
+    @ScaledMetric(relativeTo: .caption2) private var labelWidth: CGFloat = 52
+
     var body: some View {
         HStack {
             Text(label)
-                .font(Brand.Typography.itemLabel)
                 .kerning(Brand.Kerning.itemLabel)
+                .brandFont(Brand.Typography.itemLabel)
                 .foregroundStyle(color)
-                .frame(width: 40, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(width: labelWidth, alignment: .leading)
 
             Text(time, style: .time)
-                .font(Brand.Typography.periodTime)
+                .brandFont(Brand.Typography.periodTime)
                 .foregroundStyle(Brand.Colors.textPrimary)
 
             Spacer()

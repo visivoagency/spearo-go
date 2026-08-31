@@ -17,6 +17,7 @@ import com.spearotracker.spearogo.ui.AppUiState
 import com.spearotracker.spearogo.ui.theme.Brand
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun TidesPage(uiState: AppUiState) {
@@ -63,10 +64,13 @@ fun TidesPage(uiState: AppUiState) {
                 }
 
                 // Divider
+                // Matched to the high/low columns, which are taller now the
+                // type is bigger.
+                val dividerHeight = (52 * LocalDensity.current.fontScale).dp
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(44.dp)
+                        .height(dividerHeight)
                         .background(Brand.Colors.textSecondary.copy(alpha = Brand.Opacity.borderLine))
                 )
 
