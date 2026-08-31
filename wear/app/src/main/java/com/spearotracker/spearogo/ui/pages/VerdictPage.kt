@@ -29,6 +29,7 @@ import com.spearotracker.spearogo.utils.PersonalityCopy
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -121,24 +122,31 @@ fun VerdictPage(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Stale cache indicator
-                    uiState.lastRefreshedLabel?.let { label ->
+                    // Freshness and place share one line. As two rows they
+                    // ran past the bottom of a round display, where the last
+                    // line is clipped by the curve and the page indicator.
+                    // The region is dropped too: "Queidersbach" identifies the
+                    // spot, "Rheinland-Pfalz" only costs width.
+                    val place = uiState.locationLabel?.substringBefore(",")?.trim()
+                    val footer = listOfNotNull(uiState.lastRefreshedLabel, place)
+                        .filter { it.isNotEmpty() }
+                        .joinToString("  \u00B7  ")
+
+                    if (footer.isNotEmpty()) {
+                        val flagged = uiState.isStale || uiState.isUsingFallbackLocation
                         Text(
-                            text = label,
+                            text = footer,
                             style = Brand.Typography.caption,
-                            color = Color.White.copy(alpha = if (uiState.isStale) 1f else 0.7f)
+                            color = Color.White.copy(alpha = if (flagged) 1f else 0.7f),
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = Brand.Spacing.item)
                         )
                     }
 
-                    // Location label
-                    uiState.locationLabel?.let { label ->
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = label,
-                            style = Brand.Typography.caption,
-                            color = Color.White.copy(alpha = if (uiState.isUsingFallbackLocation) 1f else 0.7f)
-                        )
-                    }
+                    // Clears the page indicator and the curve of the display.
+                    Spacer(modifier = Modifier.height(Brand.Spacing.section))
                 }
             }
 
