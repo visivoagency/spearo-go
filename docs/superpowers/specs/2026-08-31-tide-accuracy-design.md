@@ -348,6 +348,68 @@ the tides now do. Logged in `docs/BACKLOG.md`.
 
 ---
 
+
+### Field verification — 2026-08-31, Galaxy Watch Ultra (SM-L705F)
+
+The release build was sideloaded to a real watch and every displayed value was
+cross-checked against the live APIs and against independent astronomical
+calculation. Device location: **Queidersbach, Rheinland-Pfalz** — a landlocked
+village roughly 400 km from the nearest sea.
+
+**What the app displayed:**
+
+| Page | Value |
+|---|---|
+| Verdict | **GO — "Perfect day. No excuses." 8.3 / 10** |
+| Conditions | Wind 6 kn, Dir SW, Swell 0.0 m, Period 0 s |
+| Water | Temp 20 °C, Viz "Great", "Comfortable. 3mm." |
+| Tides | High 23:48 (2.5 m), Low 05:58 (0.4 m), incoming, now 1.3 m |
+| Fish activity | Moon 86%, rating Fair, major period 12:39 |
+
+**Verified correct:**
+
+- **Weather.** Open-Meteo returned 2.47 m/s, and 2.47 × 1.94384 = 4.8 kn against
+  the app's cached 6 kn — consistent within the 30-minute cache. Gusts,
+  visibility (38 km) and the m/s→knots conversion all check out, and the
+  conversion is identical in Swift and Kotlin.
+- **Compass.** `compassDirection` maps 256° → "W" correctly; the displayed "SW"
+  belongs to the earlier cached reading. Boundary cases (0°, 350°) are right.
+- **Moon illumination.** An independent Meeus 48.4 computation gives 86.0% for
+  2026-08-31 18:20 UTC. The app shows 86%. The lunar phase maths is sound.
+
+**Verified wrong:**
+
+- **Marine data is fabricated, and by a different route than §6 assumed.** For a
+  landlocked coordinate Open-Meteo Marine does *not* return HTTP 400. It returns
+  **HTTP 200 with every field null**. The catch-block fallback therefore never
+  fires; instead `wave_height ?: 0.0` and `sea_surface_temperature ?: 20.0`
+  convert absent data into readings. The watch reported a 0.0 m sea at 20 °C and
+  recommended a 3 mm wetsuit, for a village in Rheinland-Pfalz.
+
+  Scored: wave height 0.0 → no penalty; period 0 → −1; temp 20 °C → no penalty.
+  **marineScore = 9/10**, worth 2.7 of the composite. The fabricated tides
+  contribute a further ~1.1. So **roughly 3.8 of the 8.3 verdict rests on data
+  that does not exist**, and the app told a diver 400 km inland that today was a
+  perfect day to dive.
+
+  This makes the §6 recommendation more urgent, and changes its shape: null
+  coalescing at the parse site is the primary defect, not just the fallback.
+
+- **The solunar major period is hours out**, confirming the `antiTransit` bug.
+  True lunar transits for this location on this date, computed independently:
+  **upper 03:34 CEST, lower 15:57 CEST** — 12h23m apart, as expected, not the
+  6h the code assumes. The app displayed a major period at **12:39**, which
+  matches no true transit; the nearest is 15:57, so it is **3h18m early**. For a
+  feature whose purpose is timing a two-hour feeding window, that points at the
+  wrong window entirely. The gap also suggests the transit calculation itself is
+  off, not only the anti-transit offset — `moonTransit` mixes degree and hour
+  conventions (`ra - longitude / 15` against `GMST + longitude`) and needs
+  checking alongside the 6h fix.
+
+**Minor:** the verdict's personality copy changes on every recomposition
+("Today's the day. Suit up." → "Perfect day. No excuses." between two reads
+seconds apart). It should be stable for a given verdict and refresh.
+
 ## 7. Open items
 
 Neither blocks implementation; both block the golden fixture and the deploy.

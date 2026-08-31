@@ -23,6 +23,7 @@ android {
         // Google Play requires Wear OS apps to target API 35+ from 2026-08-31.
         // (Handheld apps need 36; Wear OS and Automotive are carved out at 35.)
         targetSdk = 35
+        manifestPlaceholders["appLabel"] = "@string/app_name"
         versionCode = 14
         versionName = "2.0.10"
     }
@@ -38,6 +39,15 @@ android {
 
     buildTypes {
         release {
+            // Sideload builds install alongside the Play Store copy instead of
+            // trying to replace it. A locally built APK can never update the
+            // store install: Play App Signing re-signs uploads with its own
+            // key, so the on-device certificate never matches this keystore.
+            // Pass -Psideload to get a separate app with its own data.
+            if (project.hasProperty("sideload")) {
+                applicationIdSuffix = ".sideload"
+                manifestPlaceholders["appLabel"] = "Spearo Go (test)"
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
