@@ -34,7 +34,7 @@ fun TodayPage(uiState: AppUiState) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(Brand.Spacing.page),
+                .padding(horizontal = Brand.Spacing.page, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -61,12 +61,12 @@ fun TodayPage(uiState: AppUiState) {
                     text = weather.airTemp?.let { "%.0f°C".format(it) } ?: "—",
                     style = Brand.Typography.dataValue,
                     color = Brand.Colors.textPrimary,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier.padding(vertical = 2.dp)
                 )
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.padding(bottom = Brand.Spacing.item)
+                    modifier = Modifier.padding(bottom = Brand.Spacing.micro)
                 ) {
                     ConditionItem(
                         icon = "temp",
@@ -84,13 +84,13 @@ fun TodayPage(uiState: AppUiState) {
 
                 Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     ConditionItem(
-                        icon = "waves",
+                        icon = "rain",
                         label = "Rain",
                         value = weather.precipitationChance?.toString() ?: "—",
                         unit = if (weather.precipitationChance == null) "" else "%"
                     )
                     ConditionItem(
-                        icon = "eye",
+                        icon = "cloud",
                         label = "Cloud",
                         value = weather.cloudCover?.toString() ?: "—",
                         unit = if (weather.cloudCover == null) "" else "%"
@@ -102,10 +102,11 @@ fun TodayPage(uiState: AppUiState) {
                 val sunset = solunar?.sunset
                 if (sunrise != null && sunset != null) {
                     Text(
-                        text = "${timeFormat.format(Date(sunrise))}  ·  ${timeFormat.format(Date(sunset))}",
+                        text = "\u2600\uFE0F ${timeFormat.format(Date(sunrise))}   \uD83C\uDF19 ${timeFormat.format(Date(sunset))}",
                         style = Brand.Typography.caption,
                         color = Brand.Colors.textSecondary,
                         textAlign = TextAlign.Center,
+                        maxLines = 1,
                         modifier = Modifier.padding(top = Brand.Spacing.item)
                     )
                 }

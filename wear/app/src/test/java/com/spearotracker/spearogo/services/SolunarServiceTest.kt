@@ -3,6 +3,7 @@ package com.spearotracker.spearogo.services
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
+import java.util.TimeZone
 import kotlin.math.abs
 
 /**
@@ -26,6 +27,7 @@ class SolunarServiceTest {
     private val lat = 49.3486
     private val lon = 7.6486
     private val toleranceMs = 30 * 60 * 1000L
+    // rise/set are checked with the same tolerance; both are well inside it
 
     private fun assertNear(expectedIso: String, actual: Long?, label: String) {
         requireNotNull(actual) { "$label was null" }
@@ -66,5 +68,30 @@ class SolunarServiceTest {
             "illumination was ${data.moonIllumination}, expected ~0.86",
             abs(data.moonIllumination - 0.86) < 0.03
         )
+    }
+
+    /**
+     * Sunrise and sunset for the same place and day, computed independently by
+     * scanning the Sun's altitude through -0.833 degrees:
+     *   sunrise  06:44 CEST  =  04:44 UTC
+     *   sunset   20:15 CEST  =  18:15 UTC
+     *
+     * The watch was displaying 17:24 and 06:54 — not merely wrong but
+     * inverted, because riseSet derived a transit from `ra - longitude / 15`
+     * and never referenced sidereal time, so it was not anchored to the date.
+     */
+    @Test
+    fun `sunrise and sunset match an independent altitude scan`() {
+        val previous = TimeZone.getDefault()
+        try {
+            // riseSet works in local days, so the zone has to be the spot's.
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+            val noon = Instant.parse("2026-08-31T10:00:00Z").toEpochMilli()
+            val data = service.calculate(lat, lon, noon)
+            assertNear("2026-08-31T04:44:00Z", data.sunrise, "sunrise")
+            assertNear("2026-08-31T18:15:00Z", data.sunset, "sunset")
+        } finally {
+            TimeZone.setDefault(previous)
+        }
     }
 }

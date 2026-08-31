@@ -93,5 +93,8 @@ private fun iconForType(type: String): String = when (type) {
     "eye" -> "\uD83D\uDC41"         // eye
     "moon" -> "\uD83C\uDF19"        // moon
     "fish" -> "\uD83D\uDC1F"        // fish
+    "rain" -> "\uD83C\uDF27"        // cloud with rain
+    "cloud" -> "\u2601\uFE0F"       // cloud
+    "sun" -> "\u2600\uFE0F"         // sun
     else -> "\u2022"                // bullet
 }

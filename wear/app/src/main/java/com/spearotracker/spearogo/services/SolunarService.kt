@@ -4,6 +4,7 @@ import com.spearotracker.spearogo.models.SolunarData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.*
+import java.util.Calendar
 
 @Singleton
 class SolunarService @Inject constructor() {
@@ -22,23 +23,8 @@ class SolunarService @Inject constructor() {
         val moonIllum = illumination(moonPos.longitude, sunPos.longitude)
         val moonPhase = moonPhaseValue(jd)
 
-        val (moonrise, moonset) = riseSet(
-            declination = moonPos.declination,
-            ra = moonPos.rightAscension,
-            latitude = latitude,
-            longitude = longitude,
-            jd = jd,
-            isMoon = true
-        )
-
-        val (sunrise, sunset) = riseSet(
-            declination = sunPos.declination,
-            ra = sunPos.rightAscension,
-            latitude = latitude,
-            longitude = longitude,
-            jd = jd,
-            isMoon = false
-        )
+        val (moonrise, moonset) = riseSet(latitude, longitude, timeMillis, isMoon = true)
+        val (sunrise, sunset) = riseSet(latitude, longitude, timeMillis, isMoon = false)
 
         // Major periods: ~2h windows around the Moon's culminations.
         val now = timeMillis
@@ -131,27 +117,76 @@ class SolunarService @Inject constructor() {
         )
     }
 
-    private fun riseSet(
-        declination: Double, ra: Double, latitude: Double,
-        longitude: Double, jd: Double, isMoon: Boolean
-    ): Pair<Long?, Long?> {
+    /**
+     * Altitude of a body above the horizon, in degrees.
+     */
+    private fun altitude(latitude: Double, longitude: Double, millis: Long, isMoon: Boolean): Double {
+        val j = julianDay(millis)
+        val pos = if (isMoon) moonPosition(j) else sunPosition(j)
+        val d = j - 2451545.0
+        val gmst = (280.46061837 + 360.98564736629 * d) % 360
+        val hourAngle = (gmst + longitude - pos.rightAscension * 15) % 360
         val latR = Math.toRadians(latitude)
-        val decR = Math.toRadians(declination)
-        val h0 = -0.833
-        val cosH = (sin(Math.toRadians(h0)) - sin(latR) * sin(decR)) / (cos(latR) * cos(decR))
-        if (abs(cosH) > 1) return Pair(null, null) // circumpolar / never rises
+        val decR = Math.toRadians(pos.declination)
+        return Math.toDegrees(
+            asin(sin(latR) * sin(decR) + cos(latR) * cos(decR) * cos(Math.toRadians(hourAngle)))
+        )
+    }
 
-        val hAngle = Math.toDegrees(acos(cosH))
-        val noon = (ra - longitude / 15.0) % 24
-        val riseH = noon - hAngle / 15.0
-        val setH = noon + hAngle / 15.0
+    /**
+     * Rise and set for the local day containing [timeMillis], found by scanning
+     * the body's altitude for crossings of the horizon.
+     *
+     * The previous implementation solved for an hour angle and then placed it
+     * with `ra - longitude / 15`, which never referenced sidereal time and so
+     * was not anchored to the date at all. On 2026-08-31 it put sunrise at
+     * 17:24 and sunset at 06:54, inverted and thirteen hours out. A scan costs
+     * a few hundred cheap evaluations and cannot get the day wrong.
+     *
+     * Returns nulls when the body does not cross the horizon that day, which is
+     * the honest answer inside a polar summer or winter — and for the Moon,
+     * simply on days when it does not rise.
+     */
+    private fun riseSet(
+        latitude: Double,
+        longitude: Double,
+        timeMillis: Long,
+        isMoon: Boolean
+    ): Pair<Long?, Long?> {
+        // Standard refraction for the Sun's upper limb; for the Moon, parallax
+        // very nearly cancels semidiameter and refraction.
+        val horizon = if (isMoon) 0.125 else -0.833
 
-        fun toMillis(hours: Double): Long {
-            val midnight = (floor(jd - 0.5) - 2440587.5) * 86400.0
-            return ((midnight + hours * 3600.0) * 1000).toLong()
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = timeMillis
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val dayStart = cal.timeInMillis
+
+        val step = 5 * 60 * 1000L
+        val dayEnd = dayStart + 24 * 3600 * 1000L
+
+        var rise: Long? = null
+        var set: Long? = null
+        var previousAlt = altitude(latitude, longitude, dayStart, isMoon)
+        var t = dayStart + step
+
+        while (t <= dayEnd) {
+            val alt = altitude(latitude, longitude, t, isMoon)
+            // Linear interpolation across the step gets within a few seconds.
+            if (previousAlt < horizon && alt >= horizon && rise == null) {
+                rise = t - step + ((horizon - previousAlt) / (alt - previousAlt) * step).toLong()
+            }
+            if (previousAlt > horizon && alt <= horizon && set == null) {
+                set = t - step + ((previousAlt - horizon) / (previousAlt - alt) * step).toLong()
+            }
+            previousAlt = alt
+            t += step
         }
 
-        return Pair(toMillis(riseH), toMillis(setH))
+        return Pair(rise, set)
     }
 
     /**

@@ -16,23 +16,12 @@ struct SolunarService {
         let moonIllum = illumination(moonLon: moonPos.longitude, sunLon: sunPos.longitude)
         let moonPhase = moonPhaseValue(jd: jd)
 
-        let (moonrise, moonset) = riseSet(
-            declination: moonPos.declination,
-            ra: moonPos.rightAscension,
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-            jd: jd,
-            isMoon: true
-        )
-
-        let (sunrise, sunset) = riseSet(
-            declination: sunPos.declination,
-            ra: sunPos.rightAscension,
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-            jd: jd,
-            isMoon: false
-        )
+        let (moonrise, moonset) = riseSet(latitude: coordinate.latitude,
+                                          longitude: coordinate.longitude,
+                                          date: date, isMoon: true)
+        let (sunrise, sunset) = riseSet(latitude: coordinate.latitude,
+                                        longitude: coordinate.longitude,
+                                        date: date, isMoon: false)
 
         // Major periods: ~2h windows around the Moon's culminations. Both are
         // solved directly; deriving one from the other by a fixed offset was
@@ -124,27 +113,62 @@ struct SolunarService {
         return CelestialPosition(longitude: lon, rightAscension: (ra + 24).truncatingRemainder(dividingBy: 24), declination: dec)
     }
 
-    // MARK: - Rise / Set times (approximate)
+    // MARK: - Rise / Set times
 
-    private func riseSet(declination: Double, ra: Double, latitude: Double,
-                         longitude: Double, jd: Double, isMoon: Bool) -> (rise: Date?, set: Date?) {
+    /// Altitude of a body above the horizon, in degrees.
+    private func altitude(latitude: Double, longitude: Double, date: Date, isMoon: Bool) -> Double {
+        let j = julianDay(from: date)
+        let pos = isMoon ? moonPosition(jd: j) : sunPosition(jd: j)
+        let d = j - 2451545.0
+        let gmst = (280.46061837 + 360.98564736629 * d).truncatingRemainder(dividingBy: 360)
+        let hourAngle = (gmst + longitude - pos.rightAscension * 15).truncatingRemainder(dividingBy: 360)
         let latR = latitude * .pi / 180
-        let decR = declination * .pi / 180
-        let h0 = isMoon ? -0.833 : -0.833  // standard refraction
-        let cosH = (sin(h0 * .pi / 180) - sin(latR) * sin(decR)) / (cos(latR) * cos(decR))
-        guard abs(cosH) <= 1 else { return (nil, nil) }  // circumpolar / never rises
+        let decR = pos.declination * .pi / 180
+        return asin(sin(latR) * sin(decR) + cos(latR) * cos(decR) * cos(hourAngle * .pi / 180)) * 180 / .pi
+    }
 
-        let H = acos(cosH) * 180 / .pi
-        let noon = (ra - longitude / 15).truncatingRemainder(dividingBy: 24)
-        let riseH = noon - H / 15
-        let setH  = noon + H / 15
+    /// Rise and set for the local day containing `date`, found by scanning the
+    /// body's altitude for crossings of the horizon.
+    ///
+    /// The previous implementation solved for an hour angle and then placed it
+    /// with `ra - longitude / 15`, which never referenced sidereal time and so
+    /// was not anchored to the date at all. On 2026-08-31 it put sunrise at
+    /// 17:24 and sunset at 06:54, inverted and thirteen hours out. A scan costs
+    /// a few hundred cheap evaluations and cannot get the day wrong.
+    ///
+    /// Returns nil when the body does not cross the horizon that day, which is
+    /// the honest answer inside a polar summer or winter — and for the Moon,
+    /// simply on days when it does not rise.
+    private func riseSet(latitude: Double, longitude: Double, date: Date, isMoon: Bool) -> (rise: Date?, set: Date?) {
+        // Standard refraction for the Sun's upper limb; for the Moon, parallax
+        // very nearly cancels semidiameter and refraction.
+        let horizon: Double = isMoon ? 0.125 : -0.833
 
-        func toDate(_ hours: Double) -> Date {
-            let midnight = (jd - 0.5).rounded(.down) - 2440587.5  // unix midnight
-            return Date(timeIntervalSince1970: midnight * 86400 + hours * 3600)
+        let dayStart = Calendar.current.startOfDay(for: date)
+        let step: TimeInterval = 300
+        let dayEnd = dayStart.addingTimeInterval(24 * 3600)
+
+        var rise: Date?
+        var set: Date?
+        var previousAlt = altitude(latitude: latitude, longitude: longitude, date: dayStart, isMoon: isMoon)
+        var t = dayStart.addingTimeInterval(step)
+
+        while t <= dayEnd {
+            let alt = altitude(latitude: latitude, longitude: longitude, date: t, isMoon: isMoon)
+            // Linear interpolation across the step gets within a few seconds.
+            if previousAlt < horizon, alt >= horizon, rise == nil {
+                let f = (horizon - previousAlt) / (alt - previousAlt)
+                rise = t.addingTimeInterval(-step + f * step)
+            }
+            if previousAlt > horizon, alt <= horizon, set == nil {
+                let f = (previousAlt - horizon) / (previousAlt - alt)
+                set = t.addingTimeInterval(-step + f * step)
+            }
+            previousAlt = alt
+            t = t.addingTimeInterval(step)
         }
 
-        return (toDate(riseH), toDate(setH))
+        return (rise, set)
     }
 
     // MARK: - Moon culminations
