@@ -13,6 +13,12 @@ final class AppState {
     var tideData:     TideData?
     var solunarData:  SolunarData?
     var diveScore:    DiveScore?
+
+    /// Chosen once per refresh, not per render. These are drawn at random from
+    /// a pool, and calling that from the view body re-rolled the line on every
+    /// recomposition — the verdict copy visibly reshuffled while standing still.
+    var personalityMessage: String = ""
+    var loadingMessage: String = PersonalityCopy.loading()
     var isLoading:    Bool = false
     var error:        Error?
 
@@ -66,6 +72,7 @@ final class AppState {
     // ── Refresh pipeline ──────────────────────────────────────────────────────
     func refresh() async {
         isLoading = true
+        loadingMessage = PersonalityCopy.loading()
         error = nil
         locationService.requestLocation()
 
@@ -82,24 +89,20 @@ final class AppState {
                 await cache.store(weather: weatherData, for: coord)
             }
 
-            let marineData: MarineData
+            // No marine data is reported as no marine data. The previous
+            // neutral defaults (0m swell, 22°C) were not neutral — they are
+            // near-ideal inputs, so a failed lookup INFLATED the verdict.
+            var marineData: MarineData?
             if let cached = await cache.cachedMarine(for: coord) {
                 marineData = cached
             } else if let fetched = try? await marine.fetch(coordinate: coord) {
                 marineData = fetched
-                await cache.store(marine: marineData, for: coord)
+                await cache.store(marine: fetched, for: coord)
             } else {
-                // Marine API can fail for landlocked coordinates (HTTP 400)
-                // or transient network issues — use neutral defaults so the
-                // app still produces a score from weather/tides/solunar.
-                marineData = MarineData(
-                    waveHeight: 0, wavePeriod: 10,
-                    waveDirection: 0, seaSurfaceTemp: 22,
-                    fetchedAt: Date()
-                )
+                marineData = nil
             }
 
-            let tideData    = tides.calculate(coordinate: coord)
+            let tideData    = tides.calculate(coordinate: coord)   // nil until tidesGo lands
             let solunarData = solunar.calculate(coordinate: coord)
             let score       = scorer.score(weather: weatherData,
                                            marine:  marineData,
@@ -111,6 +114,7 @@ final class AppState {
             self.tideData     = tideData
             self.solunarData  = solunarData
             self.diveScore    = score
+            self.personalityMessage = PersonalityCopy.message(for: score.verdict)
             self.lastRefreshed = Date()
             self.isLoading    = false
 

@@ -26,6 +26,10 @@ import com.spearotracker.spearogo.ui.AppUiState
 import com.spearotracker.spearogo.ui.AppViewModel
 import com.spearotracker.spearogo.ui.theme.Brand
 import com.spearotracker.spearogo.utils.PersonalityCopy
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -37,9 +41,17 @@ fun VerdictPage(
 ) {
     val scrollState = rememberScrollState()
     ScreenScaffold(scrollState = scrollState) {
+    // Full-bleed verdict colour with white type, matching Spearo Vision's dive
+    // score card. Only once a score exists; loading and error states keep the
+    // dark page so a colour never implies a verdict that isn't known yet.
+    val verdictBrush = uiState.diveScore?.let {
+        Brush.linearGradient(Brand.Colors.gradientForVerdict(it.verdict))
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .then(if (verdictBrush != null) Modifier.background(verdictBrush) else Modifier)
             .verticalScroll(scrollState)
             .padding(horizontal = 24.dp, vertical = 32.dp)
             .combinedClickable(
@@ -61,7 +73,7 @@ fun VerdictPage(
                     )
                     Spacer(modifier = Modifier.height(Brand.Spacing.item))
                     Text(
-                        text = PersonalityCopy.loading(),
+                        text = uiState.loadingMessage,
                         style = Brand.Typography.caption,
                         color = Brand.Colors.textSecondary,
                         textAlign = TextAlign.Center
@@ -79,43 +91,62 @@ fun VerdictPage(
                     Text(
                         text = score.verdict.label,
                         style = Brand.Typography.verdictLabel,
-                        color = Brand.Colors.forVerdict(score.verdict)
+                        color = Color.White
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = PersonalityCopy.message(score.verdict),
+                        text = uiState.personalityMessage,
                         style = Brand.Typography.personalityCopy,
-                        color = Brand.Colors.textPrimary,
+                        color = Color.White.copy(alpha = 0.9f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = Brand.Spacing.item)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    ScoreRing(score = score.composite, verdict = score.verdict)
+                    ScoreRing(score = score.composite, verdict = score.verdict, onColour = true)
+
+                    // Names the signals the verdict could NOT see, so a
+                    // renormalised score is never mistaken for a complete one.
+                    if (score.isPartial) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Scored without ${score.missingSignals.joinToString(" or ")}",
+                            style = Brand.Typography.caption,
+                            color = Color.White.copy(alpha = 0.75f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Stale cache indicator
-                    uiState.lastRefreshedLabel?.let { label ->
+                    // Freshness and place share one line. As two rows they
+                    // ran past the bottom of a round display, where the last
+                    // line is clipped by the curve and the page indicator.
+                    // The region is dropped too: "Queidersbach" identifies the
+                    // spot, "Rheinland-Pfalz" only costs width.
+                    val place = uiState.locationLabel?.substringBefore(",")?.trim()
+                    val footer = listOfNotNull(uiState.lastRefreshedLabel, place)
+                        .filter { it.isNotEmpty() }
+                        .joinToString("  \u00B7  ")
+
+                    if (footer.isNotEmpty()) {
+                        val flagged = uiState.isStale || uiState.isUsingFallbackLocation
                         Text(
-                            text = label,
+                            text = footer,
                             style = Brand.Typography.caption,
-                            color = if (uiState.isStale) Brand.Colors.sketchy else Brand.Colors.textSecondary
+                            color = Color.White.copy(alpha = if (flagged) 1f else 0.7f),
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = Brand.Spacing.item)
                         )
                     }
 
-                    // Location label
-                    uiState.locationLabel?.let { label ->
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = label,
-                            style = Brand.Typography.caption,
-                            color = if (uiState.isUsingFallbackLocation) Brand.Colors.sketchy else Brand.Colors.textSecondary
-                        )
-                    }
+                    // Clears the page indicator and the curve of the display.
+                    Spacer(modifier = Modifier.height(Brand.Spacing.section))
                 }
             }
 
@@ -151,15 +182,18 @@ fun VerdictPage(
 }
 
 @Composable
-fun ScoreRing(score: Double, verdict: Verdict) {
+fun ScoreRing(score: Double, verdict: Verdict, onColour: Boolean = false) {
     val animatedProgress by animateFloatAsState(
         targetValue = (score / 10.0).toFloat(),
         animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f),
         label = "scoreRing"
     )
 
-    val verdictColor = Brand.Colors.forVerdict(verdict)
-    val trackColor = Brand.Colors.textSecondary.copy(alpha = Brand.Opacity.ringTrack)
+    // Drawn on top of the verdict colour, so the ring is white rather than the
+    // verdict hue it would otherwise disappear into.
+    val verdictColor = if (onColour) Color.White else Brand.Colors.forVerdict(verdict)
+    val trackColor = if (onColour) Color.White.copy(alpha = 0.3f)
+        else Brand.Colors.textSecondary.copy(alpha = Brand.Opacity.ringTrack)
     val ringSize = 58.dp
     val strokeWidthPx = 5.dp
 
@@ -195,10 +229,14 @@ fun ScoreRing(score: Double, verdict: Verdict) {
             )
         }
 
+        // ringSize is a fixed 58.dp, so the score must stay on one line rather
+        // than wrap or overflow the ring at large font scales.
         Text(
             text = "%.1f".format(score),
             style = Brand.Typography.scoreNumber,
-            color = Brand.Colors.textPrimary
+            color = Brand.Colors.textPrimary,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

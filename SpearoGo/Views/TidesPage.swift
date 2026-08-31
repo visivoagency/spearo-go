@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct TidesPage: View {
+    // Matched to the high/low columns, which are taller now the type is bigger.
+    @ScaledMetric(relativeTo: .title3) private var dividerHeight: CGFloat = 52
+
     @Environment(AppState.self) private var appState
     @State private var crownOffset: Double = 0
 
@@ -17,7 +20,7 @@ struct TidesPage: View {
                                       height: tide.nextHighHeight)
 
                         Divider()
-                            .frame(height: 44)
+                            .frame(height: dividerHeight)
                             .background(Brand.Colors.textSecondary.opacity(Brand.Opacity.borderLine))
 
                         TideEventView(label: "LOW",
@@ -39,7 +42,7 @@ struct TidesPage: View {
                             .highlightCaptionStyle()
                     }
                     .accessibilityLabel(String(format: "Current tide height %.1f metres", tide.currentHeight))
-                } else {
+                } else if appState.isLoading {
                     // Shimmer skeleton
                     HStack(spacing: 16) {
                         TideEventSkeleton()
@@ -48,6 +51,15 @@ struct TidesPage: View {
                     }
                     SkeletonBlock(width: 120, height: 30)
                     .accessibilityLabel("Loading tide data")
+                } else {
+                    // Not a loading state. The synthetic tide model this page
+                    // used to draw was wrong everywhere on earth, so it was
+                    // removed rather than improved. Real predictions arrive
+                    // with the tidesGo backend.
+                    Text("No tide data for this spot yet")
+                        .captionStyle()
+                        .multilineTextAlignment(.center)
+                        .accessibilityLabel("No tide data for this spot yet")
                 }
             }
             .padding(Brand.Spacing.page)
@@ -104,7 +116,7 @@ struct TideDirectionView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(isRising ? "Incoming" : "Outgoing")
-                    .font(Brand.Typography.personalityCopy)
+                    .brandFont(Brand.Typography.personalityCopy)
                     .foregroundStyle(Brand.Colors.textPrimary)
                 Text(phase.rawValue)
                     .captionStyle()

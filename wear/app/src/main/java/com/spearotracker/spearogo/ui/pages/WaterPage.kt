@@ -70,11 +70,20 @@ fun WaterPage(uiState: AppUiState) {
                         textAlign = TextAlign.Center
                     )
                 }
-            } else {
+            } else if (uiState.isLoading) {
                 Row(horizontalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.padding(bottom = Brand.Spacing.section)) {
                     ConditionItemSkeleton()
                     ConditionItemSkeleton()
                 }
+            } else {
+                // Not a loading state: this location has no sea to report on.
+                // It previously showed 22C and recommended a wetsuit thickness.
+                Text(
+                    text = "No water data for this spot",
+                    style = Brand.Typography.caption,
+                    color = Brand.Colors.textSecondary,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

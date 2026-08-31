@@ -10,7 +10,7 @@ struct VerdictPage: View {
                 VStack(spacing: Brand.Spacing.item) {
                     ProgressView()
                         .tint(Brand.Colors.primary)
-                    Text(PersonalityCopy.loading())
+                    Text(appState.loadingMessage)
                         .captionStyle()
                         .multilineTextAlignment(.center)
                 }
@@ -18,35 +18,57 @@ struct VerdictPage: View {
             } else if let score = appState.diveScore {
                 VStack(spacing: Brand.Spacing.item) {
                     Text(score.verdict.rawValue)
-                        .verdictStyle(color: Brand.Colors.forVerdict(score.verdict))
+                        .verdictStyle(color: .white)
                         .accessibilityLabel("Verdict: \(score.verdict.rawValue)")
 
-                    Text(PersonalityCopy.message(for: score.verdict))
+                    Text(appState.personalityMessage)
                         .personalityStyle()
+                        .foregroundStyle(.white.opacity(0.9))
                         .padding(.horizontal, Brand.Spacing.item)
 
                     Spacer().frame(height: Brand.Spacing.micro)
 
-                    ScoreRingView(score: score.composite, verdict: score.verdict)
+                    ScoreRingView(score: score.composite, verdict: score.verdict, onColour: true)
                         .accessibilityLabel(String(format: "Dive score %.1f out of 10", score.composite))
+
+                    // Names the signals the verdict could NOT see, so a
+                    // renormalised score is never mistaken for a complete one.
+                    if score.isPartial {
+                        Text("Scored without \(score.missingSignals.joined(separator: " or "))")
+                            .brandFont(Brand.Typography.caption)
+                            .foregroundStyle(.white.opacity(0.75))
+                            .multilineTextAlignment(.center)
+                            .accessibilityLabel("Score does not include \(score.missingSignals.joined(separator: " or "))")
+                    }
 
                     // Stale cache indicator
                     if let label = appState.lastRefreshedLabel {
                         Text(label)
-                            .font(Brand.Typography.caption)
-                            .foregroundStyle(appState.isStale ? Brand.Colors.sketchy : Brand.Colors.textSecondary)
+                            .brandFont(Brand.Typography.caption)
+                            .foregroundStyle(.white.opacity(appState.isStale ? 1 : 0.7))
                             .accessibilityLabel("Last updated: \(label)")
                     }
 
                     // GPS fallback indicator
                     if appState.isUsingFallbackLocation {
                         Text("📍 Default location")
-                            .font(Brand.Typography.caption)
-                            .foregroundStyle(Brand.Colors.sketchy)
+                            .brandFont(Brand.Typography.caption)
+                            .foregroundStyle(.white.opacity(0.9))
                             .accessibilityLabel("Using default location. Save a dive spot for accurate conditions.")
                     }
                 }
                 .padding(Brand.Spacing.page)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Full-bleed verdict colour with white type, matching Spearo
+                // Vision's dive score card.
+                .background(
+                    LinearGradient(
+                        colors: Brand.Colors.gradientForVerdict(score.verdict),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
+                )
                 .accessibilityElement(children: .contain)
             } else if appState.error != nil {
                 VStack(spacing: Brand.Spacing.item) {
@@ -56,7 +78,7 @@ struct VerdictPage: View {
                     Text("Couldn't load conditions")
                         .captionStyle()
                     Text("Tap to retry")
-                        .font(Brand.Typography.caption)
+                        .brandFont(Brand.Typography.caption)
                         .foregroundStyle(Brand.Colors.textSecondary)
                 }
                 .accessibilityElement(children: .combine)
@@ -84,25 +106,38 @@ struct VerdictPage: View {
 struct ScoreRingView: View {
     let score: Double
     let verdict: Verdict
+    /// Drawn on top of the verdict colour, so the ring is white rather than
+    /// the verdict hue it would otherwise disappear into.
+    var onColour: Bool = false
+
+    private var trackColour: Color {
+        onColour ? .white.opacity(0.3) : Brand.Colors.textSecondary.opacity(Brand.Opacity.ringTrack)
+    }
+    private var progressColour: Color {
+        onColour ? .white : Brand.Colors.forVerdict(verdict)
+    }
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Brand.Colors.textSecondary.opacity(Brand.Opacity.ringTrack),
-                        lineWidth: Brand.Ring.strokeWidth)
+                .stroke(trackColour, lineWidth: Brand.Ring.strokeWidth)
                 .frame(width: Brand.Ring.size, height: Brand.Ring.size)
 
             Circle()
                 .trim(from: 0, to: score / 10)
-                .stroke(Brand.Colors.forVerdict(verdict),
+                .stroke(progressColour,
                         style: StrokeStyle(lineWidth: Brand.Ring.strokeWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .frame(width: Brand.Ring.size, height: Brand.Ring.size)
                 .animation(.spring(duration: 0.7), value: score)
 
             Text(String(format: "%.1f", score))
-                .font(Brand.Typography.scoreNumber)
-                .foregroundStyle(Brand.Colors.textPrimary)
+                .brandFont(Brand.Typography.scoreNumber)
+                .foregroundStyle(onColour ? .white : Brand.Colors.textPrimary)
+                // Brand.Ring.size is a fixed 58pt, so the score has to shrink
+                // to fit rather than overflow the ring at large text sizes.
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
     }
 }

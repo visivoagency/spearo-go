@@ -16,30 +16,23 @@ struct SolunarService {
         let moonIllum = illumination(moonLon: moonPos.longitude, sunLon: sunPos.longitude)
         let moonPhase = moonPhaseValue(jd: jd)
 
-        let (moonrise, moonset) = riseSet(
-            declination: moonPos.declination,
-            ra: moonPos.rightAscension,
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-            jd: jd,
-            isMoon: true
-        )
+        let (moonrise, moonset) = riseSet(latitude: coordinate.latitude,
+                                          longitude: coordinate.longitude,
+                                          date: date, isMoon: true)
+        let (sunrise, sunset) = riseSet(latitude: coordinate.latitude,
+                                        longitude: coordinate.longitude,
+                                        date: date, isMoon: false)
 
-        let (sunrise, sunset) = riseSet(
-            declination: sunPos.declination,
-            ra: sunPos.rightAscension,
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-            jd: jd,
-            isMoon: false
-        )
-
-        // Major periods: ±1h around moon transit (upper/lower culmination)
-        let transit = moonTransit(ra: moonPos.rightAscension, longitude: coordinate.longitude, jd: jd)
-        let antiTransit = transit.addingTimeInterval(6 * 3600)
+        // Major periods: ~2h windows around the Moon's culminations. Both are
+        // solved directly; deriving one from the other by a fixed offset was
+        // what put a major period six and a half hours early.
+        let culminations = [
+            nextCulmination(longitude: coordinate.longitude, from: date, targetHourAngleDeg: 0),
+            nextCulmination(longitude: coordinate.longitude, from: date, targetHourAngleDeg: 180)
+        ]
 
         // Minor periods: around moonrise/moonset
-        let nextMajor: Date? = [transit, antiTransit]
+        let nextMajor: Date? = culminations
             .filter { $0 > date.addingTimeInterval(-3600) }
             .min()
 
@@ -120,39 +113,94 @@ struct SolunarService {
         return CelestialPosition(longitude: lon, rightAscension: (ra + 24).truncatingRemainder(dividingBy: 24), declination: dec)
     }
 
-    // MARK: - Rise / Set times (approximate)
+    // MARK: - Rise / Set times
 
-    private func riseSet(declination: Double, ra: Double, latitude: Double,
-                         longitude: Double, jd: Double, isMoon: Bool) -> (rise: Date?, set: Date?) {
+    /// Altitude of a body above the horizon, in degrees.
+    private func altitude(latitude: Double, longitude: Double, date: Date, isMoon: Bool) -> Double {
+        let j = julianDay(from: date)
+        let pos = isMoon ? moonPosition(jd: j) : sunPosition(jd: j)
+        let d = j - 2451545.0
+        let gmst = (280.46061837 + 360.98564736629 * d).truncatingRemainder(dividingBy: 360)
+        let hourAngle = (gmst + longitude - pos.rightAscension * 15).truncatingRemainder(dividingBy: 360)
         let latR = latitude * .pi / 180
-        let decR = declination * .pi / 180
-        let h0 = isMoon ? -0.833 : -0.833  // standard refraction
-        let cosH = (sin(h0 * .pi / 180) - sin(latR) * sin(decR)) / (cos(latR) * cos(decR))
-        guard abs(cosH) <= 1 else { return (nil, nil) }  // circumpolar / never rises
-
-        let H = acos(cosH) * 180 / .pi
-        let noon = (ra - longitude / 15).truncatingRemainder(dividingBy: 24)
-        let riseH = noon - H / 15
-        let setH  = noon + H / 15
-
-        func toDate(_ hours: Double) -> Date {
-            let midnight = (jd - 0.5).rounded(.down) - 2440587.5  // unix midnight
-            return Date(timeIntervalSince1970: midnight * 86400 + hours * 3600)
-        }
-
-        return (toDate(riseH), toDate(setH))
+        let decR = pos.declination * .pi / 180
+        return asin(sin(latR) * sin(decR) + cos(latR) * cos(decR) * cos(hourAngle * .pi / 180)) * 180 / .pi
     }
 
-    // MARK: - Moon transit
+    /// Rise and set for the local day containing `date`, found by scanning the
+    /// body's altitude for crossings of the horizon.
+    ///
+    /// The previous implementation solved for an hour angle and then placed it
+    /// with `ra - longitude / 15`, which never referenced sidereal time and so
+    /// was not anchored to the date at all. On 2026-08-31 it put sunrise at
+    /// 17:24 and sunset at 06:54, inverted and thirteen hours out. A scan costs
+    /// a few hundred cheap evaluations and cannot get the day wrong.
+    ///
+    /// Returns nil when the body does not cross the horizon that day, which is
+    /// the honest answer inside a polar summer or winter — and for the Moon,
+    /// simply on days when it does not rise.
+    private func riseSet(latitude: Double, longitude: Double, date: Date, isMoon: Bool) -> (rise: Date?, set: Date?) {
+        // Standard refraction for the Sun's upper limb; for the Moon, parallax
+        // very nearly cancels semidiameter and refraction.
+        let horizon: Double = isMoon ? 0.125 : -0.833
 
-    private func moonTransit(ra: Double, longitude: Double, jd: Double) -> Date {
-        let D = jd - 2451545.0
-        let GMST = (280.46061837 + 360.98564736629 * D).truncatingRemainder(dividingBy: 360)
-        let LST = (GMST + longitude).truncatingRemainder(dividingBy: 360)
-        var hourAngle = ra * 15 - LST
-        if hourAngle < 0 { hourAngle += 360 }
-        let hoursUntilTransit = (360 - hourAngle) / 15.041  // sidereal rate
-        return Date().addingTimeInterval(hoursUntilTransit * 3600)
+        let dayStart = Calendar.current.startOfDay(for: date)
+        let step: TimeInterval = 300
+        let dayEnd = dayStart.addingTimeInterval(24 * 3600)
+
+        var rise: Date?
+        var set: Date?
+        var previousAlt = altitude(latitude: latitude, longitude: longitude, date: dayStart, isMoon: isMoon)
+        var t = dayStart.addingTimeInterval(step)
+
+        while t <= dayEnd {
+            let alt = altitude(latitude: latitude, longitude: longitude, date: t, isMoon: isMoon)
+            // Linear interpolation across the step gets within a few seconds.
+            if previousAlt < horizon, alt >= horizon, rise == nil {
+                let f = (horizon - previousAlt) / (alt - previousAlt)
+                rise = t.addingTimeInterval(-step + f * step)
+            }
+            if previousAlt > horizon, alt <= horizon, set == nil {
+                let f = (previousAlt - horizon) / (previousAlt - alt)
+                set = t.addingTimeInterval(-step + f * step)
+            }
+            previousAlt = alt
+            t = t.addingTimeInterval(step)
+        }
+
+        return (rise, set)
+    }
+
+    // MARK: - Moon culminations
+
+    /// Time of the Moon's next crossing of a given hour angle — 0 for upper
+    /// culmination, 180 for lower. These are the solunar "major" periods.
+    ///
+    /// Solved iteratively. The previous implementation took a single pass from
+    /// the Moon's position *now*, took the complement of the resulting angle
+    /// (which inverted the offset), and anchored the result to `Date()` rather
+    /// than the date it was given. On 2026-08-31 that produced a 12:32 CEST
+    /// "major period" when the true culminations were 04:21 and 16:46.
+    private func nextCulmination(longitude: Double, from: Date, targetHourAngleDeg: Double) -> Date {
+        var t = from
+        for _ in 0..<4 {
+            let j = julianDay(from: t)
+            let ra = moonPosition(jd: j).rightAscension
+            let d = j - 2451545.0
+            let gmst = (280.46061837 + 360.98564736629 * d).truncatingRemainder(dividingBy: 360)
+            let lst = (gmst + longitude).truncatingRemainder(dividingBy: 360)
+            // How far past the target the Moon already is, in degrees,
+            // normalised to (-180, 180].
+            var past = lst - ra * 15 - targetHourAngleDeg
+            past = ((past + 180).truncatingRemainder(dividingBy: 360) + 360)
+                .truncatingRemainder(dividingBy: 360) - 180
+            t = t.addingTimeInterval((-past / TideConstants.siderealDegreesPerHour) * 3600)
+        }
+        // Converges on the NEAREST crossing, which may be just behind us.
+        while t < from.addingTimeInterval(-3600) {
+            t = t.addingTimeInterval(TideConstants.lunarDaySeconds)
+        }
+        return t
     }
 
     // MARK: - Illumination
@@ -186,4 +234,13 @@ struct SolunarService {
         default:      return "Poor"
         }
     }
+}
+
+// Rate at which the sky turns relative to the Moon, degrees per hour: the Moon
+// moves eastward against the stars, so it returns to the meridian every ~24h50m
+// rather than every sidereal day.
+private enum TideConstants {
+    static let siderealDegreesPerHour: Double = 15.041
+    /// Interval between successive upper culminations, 24h50m28s.
+    static let lunarDaySeconds: Double = 89_428.32
 }

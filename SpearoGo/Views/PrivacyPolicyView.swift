@@ -38,7 +38,7 @@ struct PrivacyPolicyView: View {
                 )
 
                 Text("Effective: January 2025")
-                    .font(Brand.Typography.caption)
+                    .brandFont(Brand.Typography.caption)
                     .foregroundStyle(Brand.Colors.textSecondary)
             }
             .padding(Brand.Spacing.page)
@@ -50,12 +50,12 @@ struct PrivacyPolicyView: View {
     private func policySection(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: Brand.Spacing.micro) {
             Text(title)
-                .font(Brand.Typography.itemLabel)
+                .brandFont(Brand.Typography.itemLabel)
                 .foregroundStyle(Brand.Colors.primary)
                 .kerning(Brand.Kerning.itemLabel)
 
             Text(body)
-                .font(Brand.Typography.caption)
+                .brandFont(Brand.Typography.caption)
                 .foregroundStyle(Brand.Colors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }

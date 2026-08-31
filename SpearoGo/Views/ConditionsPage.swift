@@ -8,7 +8,11 @@ struct ConditionsPage: View {
             Text("Conditions")
                 .brandSectionHeader()
 
-            if let weather = appState.weatherData, let marine = appState.marineData {
+            // Wind is shown whenever weather is known, even where there is no
+            // sea. Requiring marine data here hid the wind at any location the
+            // marine API does not cover.
+            if let weather = appState.weatherData {
+                let marine = appState.marineData
                 Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
                     GridRow {
                         ConditionItem(icon: "wind",
@@ -17,8 +21,8 @@ struct ConditionsPage: View {
                                       unit: "kn")
                         ConditionItem(icon: "water.waves",
                                       label: "Swell",
-                                      value: String(format: "%.1f", marine.waveHeight),
-                                      unit: "m")
+                                      value: marine.map { String(format: "%.1f", $0.waveHeight) } ?? "—",
+                                      unit: marine == nil ? "" : "m")
                     }
                     GridRow {
                         ConditionItem(icon: "arrow.up.right",
@@ -27,12 +31,18 @@ struct ConditionsPage: View {
                                       unit: "")
                         ConditionItem(icon: "timer",
                                       label: "Period",
-                                      value: String(format: "%.0f", marine.wavePeriod),
-                                      unit: "s")
+                                      value: marine.map { String(format: "%.0f", $0.wavePeriod) } ?? "—",
+                                      unit: marine == nil ? "" : "s")
                     }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(conditionsAccessibilityLabel(weather: weather, marine: marine))
+
+                if marine == nil {
+                    Text("No swell data for this spot")
+                        .captionStyle()
+                        .multilineTextAlignment(.center)
+                }
             } else {
                 // Shimmer skeleton
                 Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
@@ -57,8 +67,9 @@ struct ConditionsPage: View {
         return dirs[Int((degrees + 22.5) / 45.0) % 8]
     }
 
-    private func conditionsAccessibilityLabel(weather: WeatherData, marine: MarineData) -> String {
+    private func conditionsAccessibilityLabel(weather: WeatherData, marine: MarineData?) -> String {
         let wind = String(format: "Wind %.0f knots %@", weather.windSpeed, compassDirection(weather.windDirection))
+        guard let marine else { return "\(wind). No swell data for this spot." }
         let swell = String(format: "Swell %.1f metres, period %.0f seconds", marine.waveHeight, marine.wavePeriod)
         return "\(wind). \(swell)"
     }

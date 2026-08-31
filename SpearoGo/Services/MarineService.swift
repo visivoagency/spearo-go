@@ -23,11 +23,20 @@ struct MarineService {
         let decoded = try JSONDecoder().decode(OpenMeteoMarineResponse.self, from: data)
         guard let current = decoded.current else { throw ServiceError.missingData }
 
+        // Open-Meteo Marine answers HTTP 200 for a landlocked coordinate and
+        // returns nulls, so a non-error response is NOT evidence of a sea.
+        // Coalescing those nulls to 0 and 20 is what told a diver in
+        // Rheinland-Pfalz the water was a flat calm at 20°C, and scored it 9/10.
+        guard let height = current.wave_height,
+              let temp = current.sea_surface_temperature else {
+            throw ServiceError.noMarineCoverage
+        }
+
         return MarineData(
-            waveHeight:    current.wave_height ?? 0,
+            waveHeight:    height,
             wavePeriod:    current.wave_period ?? 0,
             waveDirection: current.wave_direction ?? 0,
-            seaSurfaceTemp: current.sea_surface_temperature ?? 20,
+            seaSurfaceTemp: temp,
             fetchedAt:     Date()
         )
     }

@@ -4,6 +4,7 @@ import com.spearotracker.spearogo.models.SolunarData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.*
+import java.util.Calendar
 
 @Singleton
 class SolunarService @Inject constructor() {
@@ -22,32 +23,23 @@ class SolunarService @Inject constructor() {
         val moonIllum = illumination(moonPos.longitude, sunPos.longitude)
         val moonPhase = moonPhaseValue(jd)
 
-        val (moonrise, moonset) = riseSet(
-            declination = moonPos.declination,
-            ra = moonPos.rightAscension,
-            latitude = latitude,
-            longitude = longitude,
-            jd = jd,
-            isMoon = true
-        )
+        val (moonrise, moonset) = riseSet(latitude, longitude, timeMillis, isMoon = true)
+        val (sunrise, sunset) = riseSet(latitude, longitude, timeMillis, isMoon = false)
 
-        val (sunrise, sunset) = riseSet(
-            declination = sunPos.declination,
-            ra = sunPos.rightAscension,
-            latitude = latitude,
-            longitude = longitude,
-            jd = jd,
-            isMoon = false
-        )
-
-        // Major periods: +/-1h around moon transit (upper/lower culmination)
-        val transit = moonTransit(moonPos.rightAscension, longitude, jd, timeMillis)
-        val antiTransit = transit + 6 * 3600 * 1000
-
+        // Major periods: ~2h windows around the Moon's culminations.
         val now = timeMillis
 
+        // Culminations alternate every 12h25m: the Moon crosses the meridian
+        // (upper) and the anti-meridian (lower). Both are solved directly
+        // rather than derived by adding a fixed offset to the other, because
+        // the Moon's motion is not uniform.
+        val culminations = listOf(
+            nextCulmination(longitude, now, targetHourAngleDeg = 0.0),
+            nextCulmination(longitude, now, targetHourAngleDeg = 180.0)
+        )
+
         // Next major period
-        val nextMajor = listOf(transit, antiTransit)
+        val nextMajor = culminations
             .filter { it > now - 3600_000 }
             .minOrNull()
 
@@ -125,37 +117,104 @@ class SolunarService @Inject constructor() {
         )
     }
 
-    private fun riseSet(
-        declination: Double, ra: Double, latitude: Double,
-        longitude: Double, jd: Double, isMoon: Boolean
-    ): Pair<Long?, Long?> {
+    /**
+     * Altitude of a body above the horizon, in degrees.
+     */
+    private fun altitude(latitude: Double, longitude: Double, millis: Long, isMoon: Boolean): Double {
+        val j = julianDay(millis)
+        val pos = if (isMoon) moonPosition(j) else sunPosition(j)
+        val d = j - 2451545.0
+        val gmst = (280.46061837 + 360.98564736629 * d) % 360
+        val hourAngle = (gmst + longitude - pos.rightAscension * 15) % 360
         val latR = Math.toRadians(latitude)
-        val decR = Math.toRadians(declination)
-        val h0 = -0.833
-        val cosH = (sin(Math.toRadians(h0)) - sin(latR) * sin(decR)) / (cos(latR) * cos(decR))
-        if (abs(cosH) > 1) return Pair(null, null) // circumpolar / never rises
-
-        val hAngle = Math.toDegrees(acos(cosH))
-        val noon = (ra - longitude / 15.0) % 24
-        val riseH = noon - hAngle / 15.0
-        val setH = noon + hAngle / 15.0
-
-        fun toMillis(hours: Double): Long {
-            val midnight = (floor(jd - 0.5) - 2440587.5) * 86400.0
-            return ((midnight + hours * 3600.0) * 1000).toLong()
-        }
-
-        return Pair(toMillis(riseH), toMillis(setH))
+        val decR = Math.toRadians(pos.declination)
+        return Math.toDegrees(
+            asin(sin(latR) * sin(decR) + cos(latR) * cos(decR) * cos(Math.toRadians(hourAngle)))
+        )
     }
 
-    private fun moonTransit(ra: Double, longitude: Double, jd: Double, nowMillis: Long): Long {
-        val d = jd - 2451545.0
-        val gmst = (280.46061837 + 360.98564736629 * d) % 360
-        val lst = (gmst + longitude) % 360
-        var hourAngle = ra * 15 - lst
-        if (hourAngle < 0) hourAngle += 360
-        val hoursUntilTransit = (360 - hourAngle) / 15.041
-        return nowMillis + (hoursUntilTransit * 3600 * 1000).toLong()
+    /**
+     * Rise and set for the local day containing [timeMillis], found by scanning
+     * the body's altitude for crossings of the horizon.
+     *
+     * The previous implementation solved for an hour angle and then placed it
+     * with `ra - longitude / 15`, which never referenced sidereal time and so
+     * was not anchored to the date at all. On 2026-08-31 it put sunrise at
+     * 17:24 and sunset at 06:54, inverted and thirteen hours out. A scan costs
+     * a few hundred cheap evaluations and cannot get the day wrong.
+     *
+     * Returns nulls when the body does not cross the horizon that day, which is
+     * the honest answer inside a polar summer or winter — and for the Moon,
+     * simply on days when it does not rise.
+     */
+    private fun riseSet(
+        latitude: Double,
+        longitude: Double,
+        timeMillis: Long,
+        isMoon: Boolean
+    ): Pair<Long?, Long?> {
+        // Standard refraction for the Sun's upper limb; for the Moon, parallax
+        // very nearly cancels semidiameter and refraction.
+        val horizon = if (isMoon) 0.125 else -0.833
+
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = timeMillis
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val dayStart = cal.timeInMillis
+
+        val step = 5 * 60 * 1000L
+        val dayEnd = dayStart + 24 * 3600 * 1000L
+
+        var rise: Long? = null
+        var set: Long? = null
+        var previousAlt = altitude(latitude, longitude, dayStart, isMoon)
+        var t = dayStart + step
+
+        while (t <= dayEnd) {
+            val alt = altitude(latitude, longitude, t, isMoon)
+            // Linear interpolation across the step gets within a few seconds.
+            if (previousAlt < horizon && alt >= horizon && rise == null) {
+                rise = t - step + ((horizon - previousAlt) / (alt - previousAlt) * step).toLong()
+            }
+            if (previousAlt > horizon && alt <= horizon && set == null) {
+                set = t - step + ((previousAlt - horizon) / (previousAlt - alt) * step).toLong()
+            }
+            previousAlt = alt
+            t += step
+        }
+
+        return Pair(rise, set)
+    }
+
+    /**
+     * Time of the Moon's next crossing of a given hour angle — 0 for upper
+     * culmination, 180 for lower. These are the solunar "major" periods.
+     *
+     * Solved iteratively. A single pass using the Moon's position *now* is what
+     * this code used to do, and it is wrong by up to an hour for a culmination
+     * a day away, because the Moon moves about half a degree an hour against
+     * the stars. Re-evaluating at the estimate converges in a couple of passes.
+     */
+    private fun nextCulmination(longitude: Double, fromMillis: Long, targetHourAngleDeg: Double): Long {
+        var t = fromMillis
+        repeat(4) {
+            val j = julianDay(t)
+            val ra = moonPosition(j).rightAscension
+            val d = j - 2451545.0
+            val gmst = (280.46061837 + 360.98564736629 * d) % 360
+            val lst = (gmst + longitude) % 360
+            // How far past the target the Moon already is, in degrees,
+            // normalised to (-180, 180].
+            var past = lst - ra * 15 - targetHourAngleDeg
+            past = ((past + 180.0) % 360.0 + 360.0) % 360.0 - 180.0
+            t += ((-past / SIDEREAL_DEGREES_PER_HOUR) * 3600 * 1000).toLong()
+        }
+        // Converges on the NEAREST crossing, which may be just behind us.
+        while (t < fromMillis - 3600_000) t += LUNAR_DAY_MS
+        return t
     }
 
     private fun illumination(moonLon: Double, sunLon: Double): Double {
@@ -189,3 +248,11 @@ class SolunarService @Inject constructor() {
         }
     }
 }
+
+// Rate at which the sky turns relative to the Moon, degrees per hour: the Moon
+// moves eastward against the stars, so it returns to the meridian every ~24h50m
+// rather than every sidereal day.
+private const val SIDEREAL_DEGREES_PER_HOUR = 15.041
+
+// A lunar day: the interval between successive upper culminations, 24h50m28s.
+private const val LUNAR_DAY_MS = 89_428_320L
