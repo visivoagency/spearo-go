@@ -9,7 +9,7 @@ struct PrivacyPolicyView: View {
 
                 policySection(
                     title: "Location Data",
-                    body: "Spearo Go uses your location solely to fetch weather, marine, and tide conditions for your current position. Your coordinates are sent to Open-Meteo APIs over HTTPS and are never stored on any server."
+                    body: "Spearo Go uses your location solely to fetch weather, marine, and tide conditions for your current position. Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's own tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about one kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. Nothing is linked to you or to any account."
                 )
 
                 policySection(
@@ -19,7 +19,7 @@ struct PrivacyPolicyView: View {
 
                 policySection(
                     title: "No Accounts",
-                    body: "Spearo Go does not require or create any user accounts. There is no sign-up, no email collection, and no personal data stored off-device."
+                    body: "Spearo Go does not require or create any user accounts. There is no sign-up, no email collection, and no advertising or analytics. The only thing that leaves your watch is a location, and only to fetch conditions for it."
                 )
 
                 policySection(

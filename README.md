@@ -15,13 +15,14 @@
 - 5-page horizontal TabView: Verdict, Conditions, Water, Tides, Fish Activity
 - Save multiple dive spots and switch between them
 - Background refresh every 30 minutes — always current
-- Offline tide and solunar calculations — no API key needed
+- Real tide predictions from NOAA and WorldTides gauges
+- Offline solunar calculations — sun and moon computed on the watch
 - Haptic feedback when conditions change
 - Fully accessible with VoiceOver support
 - 3-page swipeable onboarding flow
 - Error UI with tap-to-retry
 - GPS fallback indicator when no saved location or GPS is available
-- Graceful marine API fallback for landlocked/offline scenarios
+- Says so plainly where there is no marine or tide coverage, rather than estimating
 - No subscriptions, no ads, no account required
 
 ---
@@ -44,7 +45,7 @@
 |----------|--------|-----|
 | Weather  | 30%    | [Open-Meteo](https://open-meteo.com) — free, no key |
 | Marine   | 30%    | [Open-Meteo Marine](https://marine-api.open-meteo.com) — free, no key |
-| Tides    | 15%    | Synthetic lunar harmonic — offline |
+| Tides    | 15%    | NOAA / WorldTides gauges via the `tidesGo` backend |
 | Solunar  | 25%    | Sun/moon orbital math (Meeus) — offline |
 
 **Verdict bands:** GO (8–10) · MAYBE (6–7) · SKETCHY (4–5) · NO GO (0–3)
@@ -97,7 +98,7 @@ SpearoGo/
 ├── Services/
 │   ├── WeatherService.swift   # Open-Meteo /v1/forecast (URLSession, no key)
 │   ├── MarineService.swift    # Open-Meteo /v1/marine (URLSession, no key)
-│   ├── TideService.swift      # Synthetic M2+S2 harmonic tide calculator (offline)
+│   ├── TideService.swift      # Fetches real predictions from the tidesGo backend
 │   ├── SolunarService.swift   # Meeus orbital math — moon, sun, solunar periods (offline)
 │   ├── LocationService.swift  # CoreLocation, @Observable, GPS fallback
 │   ├── ScoreService.swift     # Weighted composite score (W30% M30% T15% S25%)
@@ -185,7 +186,10 @@ All colors are in `Assets.xcassets` — reference via `Brand.Colors.*` in code.
 
 ## Privacy
 
-- Location data is used **only** to fetch weather/marine conditions — never stored or shared
+- Location data is used **only** to fetch conditions. It goes to Open-Meteo, and to the
+  `tidesGo` backend which passes it to NOAA or WorldTides. The backend rounds it to ~1km
+  and caches that rounded point for 24h so a spot is not looked up twice. Nothing is
+  linked to any identity — there are no accounts.
 - No analytics, no tracking, no user accounts
 - Open-Meteo APIs are free and keyless — no API secrets in the codebase
 - Privacy manifest (`PrivacyInfo.xcprivacy`) declares UserDefaults API usage

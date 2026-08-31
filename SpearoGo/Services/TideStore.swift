@@ -51,6 +51,12 @@ struct TideStore {
         return entry.days.first { $0.date == date }
     }
 
+    /// Whether this coordinate is already known to have no sea.
+    func knownWithoutCoverage(coordinate: CLLocationCoordinate2D) -> Bool {
+        guard let entry = read(coordinate) else { return false }
+        return entry.noCoverage && Date().timeIntervalSince(entry.savedAt) < Self.cacheDuration
+    }
+
     func save(coordinate: CLLocationCoordinate2D, days: [TideData]) {
         let today = TideService.dayKey(for: Date(), utcOffsetSeconds: 0)
         let kept = days.filter { $0.date >= today }

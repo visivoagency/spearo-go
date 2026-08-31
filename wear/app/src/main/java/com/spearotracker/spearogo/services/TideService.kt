@@ -18,6 +18,16 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Why there are no tides, when there are none. A coordinate with no sea is a
+ * settled fact; a failed lookup is not, and the two must not read alike.
+ */
+sealed interface TideLookup {
+    data class Found(val data: TideData) : TideLookup
+    data object NoCoverage : TideLookup
+    data object Unavailable : TideLookup
+}
+
 private data class TidesGoRequest(val lat: Double, val lon: Double, val days: Int = 7)
 
 private data class TidesGoResponse(
@@ -79,10 +89,11 @@ class TideService @Inject constructor(
      * Order of resort: cached day, then a network fetch covering a week, then
      * a stale cached day flagged as such, then null.
      */
-    suspend fun fetch(latitude: Double, longitude: Double): TideData? {
+    suspend fun fetch(latitude: Double, longitude: Double): TideLookup {
         val today = localDateKey(System.currentTimeMillis(), 0)
 
-        store.fresh(latitude, longitude, today)?.let { return it }
+        store.fresh(latitude, longitude, today)?.let { return TideLookup.Found(it) }
+        if (store.knownWithoutCoverage(latitude, longitude)) return TideLookup.NoCoverage
 
         return try {
             val response = api.tides(TidesGoRequest(latitude, longitude))
@@ -91,8 +102,9 @@ class TideService @Inject constructor(
                 // asking; a transient failure is not, and falls through below.
                 if (response.reason == "outside_coverage") {
                     store.rememberNoCoverage(latitude, longitude)
+                    return TideLookup.NoCoverage
                 }
-                return null
+                return TideLookup.Unavailable
             }
 
             val offset = response.utcOffsetSeconds ?: 0
@@ -101,16 +113,21 @@ class TideService @Inject constructor(
                 TideData(
                     date = date,
                     events = day.extremes.orEmpty().mapNotNull { e ->
+                        // 0m is a real chart-datum height, so a missing one
+                        // must be dropped rather than floored into a plausible
+                        // reading.
                         val t = e.t ?: return@mapNotNull null
+                        val height = e.height ?: return@mapNotNull null
                         TideEvent(
                             timeSeconds = t,
                             type = if (e.type?.lowercase() == "high") TideType.HIGH else TideType.LOW,
-                            height = e.height ?: 0.0
+                            height = height
                         )
                     },
                     heights = day.heights.orEmpty().mapNotNull { h ->
                         val t = h.t ?: return@mapNotNull null
-                        TideHeight(timeSeconds = t, height = h.height ?: 0.0)
+                        val height = h.height ?: return@mapNotNull null
+                        TideHeight(timeSeconds = t, height = height)
                     },
                     stationName = response.station,
                     provenance = response.provenance,
@@ -122,11 +139,13 @@ class TideService @Inject constructor(
             // A week costs one credit, so every day is kept and the next six
             // are free.
             store.save(latitude, longitude, parsed)
-            parsed.firstOrNull { it.date == localDateKey(System.currentTimeMillis(), offset) }
+            val today = parsed.firstOrNull { it.date == localDateKey(System.currentTimeMillis(), offset) }
                 ?: parsed.firstOrNull()
+            if (today == null) TideLookup.Unavailable else TideLookup.Found(today)
         } catch (e: Exception) {
             // Deliberately not cached as unavailable: an outage must not stick.
-            store.stale(latitude, longitude, today)?.copy(isStale = true)
+            val stale = store.stale(latitude, longitude, today)
+            if (stale == null) TideLookup.Unavailable else TideLookup.Found(stale.copy(isStale = true))
         }
     }
 

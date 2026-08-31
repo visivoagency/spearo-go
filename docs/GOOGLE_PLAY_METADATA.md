@@ -33,11 +33,11 @@ FEATURES
 • Six detailed pages: Verdict, Conditions, Water, Tides, Fish Activity, Info
 • Save multiple dive spots and switch between them
 • Background refresh every 30 minutes — always current
-• Offline tide and solunar calculations — no API key needed
+• Real tide predictions from NOAA and WorldTides gauges
 • Haptic feedback when conditions change
 • No subscriptions, no ads, no account required
 
-Spearo Go uses free Open-Meteo APIs for weather and marine data. Tide heights are calculated offline using M2+S2 harmonic analysis. Solunar periods use Meeus orbital math. Your location is used only to fetch conditions — never stored or shared.
+Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your location is used only to fetch conditions; the tide service rounds it to about a kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. Nothing is linked to you, and there are no accounts, ads or analytics. Where a location has no marine or tide coverage, the app says so rather than estimating.
 
 Standalone Wear OS app — no phone companion required. Works on Galaxy Watch 4, 5, 6, 7 and all Wear OS 3+ watches.
 
@@ -161,3 +161,33 @@ Initial release — your dive-day verdict in one glance.
 - [ ] Verify spearotracker.com/privacy-policy covers Wear OS
 - [ ] Promote to Production track
 - [ ] Submit for review (typically 1-3 days)
+
+---
+
+## Data safety declaration
+
+What to select in the Play Console. This changed when tides moved to a backend:
+before that nothing was sent to a Spearo server, and the listing said so.
+
+**Data collected: Location → Approximate location**
+
+- Collected: **Yes**
+- Shared with third parties: **Yes** — the coordinate is passed to Open-Meteo,
+  and to NOAA or WorldTides via Spearo's tide service, purely to look up
+  conditions for that place.
+- Processed ephemerally: **No** — the tide service keeps the rounded coordinate
+  for 24 hours as a cache.
+- Required or optional: **Required** (the app cannot produce a verdict without a
+  position)
+- Purpose: **App functionality**
+- Linked to the user: **No** — there are no accounts and no identifiers are sent
+- Used for tracking: **No**
+
+Nothing else is collected. No personal info, no device or app IDs, no
+diagnostics, no advertising, no analytics. Saved dive spots stay on the watch.
+
+**Data security**
+
+- Encrypted in transit: **Yes** (HTTPS throughout)
+- Users can request deletion: no user data is retained to delete — the cache
+  holds a rounded coordinate with no identifier and expires after 24 hours.

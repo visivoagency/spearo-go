@@ -4,6 +4,44 @@ Where Spearo Go stands. Newest first.
 
 ---
 
+## 2026-08-31 (release prep) — Store readiness sweep
+
+Full audit ahead of App Store and Play submission. Seven findings, three of
+them genuine blockers. See `docs/RELEASE-READINESS.md` for the submission
+checklist.
+
+**The privacy disclosure was false.** Both apps stated coordinates were "never
+stored on any server". `tidesGo` stores a rounded coordinate for 24h and a
+hashed IP for rate limiting. Corrected in the in-app text on both platforms, in
+`PrivacyInfo.xcprivacy` (which declared no collected data at all), in both store
+listings, and with the exact Play Data Safety selections written down.
+
+**The listings claimed offline tides** and "M2+S2 harmonic analysis" — the model
+that was deleted this morning. Rewritten across README and both metadata files.
+
+**Two fabrications survived the earlier passes:** wave period defaulted to 0s,
+which is not a calm sea but an absent reading, and cost −1 in the score via the
+`< 6` branch; and a tide event with no height defaulted to 0m, which is a real
+chart-datum value. Both now optional.
+
+**A landlocked spot no longer returns a verdict.** "No sea here" replaces a GO
+computed from wind and moon alone. Crucially it distinguishes *no coverage* from
+*a failed lookup*, so an outage never triggers it — `TideLookup` and
+`NoMarineCoverageException` carry that apart.
+
+**Retention.** Every Firestore document the backend writes now carries an
+`expiresAt`. The TTL policies that act on it still need enabling by hand —
+`gcloud` was not installed. This is release blocker #1.
+
+**Versions bumped:** watchOS 1.0.0 (2) → **1.1.0 (3)**, Wear 2.0.10 (14) →
+**2.1.0 (15)**. `generate_xcodeproj.py` updated too, so regenerating the project
+does not revert them.
+
+Release builds clean on both platforms. 27 tests pass. The endpoint was
+re-verified live after redeploying.
+
+---
+
 ## 2026-08-31 (later) — Real tide predictions, end to end
 
 The tide model was deleted earlier in the day. This is what replaced it.

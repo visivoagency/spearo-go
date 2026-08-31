@@ -31,8 +31,8 @@ struct ConditionsPage: View {
                                       unit: "")
                         ConditionItem(icon: "timer",
                                       label: "Period",
-                                      value: marine.map { String(format: "%.0f", $0.wavePeriod) } ?? "—",
-                                      unit: marine == nil ? "" : "s")
+                                      value: marine?.wavePeriod.map { String(format: "%.0f", $0) } ?? "—",
+                                      unit: marine?.wavePeriod == nil ? "" : "s")
                     }
                 }
                 .accessibilityElement(children: .combine)
@@ -70,7 +70,9 @@ struct ConditionsPage: View {
     private func conditionsAccessibilityLabel(weather: WeatherData, marine: MarineData?) -> String {
         let wind = String(format: "Wind %.0f knots %@", weather.windSpeed, compassDirection(weather.windDirection))
         guard let marine else { return "\(wind). No swell data for this spot." }
-        let swell = String(format: "Swell %.1f metres, period %.0f seconds", marine.waveHeight, marine.wavePeriod)
+        let swell = marine.wavePeriod.map {
+            String(format: "Swell %.1f metres, period %.0f seconds", marine.waveHeight, $0)
+        } ?? String(format: "Swell %.1f metres, period not reported", marine.waveHeight)
         return "\(wind). \(swell)"
     }
 }

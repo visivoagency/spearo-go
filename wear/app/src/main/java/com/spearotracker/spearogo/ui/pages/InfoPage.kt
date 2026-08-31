@@ -38,7 +38,7 @@ fun InfoPage(onDismiss: () -> Unit) {
 
             PolicySection(
                 title = "Location Data",
-                body = "Your coordinates are sent to Open-Meteo APIs over HTTPS to fetch conditions. Never stored on any server."
+                body = "Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about 1km and keeps that rounded point 24 hours so the same spot is not looked up twice. Nothing is linked to you."
             )
 
             PolicySection(

@@ -32,12 +32,12 @@ FEATURES
 • Five detailed pages: Verdict, Conditions, Water, Tides, Fish Activity
 • Save multiple dive spots and switch between them
 • Background refresh every 30 minutes — always current
-• Offline tide and solunar calculations — no API key needed
+• Real tide predictions from NOAA and WorldTides gauges
 • Haptic feedback when conditions change
 • Fully accessible with VoiceOver support
 • No subscriptions, no ads, no account required
 
-Spearo Go uses free Open-Meteo APIs for weather and marine data. Tide heights are calculated offline using M2+S2 harmonic analysis. Solunar periods use Meeus orbital math. Your location is used only to fetch conditions — never stored or shared.
+Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your location is used only to fetch conditions; the tide service rounds it to about a kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. Nothing is linked to you, and there are no accounts, ads or analytics. Where a location has no marine or tide coverage, the app says so rather than estimating.
 
 ## Keywords (100 chars max, comma-separated)
 spearfishing,dive,swell,tides,solunar,fishing,marine,weather,surf,ocean,watch,score,conditions,wind
