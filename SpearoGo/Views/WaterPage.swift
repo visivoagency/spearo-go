@@ -29,7 +29,7 @@ struct WaterPage: View {
                     .padding(.horizontal, Brand.Spacing.page)
                     .infoPill()
                     .accessibilityLabel("Wetsuit tip: \(wetsuitTip(marine.seaSurfaceTemp))")
-            } else {
+            } else if appState.isLoading {
                 // Shimmer skeleton
                 Grid(alignment: .center, horizontalSpacing: 20, verticalSpacing: Brand.Spacing.section) {
                     GridRow {
@@ -39,6 +39,13 @@ struct WaterPage: View {
                 }
                 SkeletonBlock(width: 120, height: 24)
                     .accessibilityLabel("Loading water conditions")
+            } else {
+                // Not a loading state: this location has no sea to report on.
+                // It previously showed 20°C and recommended a 3mm wetsuit.
+                Text("No water data for this spot")
+                    .captionStyle()
+                    .multilineTextAlignment(.center)
+                    .accessibilityLabel("No water data for this spot")
             }
         }
         .padding(Brand.Spacing.page)

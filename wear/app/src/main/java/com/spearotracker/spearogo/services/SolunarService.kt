@@ -40,14 +40,20 @@ class SolunarService @Inject constructor() {
             isMoon = false
         )
 
-        // Major periods: +/-1h around moon transit (upper/lower culmination)
-        val transit = moonTransit(moonPos.rightAscension, longitude, jd, timeMillis)
-        val antiTransit = transit + 6 * 3600 * 1000
-
+        // Major periods: ~2h windows around the Moon's culminations.
         val now = timeMillis
 
+        // Culminations alternate every 12h25m: the Moon crosses the meridian
+        // (upper) and the anti-meridian (lower). Both are solved directly
+        // rather than derived by adding a fixed offset to the other, because
+        // the Moon's motion is not uniform.
+        val culminations = listOf(
+            nextCulmination(longitude, now, targetHourAngleDeg = 0.0),
+            nextCulmination(longitude, now, targetHourAngleDeg = 180.0)
+        )
+
         // Next major period
-        val nextMajor = listOf(transit, antiTransit)
+        val nextMajor = culminations
             .filter { it > now - 3600_000 }
             .minOrNull()
 
@@ -148,14 +154,32 @@ class SolunarService @Inject constructor() {
         return Pair(toMillis(riseH), toMillis(setH))
     }
 
-    private fun moonTransit(ra: Double, longitude: Double, jd: Double, nowMillis: Long): Long {
-        val d = jd - 2451545.0
-        val gmst = (280.46061837 + 360.98564736629 * d) % 360
-        val lst = (gmst + longitude) % 360
-        var hourAngle = ra * 15 - lst
-        if (hourAngle < 0) hourAngle += 360
-        val hoursUntilTransit = (360 - hourAngle) / 15.041
-        return nowMillis + (hoursUntilTransit * 3600 * 1000).toLong()
+    /**
+     * Time of the Moon's next crossing of a given hour angle — 0 for upper
+     * culmination, 180 for lower. These are the solunar "major" periods.
+     *
+     * Solved iteratively. A single pass using the Moon's position *now* is what
+     * this code used to do, and it is wrong by up to an hour for a culmination
+     * a day away, because the Moon moves about half a degree an hour against
+     * the stars. Re-evaluating at the estimate converges in a couple of passes.
+     */
+    private fun nextCulmination(longitude: Double, fromMillis: Long, targetHourAngleDeg: Double): Long {
+        var t = fromMillis
+        repeat(4) {
+            val j = julianDay(t)
+            val ra = moonPosition(j).rightAscension
+            val d = j - 2451545.0
+            val gmst = (280.46061837 + 360.98564736629 * d) % 360
+            val lst = (gmst + longitude) % 360
+            // How far past the target the Moon already is, in degrees,
+            // normalised to (-180, 180].
+            var past = lst - ra * 15 - targetHourAngleDeg
+            past = ((past + 180.0) % 360.0 + 360.0) % 360.0 - 180.0
+            t += ((-past / SIDEREAL_DEGREES_PER_HOUR) * 3600 * 1000).toLong()
+        }
+        // Converges on the NEAREST crossing, which may be just behind us.
+        while (t < fromMillis - 3600_000) t += LUNAR_DAY_MS
+        return t
     }
 
     private fun illumination(moonLon: Double, sunLon: Double): Double {
@@ -189,3 +213,11 @@ class SolunarService @Inject constructor() {
         }
     }
 }
+
+// Rate at which the sky turns relative to the Moon, degrees per hour: the Moon
+// moves eastward against the stars, so it returns to the meridian every ~24h50m
+// rather than every sidereal day.
+private const val SIDEREAL_DEGREES_PER_HOUR = 15.041
+
+// A lunar day: the interval between successive upper culminations, 24h50m28s.
+private const val LUNAR_DAY_MS = 89_428_320L

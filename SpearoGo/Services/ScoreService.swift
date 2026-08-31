@@ -3,9 +3,9 @@ import Foundation
 struct ScoreService {
     // MARK: - Public interface
 
-    func score(weather: WeatherData, marine: MarineData, tide: TideData, solunar: SolunarData) -> DiveScore {
+    func score(weather: WeatherData, marine: MarineData?, tide: TideData, solunar: SolunarData) -> DiveScore {
         let w = weatherScore(weather)
-        let m = marineScore(marine)
+        let m = marine.map(marineScore)
         let t = tideScore(tide)
         let s = solunarScore(solunar)
         return DiveScore.calculate(weather: w, marine: m, tides: t, solunar: s)

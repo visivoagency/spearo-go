@@ -51,11 +51,22 @@ class MarineService @Inject constructor() {
         val response = api.marine(latitude, longitude)
         val current = response.current ?: throw ServiceException("Missing marine data")
 
+        // Open-Meteo Marine answers HTTP 200 for a landlocked coordinate and
+        // returns nulls, so a non-error response is NOT evidence of a sea.
+        // Coalescing those nulls to 0.0 and 20.0 is what told a diver in
+        // Rheinland-Pfalz the water was a flat calm at 20C, and scored it 9/10.
+        val height = current.wave_height
+        val temp = current.sea_surface_temperature
+        if (height == null || temp == null) throw NoMarineCoverageException()
+
         return MarineData(
-            waveHeight = current.wave_height ?: 0.0,
+            waveHeight = height,
             wavePeriod = current.wave_period ?: 0.0,
             waveDirection = current.wave_direction ?: 0.0,
-            seaSurfaceTemp = current.sea_surface_temperature ?: 20.0
+            seaSurfaceTemp = temp
         )
     }
 }
+
+/** The coordinate has no sea: the marine API answered, with nothing in it. */
+class NoMarineCoverageException : Exception("No marine coverage for this location")

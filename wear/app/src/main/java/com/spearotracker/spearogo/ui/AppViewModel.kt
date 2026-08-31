@@ -126,18 +126,16 @@ class AppViewModel @Inject constructor(
                         cacheService.storeWeather(it, lat, lon)
                     }
 
-                // Fetch marine (with cache, fallback for landlocked)
-                val marineData = cacheService.cachedMarine(lat, lon)
+                // No marine data is reported as no marine data. The previous
+                // neutral defaults (0m swell, 22C) were not neutral - they are
+                // near-ideal inputs, so a failed lookup INFLATED the verdict.
+                val marineData: MarineData? = cacheService.cachedMarine(lat, lon)
                     ?: try {
                         marineService.fetch(lat, lon).also {
                             cacheService.storeMarine(it, lat, lon)
                         }
                     } catch (e: Exception) {
-                        // Marine API can fail for landlocked coordinates
-                        MarineData(
-                            waveHeight = 0.0, wavePeriod = 10.0,
-                            waveDirection = 0.0, seaSurfaceTemp = 22.0
-                        )
+                        null
                     }
 
                 val tideData = tideService.calculate(lat, lon)

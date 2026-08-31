@@ -73,6 +73,8 @@ private struct CurrentWeather: Decodable {
 enum ServiceError: Error {
     case badResponse
     case missingData
+    /// The coordinate has no sea: the marine API answered, with nothing in it.
+    case noMarineCoverage
     case invalidCoordinate
     case invalidURL
 }

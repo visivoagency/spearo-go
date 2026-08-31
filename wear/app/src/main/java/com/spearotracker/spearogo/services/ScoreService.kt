@@ -10,9 +10,9 @@ import kotlin.math.min
 @Singleton
 class ScoreService @Inject constructor() {
 
-    fun score(weather: WeatherData, marine: MarineData, tide: TideData, solunar: SolunarData): DiveScore {
+    fun score(weather: WeatherData, marine: MarineData?, tide: TideData, solunar: SolunarData): DiveScore {
         val w = weatherScore(weather)
-        val m = marineScore(marine)
+        val m = marine?.let { marineScore(it) }
         val t = tideScore(tide)
         val s = solunarScore(solunar)
         return DiveScore.calculate(weather = w, marine = m, tides = t, solunar = s)

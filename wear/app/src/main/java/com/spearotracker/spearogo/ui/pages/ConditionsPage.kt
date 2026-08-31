@@ -13,6 +13,7 @@ import com.spearotracker.spearogo.ui.AppUiState
 import com.spearotracker.spearogo.ui.components.ConditionItem
 import com.spearotracker.spearogo.ui.components.ConditionItemSkeleton
 import com.spearotracker.spearogo.ui.theme.Brand
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun ConditionsPage(uiState: AppUiState) {
@@ -37,19 +38,41 @@ fun ConditionsPage(uiState: AppUiState) {
             val weather = uiState.weatherData
             val marine = uiState.marineData
 
-            if (weather != null && marine != null) {
+            // Wind is shown whenever weather is known, even where there is no
+            // sea. Requiring marine data here hid the wind at any location the
+            // marine API does not cover.
+            if (weather != null) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.padding(bottom = Brand.Spacing.section)
                 ) {
                     ConditionItem(icon = "wind", label = "Wind", value = "%.0f".format(weather.windSpeed), unit = "kn")
-                    ConditionItem(icon = "waves", label = "Swell", value = "%.1f".format(marine.waveHeight), unit = "m")
+                    ConditionItem(
+                        icon = "waves",
+                        label = "Swell",
+                        value = marine?.let { "%.1f".format(it.waveHeight) } ?: "—",
+                        unit = if (marine == null) "" else "m"
+                    )
                 }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
                     ConditionItem(icon = "direction", label = "Dir", value = compassDirection(weather.windDirection), unit = "")
-                    ConditionItem(icon = "timer", label = "Period", value = "%.0f".format(marine.wavePeriod), unit = "s")
+                    ConditionItem(
+                        icon = "timer",
+                        label = "Period",
+                        value = marine?.let { "%.0f".format(it.wavePeriod) } ?: "—",
+                        unit = if (marine == null) "" else "s"
+                    )
+                }
+                if (marine == null) {
+                    Text(
+                        text = "No swell data for this spot",
+                        style = Brand.Typography.caption,
+                        color = Brand.Colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = Brand.Spacing.item)
+                    )
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.padding(bottom = Brand.Spacing.section)) {
