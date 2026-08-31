@@ -39,3 +39,6 @@ APIKeys.swift
 *.keystore
 *.jks
 local.properties
+
+# Editor settings
+.vscode/
