@@ -17,6 +17,9 @@ final class AppState {
     /// Chosen once per refresh, not per render. These are drawn at random from
     /// a pool, and calling that from the view body re-rolled the line on every
     /// recomposition — the verdict copy visibly reshuffled while standing still.
+    /// This coordinate has no sea: neither marine nor tide data covers it.
+    var hasNoSea: Bool = false
+
     var personalityMessage: String = ""
     var loadingMessage: String = PersonalityCopy.loading()
     var isLoading:    Bool = false
@@ -92,18 +95,39 @@ final class AppState {
             // No marine data is reported as no marine data. The previous
             // neutral defaults (0m swell, 22°C) were not neutral — they are
             // near-ideal inputs, so a failed lookup INFLATED the verdict.
+            //
+            // "No sea at this coordinate" and "the lookup failed" are tracked
+            // apart, because only the first means this is not a dive spot.
             var marineData: MarineData?
+            var marineHasNoSea = false
             if let cached = await cache.cachedMarine(for: coord) {
                 marineData = cached
-            } else if let fetched = try? await marine.fetch(coordinate: coord) {
-                marineData = fetched
-                await cache.store(marine: fetched, for: coord)
             } else {
-                marineData = nil
+                do {
+                    let fetched = try await marine.fetch(coordinate: coord)
+                    marineData = fetched
+                    await cache.store(marine: fetched, for: coord)
+                } catch ServiceError.noMarineCoverage {
+                    marineHasNoSea = true
+                } catch {
+                    marineData = nil
+                }
             }
 
-            // Real predictions, or nil. There is no synthetic fallback.
-            let tideData    = await tides.fetch(coordinate: coord)
+            // Real predictions, or a reason there are none.
+            let tideLookup  = await tides.fetch(coordinate: coord)
+            let tideData: TideData? = {
+                if case .data(let d) = tideLookup { return d }
+                return nil
+            }()
+
+            // Neither the marine model nor any tide station covers this
+            // coordinate: it is not water. Saying GO here, from wind and moon
+            // alone, reads as a recommendation to dive 400km inland.
+            let noSea: Bool = {
+                if case .noCoverage = tideLookup { return marineHasNoSea }
+                return false
+            }()
             let solunarData = solunar.calculate(coordinate: coord)
             let score       = scorer.score(weather: weatherData,
                                            marine:  marineData,
@@ -115,6 +139,7 @@ final class AppState {
             self.tideData     = tideData
             self.solunarData  = solunarData
             self.diveScore    = score
+            self.hasNoSea     = noSea
             self.personalityMessage = PersonalityCopy.message(for: score.verdict)
             self.lastRefreshed = Date()
             self.isLoading    = false

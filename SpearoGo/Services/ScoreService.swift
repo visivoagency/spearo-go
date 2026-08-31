@@ -45,9 +45,12 @@ struct ScoreService {
         case 2..<2.5: score -= 6
         default:      score -= 9
         }
-        // Long-period swell is more manageable
-        if d.wavePeriod > 14 { score += 0.5 }
-        if d.wavePeriod < 6  { score -= 1 }
+        // Long-period swell is more manageable. Skipped when not reported: a
+        // missing period is not a short one.
+        if let period = d.wavePeriod {
+            if period > 14 { score += 0.5 }
+            if period < 6  { score -= 1 }
+        }
         // Water temp: optimal 18–28°C
         if d.seaSurfaceTemp < 12 { score -= 1 }
         if d.seaSurfaceTemp > 30 { score -= 0.5 }

@@ -61,8 +61,8 @@ fun ConditionsPage(uiState: AppUiState) {
                     ConditionItem(
                         icon = "timer",
                         label = "Period",
-                        value = marine?.let { "%.0f".format(it.wavePeriod) } ?: "—",
-                        unit = if (marine == null) "" else "s"
+                        value = marine?.wavePeriod?.let { "%.0f".format(it) } ?: "—",
+                        unit = if (marine?.wavePeriod == null) "" else "s"
                     )
                 }
                 if (marine == null) {

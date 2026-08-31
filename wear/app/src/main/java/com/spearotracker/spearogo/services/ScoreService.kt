@@ -52,8 +52,12 @@ class ScoreService @Inject constructor() {
             else -> 9.0
         }
         // Long-period swell is more manageable
-        if (d.wavePeriod > 14) score += 0.5
-        if (d.wavePeriod < 6) score -= 1
+        // Long-period swell is more manageable. Skipped when not reported: a
+        // missing period is not a short one.
+        d.wavePeriod?.let { p ->
+            if (p > 14) score += 0.5
+            if (p < 6) score -= 1
+        }
         // Water temp: optimal 18-28
         if (d.seaSurfaceTemp < 12) score -= 1
         if (d.seaSurfaceTemp > 30) score -= 0.5

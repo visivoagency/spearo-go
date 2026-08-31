@@ -2,11 +2,15 @@
 
 ## Open
 
-### A landlocked spot still gets a dive verdict
-With marine and tides both correctly reporting nothing, the verdict is computed
-from weather and solunar alone — so Queidersbach, 400 km inland, still reads
-"GO". Honest arithmetic, questionable product. Decide whether a location with no
-marine coverage should get a verdict at all, or say "no sea here".
+### Release blockers
+See `docs/RELEASE-READINESS.md`. Three: enable the Firestore TTL policies
+(`gcloud` was unavailable when the backend was deployed), update the Play Data
+Safety and App Store privacy answers now that location reaches a Spearo server,
+and set the WorldTides daily ceiling against the real credit balance.
+
+### ~~A landlocked spot still gets a dive verdict~~ — fixed 2026-08-31
+Now says "No sea here" when both marine and tide report no coverage — which is
+distinguished from a failed lookup, so a transient outage never triggers it.
 
 ### Watch install is blocked by wireless debugging dropping
 The Galaxy Watch turns wireless debugging off whenever the screen sleeps, which
@@ -20,10 +24,9 @@ currently verified by running the shipping code standalone. The tide spec (§4)
 requires the same golden fixture in both languages, so this has to be built
 before that lands.
 
-### Store listings still claim offline tides
-`README.md`, `docs/APP_STORE_METADATA.md` and `docs/GOOGLE_PLAY_METADATA.md` all
-advertise "offline tide calculations". Solunar remains genuinely offline; tides
-no longer are, and right now are absent. Must be rewritten before submission.
+### ~~Store listings still claim offline tides~~ — fixed 2026-08-31
+Rewritten. Tides are described as NOAA/WorldTides gauges, and the privacy
+paragraph now matches what the backend actually does.
 
 ### MAYBE changed colour
 Adopting Vision's card styling brought its colour semantics: MAYBE moved from

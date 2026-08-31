@@ -11,6 +11,14 @@ import CoreLocation
 ///
 /// There is no synthetic fallback. When there is nothing to show, this returns
 /// nil and the UI says so.
+/// Why there are no tides, when there are none. A coordinate with no sea is a
+/// settled fact; a failed lookup is not, and the two must not read alike.
+enum TideLookup {
+    case data(TideData)
+    case noCoverage
+    case unavailable
+}
+
 struct TideService {
     private let store = TideStore()
 
@@ -25,11 +33,14 @@ struct TideService {
     ///
     /// Order of resort: cached day, then a network fetch covering a week, then
     /// a stale cached day flagged as such, then nil.
-    func fetch(coordinate: CLLocationCoordinate2D) async -> TideData? {
+    func fetch(coordinate: CLLocationCoordinate2D) async -> TideLookup {
         let today = Self.dayKey(for: Date(), utcOffsetSeconds: 0)
 
         if let cached = store.fresh(coordinate: coordinate, date: today) {
-            return cached
+            return .data(cached)
+        }
+        if store.knownWithoutCoverage(coordinate: coordinate) {
+            return .noCoverage
         }
 
         do {
@@ -40,8 +51,9 @@ struct TideService {
                 // asking; a transient failure is not, and falls through below.
                 if response.reason == "outside_coverage" {
                     store.rememberNoCoverage(coordinate: coordinate)
+                    return .noCoverage
                 }
-                return nil
+                return .unavailable
             }
 
             let offset = response.utcOffsetSeconds ?? 0
@@ -50,14 +62,17 @@ struct TideService {
                 return TideData(
                     date: date,
                     events: (day.extremes ?? []).compactMap { e in
-                        guard let t = e.t else { return nil }
+                        // 0m is a real chart-datum height, so a missing one
+                        // must be dropped rather than floored into a plausible
+                        // reading.
+                        guard let t = e.t, let height = e.height else { return nil }
                         return TideEvent(timeSeconds: t,
                                          type: e.type?.lowercased() == "high" ? .high : .low,
-                                         height: e.height ?? 0)
+                                         height: height)
                     },
                     heights: (day.heights ?? []).compactMap { h in
-                        guard let t = h.t else { return nil }
-                        return TideHeight(timeSeconds: t, height: h.height ?? 0)
+                        guard let t = h.t, let height = h.height else { return nil }
+                        return TideHeight(timeSeconds: t, height: height)
                     },
                     stationName: response.station,
                     provenance: response.provenance,
@@ -70,12 +85,17 @@ struct TideService {
             // are free.
             store.save(coordinate: coordinate, days: parsed)
             let localToday = Self.dayKey(for: Date(), utcOffsetSeconds: offset)
-            return parsed.first { $0.date == localToday } ?? parsed.first
+            guard let today = parsed.first(where: { $0.date == localToday }) ?? parsed.first else {
+                return .unavailable
+            }
+            return .data(today)
         } catch {
             // Deliberately not cached as unavailable: an outage must not stick.
-            guard var stale = store.stale(coordinate: coordinate, date: today) else { return nil }
+            guard var stale = store.stale(coordinate: coordinate, date: today) else {
+                return .unavailable
+            }
             stale.isStale = true
-            return stale
+            return .data(stale)
         }
     }
 

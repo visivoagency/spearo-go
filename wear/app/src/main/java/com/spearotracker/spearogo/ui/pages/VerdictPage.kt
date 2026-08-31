@@ -81,6 +81,31 @@ fun VerdictPage(
                 }
             }
 
+            uiState.hasNoSea -> {
+                // Not a failure and not a bad day - there is no water here. A
+                // verdict computed from wind and moon alone would read as a
+                // recommendation to dive.
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(Brand.Spacing.page)
+                ) {
+                    Text(
+                        text = "No sea here",
+                        style = Brand.Typography.dataValue,
+                        color = Brand.Colors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(Brand.Spacing.item))
+                    Text(
+                        text = "No marine or tide data covers this spot. Save a dive spot on the coast.",
+                        style = Brand.Typography.caption,
+                        color = Brand.Colors.textSecondary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
             uiState.diveScore != null -> {
                 val score = uiState.diveScore
                 Column(

@@ -47,6 +47,17 @@ const TIDES_DAILY_CALL_CEILING = 300;
 // A day of tides does not change. NOAA and WorldTides are both predictions.
 const TIDES_CACHE_HOURS = 24;
 
+// Retention. Every collection this function writes carries an `expiresAt`, and
+// each has a Firestore TTL policy configured on that field:
+//
+//   gcloud firestore fields ttls update expiresAt \
+//     --collection-group=tides_cache --enable-ttl --project=spearo-tracker
+//   (likewise tides_rate and tides_budget)
+//
+// Nothing here is linked to a person — no accounts, no identifiers — but a
+// rounded coordinate and a hashed IP should still not sit around indefinitely,
+// and the privacy disclosure promises 24 hours.
+
 // The NOAA station list is ~3,000 entries and changes rarely. Held per warm
 // instance so a cold start pays for it at most once a day.
 let noaaStationCache = { fetchedAt: 0, stations: null };
@@ -77,7 +88,14 @@ async function withinRateLimit(ipHash) {
       const data = snap.exists ? snap.data() : null;
       const count = data && data.windowStart === hourStart ? data.count : 0;
       if (count >= TIDES_RATE_LIMIT) return false;
-      tx.set(ref, { windowStart: hourStart, count: count + 1 }, { merge: true });
+      // expiresAt drives a Firestore TTL policy. Without it these documents —
+      // one per caller IP hash — accumulate forever, which is both unbounded
+      // storage and an indefinite retention of something derived from an IP.
+      tx.set(ref, {
+        windowStart: hourStart,
+        count: count + 1,
+        expiresAt: Timestamp.fromMillis(hourStart + 2 * 3600000),
+      }, { merge: true });
       return true;
     });
   } catch (e) {
@@ -95,7 +113,11 @@ async function reserveMeteredCall() {
       const snap = await tx.get(ref);
       const used = snap.exists ? snap.data().calls || 0 : 0;
       if (used >= TIDES_DAILY_CALL_CEILING) return false;
-      tx.set(ref, { calls: used + 1, day }, { merge: true });
+      tx.set(ref, {
+        calls: used + 1,
+        day,
+        expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+      }, { merge: true });
       return true;
     });
   } catch (e) {

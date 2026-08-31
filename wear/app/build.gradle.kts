@@ -24,8 +24,8 @@ android {
         // (Handheld apps need 36; Wear OS and Automotive are carved out at 35.)
         targetSdk = 35
         manifestPlaceholders["appLabel"] = "@string/app_name"
-        versionCode = 14
-        versionName = "2.0.10"
+        versionCode = 15
+        versionName = "2.1.0"
     }
 
     signingConfigs {

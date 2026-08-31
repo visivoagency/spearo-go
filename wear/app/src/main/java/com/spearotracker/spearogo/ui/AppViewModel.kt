@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 import com.spearotracker.spearogo.utils.PersonalityCopy
+import com.spearotracker.spearogo.services.NoMarineCoverageException
+import com.spearotracker.spearogo.services.TideLookup
 
 data class AppUiState(
     val weatherData: WeatherData? = null,
@@ -25,6 +27,8 @@ data class AppUiState(
     // Chosen once per refresh, not per render. These are drawn at random from a
     // pool, and calling that from a composable re-rolled the line on every
     // recomposition - the verdict copy visibly reshuffled while standing still.
+    /** This coordinate has no sea: neither marine nor tide data covers it. */
+    val hasNoSea: Boolean = false,
     val personalityMessage: String = "",
     val loadingMessage: String = "",
     val isLoading: Boolean = false,
@@ -139,21 +143,34 @@ class AppViewModel @Inject constructor(
                 // No marine data is reported as no marine data. The previous
                 // neutral defaults (0m swell, 22C) were not neutral - they are
                 // near-ideal inputs, so a failed lookup INFLATED the verdict.
+                // "No sea at this coordinate" and "the lookup failed" are
+                // tracked apart, because only the first means this is not a
+                // dive spot.
+                var marineHasNoSea = false
                 val marineData: MarineData? = cacheService.cachedMarine(lat, lon)
                     ?: try {
                         marineService.fetch(lat, lon).also {
                             cacheService.storeMarine(it, lat, lon)
                         }
+                    } catch (e: NoMarineCoverageException) {
+                        marineHasNoSea = true
+                        null
                     } catch (e: Exception) {
                         null
                     }
 
-                // Real predictions, or null. There is no synthetic fallback.
-                val tideData = try {
+                // Real predictions, or a reason there are none.
+                val tideLookup = try {
                     tideService.fetch(lat, lon)
                 } catch (e: Exception) {
-                    null
+                    TideLookup.Unavailable
                 }
+                val tideData = (tideLookup as? TideLookup.Found)?.data
+
+                // Neither the marine model nor any tide station covers this
+                // coordinate: it is not water. Saying GO here, from wind and
+                // moon alone, reads as a recommendation to dive 400km inland.
+                val noSea = marineHasNoSea && tideLookup is TideLookup.NoCoverage
                 val solunarData = solunarService.calculate(lat, lon)
                 val score = scoreService.score(weatherData, marineData, tideData, solunarData)
                 val personality = PersonalityCopy.message(score.verdict)
@@ -165,6 +182,7 @@ class AppViewModel @Inject constructor(
                     solunarData = solunarData,
                     diveScore = score,
                     personalityMessage = personality,
+                    hasNoSea = noSea,
                     isLoading = false,
                     lastRefreshed = System.currentTimeMillis(),
                     isUsingFallbackLocation = usingFallback,

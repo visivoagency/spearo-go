@@ -65,6 +65,12 @@ class TideStore @Inject constructor(
         return entry.days.firstOrNull { it.date == date }
     }
 
+    /** Whether this coordinate is already known to have no sea. */
+    fun knownWithoutCoverage(latitude: Double, longitude: Double): Boolean {
+        val entry = read(latitude, longitude) ?: return false
+        return entry.noCoverage && isFresh(entry)
+    }
+
     fun save(latitude: Double, longitude: Double, days: List<TideData>) {
         val today = java.time.LocalDate.now().toString()
         val kept = days.filter { it.date >= today }

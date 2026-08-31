@@ -61,8 +61,8 @@ class MarineService @Inject constructor() {
 
         return MarineData(
             waveHeight = height,
-            wavePeriod = current.wave_period ?: 0.0,
-            waveDirection = current.wave_direction ?: 0.0,
+            wavePeriod = current.wave_period,
+            waveDirection = current.wave_direction,
             seaSurfaceTemp = temp
         )
     }
