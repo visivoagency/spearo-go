@@ -61,5 +61,20 @@ live in `wear/app/src/test/`. Swift has no test target yet.
 
 ## Firebase
 
-The project is shared with three other Spearo apps. Deploy functions **by name**
-(`firebase deploy --only functions:<name>`) and never `--force` an index.
+The project (`spearo-tracker`) is shared with three other Spearo apps.
+
+Go's functions live in `functions/` under their **own codebase**, `spearogo`.
+Spearo Vision owns `default`. This is not cosmetic: two repos deploying the same
+codebase would delete each other's functions. Deploy naming both:
+
+```
+firebase deploy --only functions:spearogo:tidesGo
+```
+
+Go's `firebase.json` deliberately declares **no Firestore config**. Rules live in
+Spearo-Empire and indexes in Vision; both describe the whole project, so
+deploying either from here would rewrite access control for every other app.
+Never `--force` an index.
+
+`tidesGo` is the tide backend. It owns the NOAA-vs-WorldTides decision so the
+two clients do not have to — see the two-languages rule above.

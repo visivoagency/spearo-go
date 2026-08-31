@@ -4,7 +4,78 @@ Where Spearo Go stands. Newest first.
 
 ---
 
-## 2026-08-31 — Fabricated data removed, weather page added
+## 2026-08-31 (later) — Real tide predictions, end to end
+
+The tide model was deleted earlier in the day. This is what replaced it.
+
+### What changed
+
+**`tidesGo` backend**, in `functions/`, deployed to the shared `spearo-tracker`
+project. NOAA CO-OPS where it reaches (free, gauge-based), WorldTides
+everywhere else, and an honest `outside_coverage` where neither answers.
+
+The NOAA and WorldTides logic is **ported from Spearo Vision's**
+`lib/services/tide_service.dart`, but lands server-side rather than in the
+clients. Vision makes that decision in its Dart client; Go has two clients, and
+copying a station list and event assembly into Swift *and* Kotlin is exactly how
+Go's two `TideService` files came to hold the same defect twice.
+
+**Both clients wired.** They fetch, cache a week, and render. The only tide
+logic left in them is the derivation that genuinely cannot be precomputed —
+which tide is next, whether the water is rising, the height right now — because
+a week is cached and "next" changes by the minute.
+
+**Provenance reaches the screen.** A named gauge, an ocean-model estimate and a
+saved forecast read differently, because the grid model is materially weaker in
+the inlets these users dive.
+
+**Last fabrication removed:** `RefreshWorker` still built a flat-calm 22 °C sea
+on a failed background lookup.
+
+### Verified
+
+Live against the deployed endpoint:
+
+| Query | Result |
+|---|---|
+| Lagos, Portugal | `station: "Lagos"`, gauge, datum CD, UTC+1, 7 days |
+| New York | `source: noaa`, "NEW YORK (The Battery)", MLLW — never billed |
+| Queidersbach (landlocked) | `outside_coverage` |
+| `lat=999` | HTTP 400 |
+
+**The customer's report, resolved.** He saw a LOW at 04:49 and a HIGH at 11:00.
+The Lagos gauge reads a HIGH at **04:50** and a LOW at **10:49**. The synthetic
+model was landing within a minute on timing with high and low **inverted** —
+divers were being sent in at the wrong end of the tide.
+
+27 tests pass: 15 on the function, 12 on Kotlin (8 of them pinning the
+derivation against that real Lagos day, including the inversion case).
+
+**Not verified on-device.** The watch is landlocked, so it correctly shows "no
+tide data"; and its wireless debugging drops whenever the screen sleeps, which
+blocked the last install. To see real gauge data on the watch, save a coastal
+spot (long-press the verdict page).
+
+### Deploying
+
+```
+firebase deploy --only functions:spearogo:tidesGo
+```
+
+Note the codebase in the filter. Go owns `spearogo`; Vision owns `default`. Two
+repos deploying one codebase would delete each other's functions.
+
+### Pick up here
+
+1. **Reply to the Lagos customer.** Vision's
+   `docs/CUSTOMER-REPLY-alejandro-tides.md` is the template. The inversion
+   finding is worth telling him — he was more right than he knew.
+2. **Store listings** still advertise offline tides. See BACKLOG.
+3. **Decide the landlocked case** — see BACKLOG.
+
+---
+
+## 2026-08-31 (earlier) — Fabricated data removed, weather page added
 
 Triggered by a customer in Lagos, Portugal reporting tide times that matched no
 real sequence. Investigation found the tide model was not the only invented
