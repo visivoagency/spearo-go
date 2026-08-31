@@ -69,9 +69,10 @@ struct TodayPage: View {
     // MARK: - Screen 2 — rain, cloud, and daylight
 
     private var skyScreen: some View {
-        VStack(spacing: Brand.Spacing.section) {
+        VStack(spacing: Brand.Spacing.item) {
             Text("Sky")
                 .brandSectionHeader()
+                .padding(.top, Brand.Spacing.section)
 
             if let weather = appState.weatherData {
                 HStack(spacing: 20) {
@@ -84,20 +85,22 @@ struct TodayPage: View {
                                   value: weather.cloudCover.map(String.init) ?? "—",
                                   unit: weather.cloudCover == nil ? "" : "%")
                 }
+                .padding(.bottom, Brand.Spacing.section)
             }
 
-            if let solunar = appState.solunarData,
-               let sunrise = solunar.sunrise, let sunset = solunar.sunset {
-                Text("☀️ \(timeString(sunrise))   🌙 \(timeString(sunset))")
-                    .captionStyle()
-                    .lineLimit(1)
-                    .accessibilityLabel("Sunrise \(timeString(sunrise)), sunset \(timeString(sunset))")
-            } else {
-                // The Sun genuinely does not rise or set on some days at high
-                // latitude. Say so rather than leaving a blank.
-                Text("No sunrise or sunset today")
-                    .captionStyle()
-                    .multilineTextAlignment(.center)
+            // Daylight uses the same ConditionItem treatment as every other
+            // reading, rather than a smaller caption line. The Sun genuinely
+            // does not rise or set on some days at high latitude, and "—" says
+            // that in the same way a missing swell reading does.
+            HStack(spacing: 20) {
+                ConditionItem(icon: "sunrise",
+                              label: "Rise",
+                              value: appState.solunarData?.sunrise.map(timeString) ?? "—",
+                              unit: "")
+                ConditionItem(icon: "sunset",
+                              label: "Set",
+                              value: appState.solunarData?.sunset.map(timeString) ?? "—",
+                              unit: "")
             }
         }
         .padding(.horizontal, Brand.Spacing.page)

@@ -101,10 +101,13 @@ fun TodayPage(uiState: AppUiState) {
                     text = "SKY",
                     style = Brand.Typography.sectionHeader,
                     color = Brand.Colors.textSecondary,
-                    modifier = Modifier.padding(bottom = Brand.Spacing.section)
+                    modifier = Modifier.padding(bottom = Brand.Spacing.item)
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.padding(bottom = Brand.Spacing.section)
+                ) {
                     ConditionItem(
                         icon = "rain",
                         label = "Rain",
@@ -119,23 +122,26 @@ fun TodayPage(uiState: AppUiState) {
                     )
                 }
 
+                // Daylight uses the same ConditionItem treatment as every other
+                // reading, rather than a smaller caption line. The Sun genuinely
+                // does not rise or set on some days at high latitude, and "—"
+                // says that in the same way a missing swell reading does.
                 val sunrise = uiState.solunarData?.sunrise
                 val sunset = uiState.solunarData?.sunset
-                Text(
-                    text = if (sunrise != null && sunset != null) {
-                        "☀️ ${timeFormat.format(Date(sunrise))}   " +
-                            "🌙 ${timeFormat.format(Date(sunset))}"
-                    } else {
-                        // The Sun genuinely does not rise or set on some days at
-                        // high latitude. Say so rather than leave a blank.
-                        "No sunrise or sunset today"
-                    },
-                    style = Brand.Typography.caption,
-                    color = Brand.Colors.textSecondary,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    modifier = Modifier.padding(top = Brand.Spacing.section)
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    ConditionItem(
+                        icon = "sun",
+                        label = "Rise",
+                        value = sunrise?.let { timeFormat.format(Date(it)) } ?: "—",
+                        unit = ""
+                    )
+                    ConditionItem(
+                        icon = "moon",
+                        label = "Set",
+                        value = sunset?.let { timeFormat.format(Date(it)) } ?: "—",
+                        unit = ""
+                    )
+                }
             }
         }
     }
