@@ -13,18 +13,17 @@ struct TodayPage: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                nowScreen
-                    .containerRelativeFrame(.vertical)
-
-                if appState.weatherData != nil {
-                    skyScreen
-                        .containerRelativeFrame(.vertical)
-                }
-            }
+        // A paged TabView, not a ScrollView. A free scroll comes to rest
+        // anywhere, which put the header under the status bar and left half a
+        // row hanging off the bottom. Vertical paging always lands square, and
+        // is the same gesture Apple's own Weather app uses on the watch.
+        TabView {
+            nowScreen
+                .brandPage()
+            skyScreen
+                .brandPage()
         }
-        .brandPage()
+        .tabViewStyle(.verticalPage)
     }
 
     // MARK: - Screen 1 — what it is doing right now
@@ -33,6 +32,7 @@ struct TodayPage: View {
         VStack(spacing: Brand.Spacing.item) {
             Text("Today")
                 .brandSectionHeader()
+                .padding(.top, Brand.Spacing.section)
 
             if let weather = appState.weatherData {
                 if let condition = weather.conditionLabel {
