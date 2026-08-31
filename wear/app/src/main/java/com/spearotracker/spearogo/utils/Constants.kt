@@ -11,6 +11,10 @@ object Constants {
     object Api {
         const val WEATHER_BASE = "https://api.open-meteo.com/"
         const val MARINE_BASE = "https://marine-api.open-meteo.com/"
+
+        // Cloud Functions for Spearo Go, deployed under the `spearogo` codebase
+        // of the shared spearo-tracker project. See spearo-go/functions.
+        const val FUNCTIONS_BASE = "https://us-central1-spearo-tracker.cloudfunctions.net/"
     }
 
     object App {

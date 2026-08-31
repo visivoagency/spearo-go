@@ -58,6 +58,7 @@ SOURCES = [
     ("WeatherService.swift",   "Services/WeatherService.swift",   False),
     ("MarineService.swift",    "Services/MarineService.swift",    False),
     ("TideService.swift",      "Services/TideService.swift",      False),
+    ("TideStore.swift",        "Services/TideStore.swift",        False),
     ("SolunarService.swift",   "Services/SolunarService.swift",   False),
     ("LocationService.swift",  "Services/LocationService.swift",  False),
     ("ScoreService.swift",     "Services/ScoreService.swift",     False),

@@ -60,7 +60,7 @@ class ScoreService @Inject constructor() {
         return max(0.0, min(10.0, score))
     }
 
-    private fun tideScore(d: TideData): Double = when (d.phase) {
+    private fun tideScore(d: TideData): Double = when (d.phase()) {
         TidePhase.SLACK -> 9.0
         TidePhase.FLOOD -> 7.5
         TidePhase.EBB -> 6.0

@@ -47,13 +47,20 @@ class RefreshWorker @AssistedInject constructor(
                 weatherService.fetch(lat, lon).also { cacheService.storeWeather(it, lat, lon) }
             } catch (e: Exception) { return Result.retry() }
 
-            val marine = try {
+            // Background refresh warms the caches. A failed marine lookup is
+            // left as nothing - the fabricated flat-calm defaults that used to
+            // sit here are the same defect the foreground path had.
+            try {
                 marineService.fetch(lat, lon).also { cacheService.storeMarine(it, lat, lon) }
             } catch (e: Exception) {
-                com.spearotracker.spearogo.models.MarineData(0.0, 10.0, 0.0, 22.0)
+                null
             }
 
-            tideService.calculate(lat, lon)
+            try {
+                tideService.fetch(lat, lon)
+            } catch (e: Exception) {
+                null
+            }
             solunarService.calculate(lat, lon)
 
             Result.success()

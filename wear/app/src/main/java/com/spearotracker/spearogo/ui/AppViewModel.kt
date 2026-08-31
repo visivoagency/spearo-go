@@ -148,7 +148,12 @@ class AppViewModel @Inject constructor(
                         null
                     }
 
-                val tideData = tideService.calculate(lat, lon)
+                // Real predictions, or null. There is no synthetic fallback.
+                val tideData = try {
+                    tideService.fetch(lat, lon)
+                } catch (e: Exception) {
+                    null
+                }
                 val solunarData = solunarService.calculate(lat, lon)
                 val score = scoreService.score(weatherData, marineData, tideData, solunarData)
                 val personality = PersonalityCopy.message(score.verdict)

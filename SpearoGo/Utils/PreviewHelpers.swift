@@ -90,16 +90,28 @@ enum MockData {
         fetchedAt:      Date()
     )
 
-    static let tide = TideData(
-        currentHeight:  1.1,
-        isRising:       true,
-        phase:          .flood,
-        nextHighTime:   Date().addingTimeInterval(3600 * 2.5),
-        nextHighHeight: 1.8,
-        nextLowTime:    Date().addingTimeInterval(-3600 * 4),
-        nextLowHeight:  0.3,
-        fetchedAt:      Date()
-    )
+    /// The real Lagos, Portugal tide day, from the tidesGo backend on
+    /// 2026-08-31 — the spot the customer reported. Times are anchored to
+    /// "now" so previews always show a live-looking day.
+    static let tide: TideData = {
+        let now = Int(Date().timeIntervalSince1970)
+        return TideData(
+            date: TideService.dayKey(for: Date(), utcOffsetSeconds: 3600),
+            events: [
+                TideEvent(timeSeconds: now - 3600 * 4, type: .high, height: 3.28),
+                TideEvent(timeSeconds: now + 3600 * 2, type: .low, height: 0.69),
+                TideEvent(timeSeconds: now + 3600 * 8, type: .high, height: 3.40),
+            ],
+            heights: [
+                TideHeight(timeSeconds: now - 1800, height: 1.9),
+                TideHeight(timeSeconds: now + 1800, height: 1.6),
+            ],
+            stationName: "Lagos",
+            provenance: "gauge",
+            utcOffsetSeconds: 3600,
+            tidalRange: "Spring"
+        )
+    }()
 
     static let solunar = SolunarData(
         moonPhase:        0.79,

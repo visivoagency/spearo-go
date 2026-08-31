@@ -53,12 +53,12 @@ fun TidesPage(uiState: AppUiState) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = "HIGH", style = Brand.Typography.itemLabel, color = Brand.Colors.textSecondary)
                     Text(
-                        text = timeFormat.format(Date(tide.nextHighTime)),
+                        text = tide.nextHigh()?.let { timeFormat.format(Date(it.timeSeconds * 1000)) } ?: "—",
                         style = Brand.Typography.timeDisplay,
                         color = Brand.Colors.textPrimary
                     )
                     Text(
-                        text = "%.1fm".format(tide.nextHighHeight),
+                        text = tide.nextHigh()?.let { "%.1fm".format(it.height) } ?: "",
                         style = Brand.Typography.caption,
                         color = Brand.Colors.secondary
                     )
@@ -79,12 +79,12 @@ fun TidesPage(uiState: AppUiState) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = "LOW", style = Brand.Typography.itemLabel, color = Brand.Colors.textSecondary)
                     Text(
-                        text = timeFormat.format(Date(tide.nextLowTime)),
+                        text = tide.nextLow()?.let { timeFormat.format(Date(it.timeSeconds * 1000)) } ?: "—",
                         style = Brand.Typography.timeDisplay,
                         color = Brand.Colors.textPrimary
                     )
                     Text(
-                        text = "%.1fm".format(tide.nextLowHeight),
+                        text = tide.nextLow()?.let { "%.1fm".format(it.height) } ?: "",
                         style = Brand.Typography.caption,
                         color = Brand.Colors.secondary
                     )
@@ -108,18 +108,18 @@ fun TidesPage(uiState: AppUiState) {
                 horizontalArrangement = Arrangement.spacedBy(Brand.Spacing.item)
             ) {
                 Text(
-                    text = if (tide.isRising) "\u2191" else "\u2193",
+                    text = if (tide.isRising()) "\u2191" else "\u2193",
                     style = Brand.Typography.dataValue,
-                    color = if (tide.isRising) Brand.Colors.maybe else Brand.Colors.primary
+                    color = if (tide.isRising()) Brand.Colors.maybe else Brand.Colors.primary
                 )
                 Column {
                     Text(
-                        text = if (tide.isRising) "Incoming" else "Outgoing",
+                        text = if (tide.isRising()) "Incoming" else "Outgoing",
                         style = Brand.Typography.personalityCopy,
                         color = Brand.Colors.textPrimary
                     )
                     Text(
-                        text = tide.phase.label,
+                        text = tide.phase().label,
                         style = Brand.Typography.caption,
                         color = Brand.Colors.textSecondary
                     )
@@ -128,10 +128,35 @@ fun TidesPage(uiState: AppUiState) {
 
             Spacer(modifier = Modifier.height(Brand.Spacing.item))
 
-            // Current height
+            // Current height. Null when the day's hourly readings do not
+            // bracket this moment — shown as "—" rather than guessed.
             Row(horizontalArrangement = Arrangement.spacedBy(Brand.Spacing.micro)) {
                 Text(text = "Now", style = Brand.Typography.itemLabel, color = Brand.Colors.textSecondary)
-                Text(text = "%.1fm".format(tide.currentHeight), style = Brand.Typography.caption, color = Brand.Colors.secondary)
+                Text(
+                    text = tide.currentHeight()?.let { "%.1fm".format(it) } ?: "—",
+                    style = Brand.Typography.caption,
+                    color = Brand.Colors.secondary
+                )
+            }
+
+            // Where the numbers came from. A named gauge and an ocean-model
+            // estimate must never read as equally trustworthy: the model is
+            // materially weaker in the estuaries and inlets these users dive.
+            val source = when {
+                tide.isStale -> "Saved forecast"
+                tide.isModelEstimate -> "Estimated \u00b7 no nearby gauge"
+                tide.stationName != null -> tide.stationName
+                else -> null
+            }
+            source?.let {
+                Spacer(modifier = Modifier.height(Brand.Spacing.micro))
+                Text(
+                    text = it,
+                    style = Brand.Typography.caption,
+                    color = Brand.Colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
             }
         } else if (uiState.isLoading) {
             Text(

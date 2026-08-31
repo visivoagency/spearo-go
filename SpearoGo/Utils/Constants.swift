@@ -19,6 +19,10 @@ enum Constants {
     enum API {
         static let weatherBase = "https://api.open-meteo.com/v1/forecast"
         static let marineBase  = "https://marine-api.open-meteo.com/v1/marine"
+
+        // Cloud Functions for Spearo Go, deployed under the `spearogo` codebase
+        // of the shared spearo-tracker project. See spearo-go/functions.
+        static let tidesBase   = "https://us-central1-spearo-tracker.cloudfunctions.net/tidesGo"
     }
 
     // MARK: - App info
