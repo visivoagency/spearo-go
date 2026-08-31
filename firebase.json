@@ -1,0 +1,11 @@
+{
+  "_comment": "Functions ONLY. All Spearo apps share the spearo-tracker project. Firestore rules live in Spearo-Empire and indexes in Spearo Vision; deploying either from here would silently rewrite access control for every other app, so neither is configured. Note the codebase name: it is deliberately NOT 'default', which Vision owns. Two repos deploying the same codebase would delete each other's functions.",
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "spearogo",
+      "ignore": ["node_modules", ".git", "test"],
+      "predeploy": []
+    }
+  ]
+}

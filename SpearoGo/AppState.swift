@@ -102,7 +102,8 @@ final class AppState {
                 marineData = nil
             }
 
-            let tideData    = tides.calculate(coordinate: coord)   // nil until tidesGo lands
+            // Real predictions, or nil. There is no synthetic fallback.
+            let tideData    = await tides.fetch(coordinate: coord)
             let solunarData = solunar.calculate(coordinate: coord)
             let score       = scorer.score(weather: weatherData,
                                            marine:  marineData,
