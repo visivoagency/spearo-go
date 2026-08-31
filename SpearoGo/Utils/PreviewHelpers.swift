@@ -74,6 +74,11 @@ enum MockData {
         windGusts:     18.0,
         visibility:    18.0,
         cloudCover:    20,
+        airTemp:       19.0,
+        tempMax:       23.0,
+        tempMin:       14.0,
+        precipitationChance: 10,
+        weatherCode:   2,
         fetchedAt:     Date()
     )
 

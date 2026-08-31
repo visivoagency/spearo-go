@@ -73,7 +73,7 @@ fun VerdictPage(
                     )
                     Spacer(modifier = Modifier.height(Brand.Spacing.item))
                     Text(
-                        text = PersonalityCopy.loading(),
+                        text = uiState.loadingMessage,
                         style = Brand.Typography.caption,
                         color = Brand.Colors.textSecondary,
                         textAlign = TextAlign.Center
@@ -97,7 +97,7 @@ fun VerdictPage(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = PersonalityCopy.message(score.verdict),
+                        text = uiState.personalityMessage,
                         style = Brand.Typography.personalityCopy,
                         color = Color.White.copy(alpha = 0.9f),
                         textAlign = TextAlign.Center,

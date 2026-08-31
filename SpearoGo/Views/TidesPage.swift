@@ -42,7 +42,7 @@ struct TidesPage: View {
                             .highlightCaptionStyle()
                     }
                     .accessibilityLabel(String(format: "Current tide height %.1f metres", tide.currentHeight))
-                } else {
+                } else if appState.isLoading {
                     // Shimmer skeleton
                     HStack(spacing: 16) {
                         TideEventSkeleton()
@@ -51,6 +51,15 @@ struct TidesPage: View {
                     }
                     SkeletonBlock(width: 120, height: 30)
                     .accessibilityLabel("Loading tide data")
+                } else {
+                    // Not a loading state. The synthetic tide model this page
+                    // used to draw was wrong everywhere on earth, so it was
+                    // removed rather than improved. Real predictions arrive
+                    // with the tidesGo backend.
+                    Text("No tide data for this spot yet")
+                        .captionStyle()
+                        .multilineTextAlignment(.center)
+                        .accessibilityLabel("No tide data for this spot yet")
                 }
             }
             .padding(Brand.Spacing.page)

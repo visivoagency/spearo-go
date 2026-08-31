@@ -3,10 +3,10 @@ import Foundation
 struct ScoreService {
     // MARK: - Public interface
 
-    func score(weather: WeatherData, marine: MarineData?, tide: TideData, solunar: SolunarData) -> DiveScore {
+    func score(weather: WeatherData, marine: MarineData?, tide: TideData?, solunar: SolunarData) -> DiveScore {
         let w = weatherScore(weather)
         let m = marine.map(marineScore)
-        let t = tideScore(tide)
+        let t = tide.map(tideScore)
         let s = solunarScore(solunar)
         return DiveScore.calculate(weather: w, marine: m, tides: t, solunar: s)
     }
@@ -25,9 +25,12 @@ struct ScoreService {
         }
         // Gust penalty
         if d.windGusts > d.windSpeed + 10 { score -= 1 }
-        // Visibility bonus/penalty
-        if d.visibility < 5  { score -= 2 }
-        if d.visibility > 15 { score += 0.5 }
+        // Visibility bonus/penalty — skipped entirely when not reported, rather
+        // than treated as a neutral value that could move the score.
+        if let visibility = d.visibility {
+            if visibility < 5  { score -= 2 }
+            if visibility > 15 { score += 0.5 }
+        }
         return max(0, min(10, score))
     }
 

@@ -18,6 +18,7 @@ import com.spearotracker.spearogo.ui.theme.Brand
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun TidesPage(uiState: AppUiState) {
@@ -132,11 +133,21 @@ fun TidesPage(uiState: AppUiState) {
                 Text(text = "Now", style = Brand.Typography.itemLabel, color = Brand.Colors.textSecondary)
                 Text(text = "%.1fm".format(tide.currentHeight), style = Brand.Typography.caption, color = Brand.Colors.secondary)
             }
-        } else {
+        } else if (uiState.isLoading) {
             Text(
                 text = "Loading tides...",
                 style = Brand.Typography.caption,
                 color = Brand.Colors.textSecondary
+            )
+        } else {
+            // Not a loading state. The synthetic tide model this page used to
+            // draw was wrong everywhere on earth, so it was removed rather than
+            // improved. Real predictions arrive with the tidesGo backend.
+            Text(
+                text = "No tide data for this spot yet",
+                style = Brand.Typography.caption,
+                color = Brand.Colors.textSecondary,
+                textAlign = TextAlign.Center
             )
         }
     }

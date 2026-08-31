@@ -37,7 +37,7 @@ fun SpearoGoWearApp(
             )
         } else {
             var showInfo by remember { mutableStateOf(false) }
-            val pagerState = rememberPagerState(pageCount = { 5 })
+            val pagerState = rememberPagerState(pageCount = { 6 })
 
             if (showInfo) {
                 InfoPage(onDismiss = { showInfo = false })
@@ -53,10 +53,11 @@ fun SpearoGoWearApp(
                             onInfoTap = { showInfo = true },
                             viewModel = viewModel
                         )
-                        1 -> ConditionsPage(uiState = uiState)
-                        2 -> WaterPage(uiState = uiState)
-                        3 -> TidesPage(uiState = uiState)
-                        4 -> FishActivityPage(uiState = uiState)
+                        1 -> TodayPage(uiState = uiState)
+                        2 -> ConditionsPage(uiState = uiState)
+                        3 -> WaterPage(uiState = uiState)
+                        4 -> TidesPage(uiState = uiState)
+                        5 -> FishActivityPage(uiState = uiState)
                     }
                 }
             }

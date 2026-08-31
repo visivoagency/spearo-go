@@ -13,6 +13,12 @@ final class AppState {
     var tideData:     TideData?
     var solunarData:  SolunarData?
     var diveScore:    DiveScore?
+
+    /// Chosen once per refresh, not per render. These are drawn at random from
+    /// a pool, and calling that from the view body re-rolled the line on every
+    /// recomposition — the verdict copy visibly reshuffled while standing still.
+    var personalityMessage: String = ""
+    var loadingMessage: String = PersonalityCopy.loading()
     var isLoading:    Bool = false
     var error:        Error?
 
@@ -66,6 +72,7 @@ final class AppState {
     // ── Refresh pipeline ──────────────────────────────────────────────────────
     func refresh() async {
         isLoading = true
+        loadingMessage = PersonalityCopy.loading()
         error = nil
         locationService.requestLocation()
 
@@ -95,7 +102,7 @@ final class AppState {
                 marineData = nil
             }
 
-            let tideData    = tides.calculate(coordinate: coord)
+            let tideData    = tides.calculate(coordinate: coord)   // nil until tidesGo lands
             let solunarData = solunar.calculate(coordinate: coord)
             let score       = scorer.score(weather: weatherData,
                                            marine:  marineData,
@@ -107,6 +114,7 @@ final class AppState {
             self.tideData     = tideData
             self.solunarData  = solunarData
             self.diveScore    = score
+            self.personalityMessage = PersonalityCopy.message(for: score.verdict)
             self.lastRefreshed = Date()
             self.isLoading    = false
 

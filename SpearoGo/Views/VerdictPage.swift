@@ -10,7 +10,7 @@ struct VerdictPage: View {
                 VStack(spacing: Brand.Spacing.item) {
                     ProgressView()
                         .tint(Brand.Colors.primary)
-                    Text(PersonalityCopy.loading())
+                    Text(appState.loadingMessage)
                         .captionStyle()
                         .multilineTextAlignment(.center)
                 }
@@ -21,7 +21,7 @@ struct VerdictPage: View {
                         .verdictStyle(color: .white)
                         .accessibilityLabel("Verdict: \(score.verdict.rawValue)")
 
-                    Text(PersonalityCopy.message(for: score.verdict))
+                    Text(appState.personalityMessage)
                         .personalityStyle()
                         .foregroundStyle(.white.opacity(0.9))
                         .padding(.horizontal, Brand.Spacing.item)

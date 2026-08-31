@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
+import com.spearotracker.spearogo.utils.PersonalityCopy
 
 data class AppUiState(
     val weatherData: WeatherData? = null,
@@ -21,6 +22,11 @@ data class AppUiState(
     val tideData: TideData? = null,
     val solunarData: SolunarData? = null,
     val diveScore: DiveScore? = null,
+    // Chosen once per refresh, not per render. These are drawn at random from a
+    // pool, and calling that from a composable re-rolled the line on every
+    // recomposition - the verdict copy visibly reshuffled while standing still.
+    val personalityMessage: String = "",
+    val loadingMessage: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
     val lastRefreshed: Long? = null,
@@ -87,7 +93,11 @@ class AppViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                loadingMessage = PersonalityCopy.loading()
+            )
 
             try {
                 // Determine coordinate
@@ -141,6 +151,7 @@ class AppViewModel @Inject constructor(
                 val tideData = tideService.calculate(lat, lon)
                 val solunarData = solunarService.calculate(lat, lon)
                 val score = scoreService.score(weatherData, marineData, tideData, solunarData)
+                val personality = PersonalityCopy.message(score.verdict)
 
                 _uiState.value = AppUiState(
                     weatherData = weatherData,
@@ -148,6 +159,7 @@ class AppViewModel @Inject constructor(
                     tideData = tideData,
                     solunarData = solunarData,
                     diveScore = score,
+                    personalityMessage = personality,
                     isLoading = false,
                     lastRefreshed = System.currentTimeMillis(),
                     isUsingFallbackLocation = usingFallback,

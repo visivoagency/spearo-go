@@ -41,6 +41,7 @@ SOURCES = [
     ("ConditionsPage.swift",   "Views/ConditionsPage.swift",      False),
     ("WaterPage.swift",        "Views/WaterPage.swift",           False),
     ("TidesPage.swift",        "Views/TidesPage.swift",           False),
+    ("TodayPage.swift",        "Views/TodayPage.swift",           False),
     ("FishActivityPage.swift", "Views/FishActivityPage.swift",    False),
     ("LocationsView.swift",    "Views/LocationsView.swift",       False),
     ("OnboardingView.swift",   "Views/OnboardingView.swift",      False),
