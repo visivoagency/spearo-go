@@ -1,0 +1,65 @@
+# Spearo Go — working notes
+
+Standalone dive-conditions app for Apple Watch (SwiftUI) and Wear OS (Kotlin /
+Compose). No account, no subscription.
+
+## The rule that matters most: never fabricate a reading
+
+This app shipped for months telling divers things that were not true — invented
+tide times, a 0 m sea at 20 °C wherever the marine API had no data, sunrise and
+sunset thirteen hours wrong. Every one of those looked exactly like a real
+measurement, which is what made them dangerous: a diver cannot tell a fabricated
+number from a measured one.
+
+So:
+
+- **Never coalesce a missing value into a plausible one.** `?? 0`, `?: 20.0` and
+  friends at a parse site turn absent data into a reading. If the API did not
+  say it, the app does not either.
+- **A 200 response is not evidence of data.** Open-Meteo Marine answers HTTP 200
+  with null fields for landlocked coordinates. Check the fields, not the status.
+- **"Neutral" defaults are not neutral.** 0 m swell and 22 °C water are
+  near-ideal inputs — a failed lookup using them *inflates* the verdict.
+- **Missing signals are dropped and the weights renormalised**, never scored as
+  average ones. `DiveScore.calculate` takes optionals; the verdict card names
+  what it could not see.
+- **Show "—" or say there is no data.** Never a shimmer that implies loading
+  forever.
+
+Spearo Vision learned this the same way, from a customer in Galicia. Its
+`lib/services/tide_service.dart` carries the same instruction: *"Do not
+reintroduce a fallback that fabricates."*
+
+## Two languages, one behaviour
+
+`SpearoGo/` (Swift) and `wear/` (Kotlin) are the same app twice. The two
+`TideService` files once contained the same defect in both, because a change was
+made to one and mirrored carelessly. **Change both together, and keep the type
+scale, weights and thresholds in lockstep.**
+
+Where logic can be centralised server-side instead of duplicated, prefer that —
+it is why the tide design puts the NOAA/WorldTides choice in a Cloud Function
+rather than in both clients.
+
+## Astronomy is testable — test it
+
+Solunar and tide maths must be checked against independently computed ground
+truth, not against itself. The existing fixtures (Queidersbach, 2026-08-31) came
+from a separate Meeus implementation and caught four real bugs. Kotlin tests
+live in `wear/app/src/test/`. Swift has no test target yet.
+
+## Building and sideloading
+
+- watchOS: `xcodebuild -project SpearoGo.xcodeproj -scheme "SpearoGo Watch App"`.
+  New source files must be added to `generate_xcodeproj.py`, then regenerate.
+- Wear: `./gradlew :app:assembleRelease` from `wear/`. Needs
+  `JAVA_HOME` — Android Studio's bundled JBR works.
+- **Sideloading to a real watch:** build with `-Psideload`. A locally built APK
+  can never update the Play install, because Play App Signing re-signs uploads
+  with a different key. The flag gives it its own application id so it installs
+  alongside, leaving the user's real app and its saved spots untouched.
+
+## Firebase
+
+The project is shared with three other Spearo apps. Deploy functions **by name**
+(`firebase deploy --only functions:<name>`) and never `--force` an index.

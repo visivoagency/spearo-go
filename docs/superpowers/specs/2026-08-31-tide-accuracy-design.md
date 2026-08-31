@@ -414,10 +414,9 @@ seconds apart). It should be stable for a given verdict and refresh.
 
 Neither blocks implementation; both block the golden fixture and the deploy.
 
-1. **WorldTides credit headroom.** Unknown at time of writing. The daily ceiling
-   in §3.2 is specified so the answer changes a config value, not the design.
-   Assumed default until confirmed: a conservative cap, with Go degrading to
-   `available:false` past it rather than spending without a floor.
+1. ~~**WorldTides credit headroom.**~~ **Closed 2026-08-31** — confirmed
+   available by the owner. The daily ceiling in §3.2 still ships, as a floor
+   under an open endpoint rather than as a workaround for a credit shortage.
 2. **Customer's screenshots and Instituto Hidrográfico comparison.** He offered
    both. They become the golden fixture in §4. Until they arrive the fixture is
    built from the published Lagos table directly, and the customer's own day is
