@@ -44,9 +44,13 @@ fun VerdictPage(
     // Full-bleed verdict colour with white type, matching Spearo Vision's dive
     // score card. Only once a score exists; loading and error states keep the
     // dark page so a colour never implies a verdict that isn't known yet.
-    val verdictBrush = uiState.diveScore?.let {
-        Brush.linearGradient(Brand.Colors.gradientForVerdict(it.verdict))
-    }
+    // Only when a verdict is actually being shown. "No sea here" still has a
+    // diveScore behind it - computed from weather and solunar - so keying the
+    // gradient off the score alone painted that screen GO green, which said the
+    // opposite of the words on it, and left grey body text on a green field.
+    val verdictBrush = uiState.diveScore
+        ?.takeUnless { uiState.hasNoSea }
+        ?.let { Brush.linearGradient(Brand.Colors.gradientForVerdict(it.verdict)) }
 
     Box(
         modifier = Modifier
