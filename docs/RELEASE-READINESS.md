@@ -9,13 +9,24 @@ Versions: **watchOS 1.1.0 (3)**, **Wear OS 2.1.0 (15)**.
 
 ## Blocking — must be done before submitting
 
-### 1. Enable Firestore TTL policies
+**Status 2026-09-01:** two of the three original blockers are closed. Only the
+store privacy answers remain.
 
-The `tidesGo` backend writes an `expiresAt` timestamp on every document, but the
-TTL policies that act on it are **not yet enabled** — `gcloud` is not installed
-on the machine that deployed it. Until they are, hashed IPs and cached
-coordinates accumulate indefinitely, which contradicts the 24-hour retention the
-privacy disclosure now promises.
+### ~~1. Enable Firestore TTL policies~~ — done 2026-09-01
+
+`tides_cache` and `tides_rate` both show **Serving** on `expiresAt` with a 0 sec
+offset. Those are the two that carry the privacy promise — rounded coordinates
+and hashed IPs — so the disclosure is now true.
+
+`tides_budget` is still outstanding and is **not blocking**: it holds a daily
+call count and a date string, no location and no IP, and grows by one small
+document a day. Worth adding for tidiness.
+
+Note when creating it: the dropdown only offers fields Firestore has already
+seen. `expiresAt` was added to that collection after the first documents were
+written, so a metered call has to happen before the field appears.
+
+Original instructions, kept for the remaining policy:
 
 ```
 gcloud firestore fields ttls update expiresAt \
@@ -42,13 +53,19 @@ is no longer true.
   Functionality*, **not** linked to identity, **not** used for tracking. This
   matches `SpearoGo/PrivacyInfo.xcprivacy`, which is already updated.
 
-### 3. Set the WorldTides ceiling deliberately
+### ~~3. Set the WorldTides ceiling deliberately~~ — done 2026-09-01
 
-`TIDES_DAILY_CALL_CEILING` in `functions/index.js` is **300 metered calls/day**,
-chosen as a placeholder. Each call covers a week for one ~1km grid square and is
-cached 24h, so it stretches further than it looks — but it should be set against
-the real credit balance before launch. It fails closed: past the ceiling the app
-reports no tide data rather than spending.
+Set to **500 metered calls/day** and deployed.
+
+The plan is 20,000 credits a month and is **shared with Spearo Vision**, which
+reads the same `WORLDTIDES_API_KEY` secret. Vision was running at roughly 63
+credits a day on 2026-09-01. 500/day x 31 = 15,500/month for Go leaves ~4,500
+for Vision, several times its current usage.
+
+A call is not a user: each covers a week for one ~1km square and is cached 24h,
+so this is 500 distinct *spots* a day. A watch checking one spot every 30
+minutes costs one credit a day. Real daily totals accumulate in the
+`tides_budget` collection — look there before changing this.
 
 ---
 

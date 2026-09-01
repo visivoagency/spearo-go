@@ -39,10 +39,26 @@ const db = getFirestore();
 // across a few saved spots; nowhere near enough to scrape the API.
 const TIDES_RATE_LIMIT = 60;
 
-// Metered WorldTides calls per day, across all users. Each call covers a week
-// for one location and is cached, so this is a much larger surface than it
-// looks. Raise it deliberately, having looked at the credit balance.
-const TIDES_DAILY_CALL_CEILING = 300;
+// Metered WorldTides calls per day, across all users.
+//
+// The WorldTides plan is 20,000 credits a month and is SHARED with Spearo
+// Vision, which reads the same WORLDTIDES_API_KEY secret in this project.
+// Vision was running at roughly 63 credits a day as of 2026-09-01, so about
+// 2,000 a month. This ceiling reserves the remainder for Go while leaving
+// Vision several times its current usage in headroom:
+//
+//   500/day x 31 = 15,500/month for Go, ~4,500 left for Vision
+//
+// A call is not a user. Each one covers a WEEK for one ~1km grid square and is
+// cached server-side for 24 hours, so this is 500 distinct spots a day, not 500
+// refreshes. A watch checking one spot every 30 minutes costs one credit a day.
+//
+// It fails closed: past the ceiling the app reports no tide data rather than
+// spending. That is a blunt failure — everyone loses tides for the rest of the
+// day — so the per-IP rate limit above is what should stop abuse first, and
+// this is the backstop behind it. Daily totals are in the tides_budget
+// collection if you want to see where real usage sits before changing it.
+const TIDES_DAILY_CALL_CEILING = 500;
 
 // A day of tides does not change. NOAA and WorldTides are both predictions.
 const TIDES_CACHE_HOURS = 24;
