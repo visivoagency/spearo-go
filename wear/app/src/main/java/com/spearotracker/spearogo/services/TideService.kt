@@ -139,22 +139,13 @@ class TideService @Inject constructor(
             // A week costs one credit, so every day is kept and the next six
             // are free.
             store.save(latitude, longitude, parsed)
+            // Read back through the store so the cache and the network path
+            // return exactly the same thing, including the next-day rollover.
             val todayKey = localDateKey(System.currentTimeMillis(), offset)
-            val index = parsed.indexOfFirst { it.date == todayKey }.takeIf { it >= 0 } ?: 0
-            val today = parsed.getOrNull(index)
+            val today = store.fresh(latitude, longitude, todayKey)
+                ?: store.fresh(latitude, longitude, parsed.first().date)
 
-            if (today == null) {
-                TideLookup.Unavailable
-            } else {
-                // Carry the following day's turns so "next high" still has an
-                // answer late in the evening. Without this the page reads "—"
-                // from the day's last high until midnight, which is precisely
-                // when someone is planning tomorrow's dive.
-                val withTomorrow = today.copy(
-                    events = today.events + parsed.getOrNull(index + 1)?.events.orEmpty()
-                )
-                TideLookup.Found(withTomorrow)
-            }
+            if (today == null) TideLookup.Unavailable else TideLookup.Found(today)
         } catch (e: Exception) {
             // Deliberately not cached as unavailable: an outage must not stick.
             val stale = store.stale(latitude, longitude, today)
