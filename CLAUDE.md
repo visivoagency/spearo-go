@@ -30,12 +30,31 @@ Spearo Vision learned this the same way, from a customer in Galicia. Its
 `lib/services/tide_service.dart` carries the same instruction: *"Do not
 reintroduce a fallback that fabricates."*
 
+## Running the apps
+
+Wear: `./gradlew :app:assembleDebug -Psideload` and install beside the Play copy.
+
+watchOS: build the **target**, not the scheme — the scheme pulls in the iOS
+container and fails:
+
+```
+xcodebuild -project SpearoGo.xcodeproj -target "SpearoGo Watch App" \
+  -sdk watchsimulator -configuration Debug CONFIGURATION_BUILD_DIR=<dir> build
+```
+
+`SUPPORTED_PLATFORMS` must include `watchsimulator`; it did not until
+2026-09-01, which is why the Apple app had never been run.
+
 ## Two languages, one behaviour
 
 `SpearoGo/` (Swift) and `wear/` (Kotlin) are the same app twice. The two
 `TideService` files once contained the same defect in both, because a change was
 made to one and mirrored carelessly. **Change both together, and keep the type
 scale, weights and thresholds in lockstep.**
+
+This is not theoretical. On 2026-09-01 two tide fixes were made in Kotlin and
+not ported; watchOS shipped both defects for hours and only running the app
+found them. If you fix one, fix the other in the same commit.
 
 Where logic can be centralised server-side instead of duplicated, prefer that —
 it is why the tide design puts the NOAA/WorldTides choice in a Cloud Function

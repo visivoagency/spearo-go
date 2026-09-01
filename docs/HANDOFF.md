@@ -4,6 +4,82 @@ Where Spearo Go stands. Newest first.
 
 ---
 
+## 2026-09-01 (evening) — Spot search, and the watchOS app's first run
+
+### Spot search
+
+Neither app could save a spot you were not standing at. Wear had no
+locations UI at all — the Room entity, the DAO and every ViewModel function
+existed with nothing calling them — and watchOS could only save "here". That
+made the verdict page's own advice, "save a dive spot on the coast",
+unactionable.
+
+Both apps now search by place name through Open-Meteo's geocoder. Results carry
+region and country because "Lagos" matches five places and the Portuguese one is
+**fourth** — confirmed on the watch, where the first three rows were Nigeria,
+France and Spain. On Wear, long-pressing the verdict opens Spots; About moved to
+a row inside it. Design in
+`docs/superpowers/specs/2026-09-01-spot-search-design.md`.
+
+### The watchOS app had never run — anywhere
+
+Not on a device, not in a simulator. It **could not**: the project declared
+`SUPPORTED_PLATFORMS = watchos`, so no simulator destination existed. Adding
+`watchsimulator` is what made the rest of this possible. Fixed in
+`generate_xcodeproj.py` too, so regenerating does not undo it.
+
+To run it:
+
+```
+xcodebuild -project SpearoGo.xcodeproj -target "SpearoGo Watch App" \
+  -sdk watchsimulator -configuration Debug \
+  CONFIGURATION_BUILD_DIR=<dir> build
+xcrun simctl install <sim-id> "<dir>/SpearoGo Watch App.app"
+xcrun simctl launch <sim-id> agency.visivo.SpearoGo.watchkitapp
+```
+
+The Simulator renders the watch screen rather than exposing it to
+accessibility, so it can only be driven by coordinates. `simdrive.swift` in the
+session scratchpad does taps, drags and crown scrolls via CGEvent.
+
+### What running things found
+
+Six defects, all fixed, none of which the tests caught:
+
+| Where | Defect |
+|---|---|
+| Wear | "No sea here" rendered on the **green GO gradient** — the colour said the opposite of the words |
+| Wear | Tide times in the reader's timezone: a Lagos 23:50 low showed as **00:50** |
+| Wear | "Next high" read "—" from the day's last high until midnight |
+| Wear | The active spot **forgot itself on every restart** — a race between `init` and `refresh` |
+| Wear | The rollover fix reached only the network path, not the cache |
+| watchOS | Both tide defects again — fixed on Kotlin, never ported |
+| watchOS | Personality copy truncated to one line; verdict never named its spot |
+
+The lesson worth keeping: **fixing Kotlin does not fix Swift.** The backend owns
+the source decision precisely so it cannot drift, but the client-side derivation
+still lives twice and drifted within hours.
+
+### Verified
+
+- **Wear, on a Galaxy Watch Ultra:** searched "Lagos", saved the Portuguese one,
+  and the Tides page showed HIGH 06:05 / LOW 23:50 from the Lagos gauge —
+  matching the backend exactly, including the next-day rollover.
+- **watchOS, in the Ultra 3 simulator:** tides showed 00:59 / 06:02 from NOAA's
+  San Diego (Broadway), tomorrow's turns, matching the backend to the minute and
+  the metre.
+- 42 tests pass: 27 Kotlin across five suites, 15 on the backend.
+
+### Pick up here
+
+1. **Store console work** — the privacy answers are the last blocker. See
+   `docs/RELEASE-READINESS.md`.
+2. **Screenshots** — stale on both stores, and now more so. Wear ones can be
+   captured from the watch; Apple ones from the simulator.
+3. **Reply to the Lagos customer** once a version is submitted.
+
+---
+
 ## 2026-08-31 (release prep) — Store readiness sweep
 
 Full audit ahead of App Store and Play submission. Seven findings, three of
