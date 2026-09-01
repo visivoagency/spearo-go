@@ -130,6 +130,8 @@ Tides now come from NOAA stations in US waters and WorldTides gauges elsewhere,
 and the app shows which station answered. Where a spot has no tide or sea data,
 it says so instead of estimating.
 
+Also new: save dive spots anywhere. Search for a place by name and switch between your saved spots, rather than only getting conditions where you happen to be standing.
+
 Also: larger text that follows your watch's text size setting; a new Today
 screen with temperature, rain and daylight; corrected sunrise, sunset and moon
 times; sea temperature and swell no longer guessed where there is no data; and a

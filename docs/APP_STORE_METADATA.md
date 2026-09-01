@@ -89,6 +89,8 @@ a spot has no tide or sea data at all, it now says so instead of estimating.
 
 Also in this release:
 
+• Save dive spots anywhere — search for a place by name and switch between
+  your spots, instead of only getting conditions where you are standing
 • Larger, clearer text throughout, and it now follows your watch's text size
 • A new Today screen — air temperature, conditions, high and low, rain, and
   sunrise and sunset
