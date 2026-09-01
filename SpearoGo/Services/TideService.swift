@@ -84,10 +84,12 @@ struct TideService {
             // A week costs one credit, so every day is kept and the next six
             // are free.
             store.save(coordinate: coordinate, days: parsed)
+            // Read back through the store so the cache and the network path
+            // return exactly the same thing, including the next-day rollover.
             let localToday = Self.dayKey(for: Date(), utcOffsetSeconds: offset)
-            guard let today = parsed.first(where: { $0.date == localToday }) ?? parsed.first else {
-                return .unavailable
-            }
+            guard let today = store.fresh(coordinate: coordinate, date: localToday)
+                    ?? parsed.first.flatMap({ store.fresh(coordinate: coordinate, date: $0.date) })
+            else { return .unavailable }
             return .data(today)
         } catch {
             // Deliberately not cached as unavailable: an outage must not stick.

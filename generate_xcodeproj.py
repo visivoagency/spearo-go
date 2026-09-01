@@ -562,7 +562,7 @@ def pbxproj():
         ("PRODUCT_NAME", "$(TARGET_NAME)"),
         ("SDKROOT", "watchos"),
         ("SKIP_INSTALL", "YES"),
-        ("SUPPORTED_PLATFORMS", "watchos"),
+        ("SUPPORTED_PLATFORMS", "watchos watchsimulator"),
         ("SUPPORTS_MACCATALYST", "NO"),
         ("SWIFT_EMIT_LOC_STRINGS", "YES"),
         ("SWIFT_VERSION", "5.0"),

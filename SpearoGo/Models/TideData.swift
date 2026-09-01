@@ -49,6 +49,16 @@ struct TideData: Codable, Equatable {
     /// A grid estimate is materially weaker in the inlets these users dive.
     var isModelEstimate: Bool { provenance == "model" }
 
+    /// The moment to render, shifted into the tide station's own local time.
+    ///
+    /// Format the result in UTC. A diver in Germany reading Portuguese tides
+    /// must see the time the Portuguese tide table prints, not that instant
+    /// translated into German wall clock. The Wear app was showing 00:50 for a
+    /// low that happens at 23:50 in Lagos before this existed.
+    func stationLocalDate(_ event: TideEvent) -> Date {
+        Date(timeIntervalSince1970: TimeInterval(event.timeSeconds + utcOffsetSeconds))
+    }
+
     // Derived state takes the moment as a parameter so it can be tested. A week
     // of predictions is cached and "next" changes by the minute, so none of this
     // can be precomputed server-side.
