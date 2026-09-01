@@ -18,12 +18,14 @@ struct VerdictPage: View {
             } else if appState.hasNoSea {
                 // Not a failure and not a bad day — there is no water here.
                 // A verdict computed from wind and moon alone would read as a
-                // recommendation to dive.
+                // recommendation to dive. The headline is warm rather than
+                // blunt; the line under it does the explaining, so the meaning
+                // does not depend on the tone.
                 VStack(spacing: Brand.Spacing.item) {
                     Image(systemName: "water.waves.slash")
                         .font(.title3)
                         .foregroundStyle(Brand.Colors.textSecondary)
-                    Text("No sea here")
+                    Text("The sea is calling")
                         .brandFont(Brand.Typography.dataValue)
                         .foregroundStyle(Brand.Colors.textPrimary)
                     Text("No marine or tide data covers this spot. Save a dive spot on the coast.")
@@ -32,7 +34,7 @@ struct VerdictPage: View {
                 }
                 .padding(Brand.Spacing.page)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("No sea here. No marine or tide data covers this spot. Save a dive spot on the coast.")
+                .accessibilityLabel("The sea is calling. No marine or tide data covers this spot. Save a dive spot on the coast.")
             } else if let score = appState.diveScore {
                 VStack(spacing: Brand.Spacing.item) {
                     Text(score.verdict.rawValue)

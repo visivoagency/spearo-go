@@ -38,6 +38,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Same separate identity as the release sideload, so a debuggable
+            // build can be installed next to the Play app. Debuggable means
+            // run-as works, which is the only way to inspect or seed the Room
+            // database on a device without root.
+            if (project.hasProperty("sideload")) {
+                applicationIdSuffix = ".sideload"
+                manifestPlaceholders["appLabel"] = "Spearo Go (test)"
+            }
+        }
         release {
             // Sideload builds install alongside the Play Store copy instead of
             // trying to replace it. A locally built APK can never update the

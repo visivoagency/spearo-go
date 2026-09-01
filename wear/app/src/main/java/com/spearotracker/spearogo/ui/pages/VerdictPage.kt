@@ -88,14 +88,16 @@ fun VerdictPage(
             uiState.hasNoSea -> {
                 // Not a failure and not a bad day - there is no water here. A
                 // verdict computed from wind and moon alone would read as a
-                // recommendation to dive.
+                // recommendation to dive. The headline is warm rather than
+                // blunt; the line under it does the explaining, so the meaning
+                // does not depend on the tone.
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(Brand.Spacing.page)
                 ) {
                     Text(
-                        text = "No sea here",
+                        text = "The sea is calling",
                         style = Brand.Typography.dataValue,
                         color = Brand.Colors.textPrimary,
                         textAlign = TextAlign.Center
