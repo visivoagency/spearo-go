@@ -36,11 +36,21 @@ fun SpearoGoWearApp(
                 }
             )
         } else {
+            // Long-pressing the verdict used to open Info. It now opens Spots,
+            // which is the gesture watchOS already uses for the same thing and
+            // by far the more common need; Info moved to a row inside it.
+            var showSpots by remember { mutableStateOf(false) }
             var showInfo by remember { mutableStateOf(false) }
             val pagerState = rememberPagerState(pageCount = { 6 })
 
             if (showInfo) {
                 InfoPage(onDismiss = { showInfo = false })
+            } else if (showSpots) {
+                SpotsPage(
+                    viewModel = viewModel,
+                    onAbout = { showInfo = true },
+                    onDismiss = { showSpots = false }
+                )
             } else {
                 HorizontalPagerScaffold(
                     pagerState = pagerState,
@@ -50,7 +60,7 @@ fun SpearoGoWearApp(
                         0 -> VerdictPage(
                             uiState = uiState,
                             onRefresh = { viewModel.refresh() },
-                            onInfoTap = { showInfo = true },
+                            onInfoTap = { showSpots = true },
                             viewModel = viewModel
                         )
                         1 -> TodayPage(uiState = uiState)

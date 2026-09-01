@@ -144,6 +144,10 @@ dependencies {
 
     // Wear OS core
     implementation("androidx.wear:wear:1.3.0")
+    // RemoteInput: hands text entry to the system input activity, which gives
+    // voice dictation, keyboard and handwriting without the app implementing
+    // any of them. Voice is how people actually type on a watch.
+    implementation("androidx.wear:wear-input:1.1.0")
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
 
     // Splash screen

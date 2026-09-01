@@ -97,7 +97,7 @@ fun VerdictPage(
                     modifier = Modifier.padding(Brand.Spacing.page)
                 ) {
                     Text(
-                        text = "The sea is calling",
+                        text = "THE SEA IS CALLING",
                         style = Brand.Typography.dataValue,
                         color = Brand.Colors.textPrimary,
                         textAlign = TextAlign.Center

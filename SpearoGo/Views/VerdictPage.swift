@@ -25,7 +25,7 @@ struct VerdictPage: View {
                     Image(systemName: "water.waves.slash")
                         .font(.title3)
                         .foregroundStyle(Brand.Colors.textSecondary)
-                    Text("The sea is calling")
+                    Text("THE SEA IS CALLING")
                         .brandFont(Brand.Typography.dataValue)
                         .foregroundStyle(Brand.Colors.textPrimary)
                     Text("No marine or tide data covers this spot. Save a dive spot on the coast.")
