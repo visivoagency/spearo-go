@@ -9,18 +9,39 @@ Versions: **watchOS 1.1.0 (3)**, **Wear OS 2.1.0 (15)**.
 
 ## Blocking — must be done before submitting
 
-**Status 2026-09-01:** two of the three original blockers are closed. Only the
-store privacy answers remain.
+**Status 2026-09-01:** the three original blockers are closed. Both submission
+artifacts are built and signed. Only the store console work remains — the
+privacy answers, screenshots, and pressing submit.
+
+### Artifacts
+
+Built 2026-09-01, in `build/release-2026-09-01/` (gitignored):
+
+| File | What |
+|---|---|
+| `SpearoGo.ipa` | watchOS 1.1.0 (3), signed `Apple Distribution: VISIVO (RBDNV7NG89)` |
+| `spearo-go-2.1.0-15.aab` | Wear OS 2.1.0 (15), signed with the upload key |
+
+Rebuild the iOS one with:
+
+```
+xcodebuild -project SpearoGo.xcodeproj -scheme SpearoGo \
+  -destination 'generic/platform=iOS' -configuration Release \
+  -archivePath <path>/SpearoGo.xcarchive archive -allowProvisioningUpdates
+xcodebuild -exportArchive -archivePath <path>/SpearoGo.xcarchive \
+  -exportPath <path>/export -exportOptionsPlist <path>/ExportOptions.plist \
+  -allowProvisioningUpdates
+```
+
+with `method: app-store-connect`, `teamID: RBDNV7NG89`, `signingStyle: automatic`.
+Uploading still needs an App Store Connect session — Xcode Organizer, Transporter,
+or `xcrun altool` with an API key.
 
 ### ~~1. Enable Firestore TTL policies~~ — done 2026-09-01
 
-`tides_cache` and `tides_rate` both show **Serving** on `expiresAt` with a 0 sec
-offset. Those are the two that carry the privacy promise — rounded coordinates
-and hashed IPs — so the disclosure is now true.
-
-`tides_budget` is still outstanding and is **not blocking**: it holds a daily
-call count and a date string, no location and no IP, and grows by one small
-document a day. Worth adding for tidiness.
+All three — `tides_cache`, `tides_rate`, `tides_budget` — show **Serving** on
+`expiresAt` with a 0 sec offset. The 24-hour retention the privacy text promises
+is now actually enforced.
 
 Note when creating it: the dropdown only offers fields Firestore has already
 seen. `expiresAt` was added to that collection after the first documents were
