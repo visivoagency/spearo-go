@@ -1,6 +1,76 @@
 # Handoff
 
-Where Spearo Go stands. Newest first.
+Where Spearo Go stands. **Read the block below first** — the dated entries
+underneath are a change log, not a status report.
+
+---
+
+## Start here — state as of 2026-09-02
+
+### What this app is
+
+A standalone dive-conditions app for **Apple Watch** (`SpearoGo/`, SwiftUI) and
+**Wear OS** (`wear/`, Kotlin/Compose), plus **its own Cloud Functions**
+(`functions/`). No accounts, no subscriptions. It gives one verdict — GO /
+MAYBE / SKETCHY / NO GO — from weather, sea state, tides and solunar.
+
+### How it got here
+
+A customer in Lagos, Portugal wrote in on 2026-08-31 saying the tide times were
+wrong. They were: the tide model was anchored to the **Unix epoch** rather than
+the Moon, and had Lagos **inverted** — showing a high as a low. Chasing that
+turned up four more sources of fabricated data, all of which looked exactly like
+real measurements. Everything since has been removing them and replacing the
+tides with real gauges.
+
+The governing rule now lives in `CLAUDE.md`: **never fabricate a reading.** If
+the API did not say it, the app does not either.
+
+### Where the release stands
+
+Both store builds are **made, signed and verified**, in
+`build/release-2026-09-01/` (gitignored, rebuild if stale):
+
+- `SpearoGo.ipa` — watchOS 1.1.0 (3), Apple Distribution signed
+- `spearo-go-2.1.0-15.aab` — Wear 2.1.0 (15), upload key
+
+Backend `tidesGo` is **deployed and live**. Neither app has been uploaded to a
+store, so both version numbers are still unused.
+
+**The one remaining blocker is console work only you can do:** the store privacy
+answers. Location now reaches a Spearo server, which was not true when those
+forms were last filled in. Exact selections are in
+`docs/GOOGLE_PLAY_METADATA.md`; the Apple side must match
+`SpearoGo/PrivacyInfo.xcprivacy`. Full checklist in
+`docs/RELEASE-READINESS.md`.
+
+### Do these next
+
+1. **Store privacy answers**, both consoles — the blocker.
+2. **Screenshots** — stale on both stores. Wear ones can be captured from the
+   Galaxy Watch; Apple ones from the simulator (see below).
+3. **Upload and submit**, then **reply to the Lagos customer**. He was more
+   right than he knew — his fix is live and verified against his own gauge, and
+   the tides were inverted, not merely late. Spearo Vision's
+   `docs/CUSTOMER-REPLY-alejandro-tides.md` is the template.
+
+### Things that will bite you
+
+- **Fixing Kotlin does not fix Swift.** Two tide fixes were made on Wear on
+  2026-09-01 and not ported; watchOS shipped both defects for hours. The backend
+  owns the NOAA/WorldTides decision so *it* cannot drift, but the client-side
+  derivation lives twice. Swift has **no test target at all**.
+- **Building the watchOS *scheme* fails** — it drags in the iOS container. Build
+  the *target*. Commands in `CLAUDE.md`.
+- **Firebase is shared with three other apps.** Go owns the `spearogo`
+  codebase; Vision owns `default`. Deploy naming both:
+  `firebase deploy --only functions:spearogo:tidesGo`. Go's `firebase.json`
+  declares no Firestore config on purpose.
+- **The Galaxy Watch drops wireless debugging** whenever the screen sleeps, and
+  the port rotates each time. Expect to re-pair repeatedly, or set the watch to
+  stay awake while charging.
+- **A locally built APK can never update the Play install** — Play App Signing
+  re-signs uploads. Use `-Psideload` to install a separate copy beside it.
 
 ---
 
