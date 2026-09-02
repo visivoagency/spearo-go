@@ -15,13 +15,13 @@ struct TidesPage: View {
 
                 if let tide = appState.tideData {
                     HStack(spacing: 16) {
-                        TideEventView(label: "HIGH", event: tide.nextHigh())
+                        TideEventView(label: "HIGH", event: tide.nextHigh(), tide: tide)
 
                         Divider()
                             .frame(height: dividerHeight)
                             .background(Brand.Colors.textSecondary.opacity(Brand.Opacity.borderLine))
 
-                        TideEventView(label: "LOW", event: tide.nextLow())
+                        TideEventView(label: "LOW", event: tide.nextLow(), tide: tide)
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel(tideTimesLabel(tide))
@@ -76,7 +76,7 @@ struct TidesPage: View {
         formatter.timeStyle = .short
         func describe(_ name: String, _ event: TideEvent?) -> String {
             guard let event else { return "No further \(name) tide today" }
-            return "\(name) tide at \(formatter.string(from: event.date)), "
+            return "\(name) tide at \(TideEventView.stationTime.string(from: tide.stationLocalDate(event))), "
                 + "\(String(format: "%.1f", event.height)) metres"
         }
         return "\(describe("High", tide.nextHigh())). \(describe("Low", tide.nextLow()))"
@@ -93,16 +93,29 @@ struct TidesPage: View {
 }
 
 struct TideEventView: View {
+    /// UTC, because the value handed to it is already shifted into the
+    /// station's local time.
+    static let stationTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        return f
+    }()
+
     let label: String
     /// nil after the day's last turn — shown as "—" rather than wrapped round
     /// to a time that has already passed.
     let event: TideEvent?
+    /// Carries the station's UTC offset, so the time shown is the one the local
+    /// tide table prints rather than the reader's wall clock.
+    let tide: TideData
 
     var body: some View {
         VStack(spacing: Brand.Spacing.micro) {
             Text(label).itemLabelStyle()
             if let event {
-                Text(event.date, style: .time).timeDisplayStyle()
+                Text(Self.stationTime.string(from: tide.stationLocalDate(event)))
+                    .timeDisplayStyle()
                 Text(String(format: "%.1fm", event.height)).highlightCaptionStyle()
             } else {
                 Text("—").timeDisplayStyle()

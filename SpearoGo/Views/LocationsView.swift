@@ -13,6 +13,7 @@ struct LocationsView: View {
     private var locations: [SavedLocation]
 
     @State private var showingAddSheet = false
+    @State private var showingSearchSheet = false
 
     var body: some View {
         NavigationStack {
@@ -60,15 +61,26 @@ struct LocationsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
+                    Button { showingSearchSheet = true } label: {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(Brand.Colors.primary)
+                    }
+                    .accessibilityLabel("Search for a place")
+                }
+                ToolbarItem(placement: .cancellationAction) {
                     Button { showingAddSheet = true } label: {
                         Image(systemName: "plus")
                             .foregroundStyle(Brand.Colors.primary)
                     }
+                    .accessibilityLabel("Save my current location")
                 }
             }
         }
         .sheet(isPresented: $showingAddSheet) {
             AddLocationView()
+        }
+        .sheet(isPresented: $showingSearchSheet) {
+            SearchSpotView()
         }
     }
 
@@ -235,4 +247,98 @@ struct AddLocationView: View {
         .previewAsWatch()
         .environment(AppState.preview())
         .modelContainer(for: SavedLocation.self, inMemory: true)
+}
+
+// MARK: - Search a place by name
+
+/// Adds a spot the diver is not standing at.
+///
+/// Until this existed both apps could only save "here", so a spot could only be
+/// added by physically going to it.
+struct SearchSpotView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self)  private var appState
+    @Environment(\.dismiss)      private var dismiss
+
+    private let geocoder = GeocodingService()
+
+    @State private var query: String = ""
+    @State private var results: [GeocodedPlace] = []
+    @State private var isSearching = false
+    @State private var searched = false
+    @State private var failed = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Brand.Spacing.item) {
+                Text("Find a spot")
+                    .brandSectionHeader()
+
+                TextField("Place name", text: $query)
+                    .brandFont(Brand.Typography.personalityCopy)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+                    .padding(Brand.Spacing.item)
+                    .brandCard()
+                    .onSubmit { Task { await search() } }
+                    .submitLabel(.search)
+
+                if isSearching {
+                    Text("Searching…").captionStyle()
+                } else if failed {
+                    // A failed lookup is not "no such place".
+                    Text("Couldn't search. Try again.").captionStyle()
+                } else if searched && results.isEmpty {
+                    Text("No places found").captionStyle()
+                }
+
+                ForEach(results) { place in
+                    Button { save(place) } label: {
+                        VStack(alignment: .leading, spacing: Brand.Spacing.micro) {
+                            Text(place.name)
+                                .brandFont(Brand.Typography.personalityCopy)
+                                .foregroundStyle(Brand.Colors.textPrimary)
+                            // Region and country are the whole point: "Lagos"
+                            // matches five places and the Portuguese one is
+                            // fourth.
+                            Text(place.label)
+                                .captionStyle()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(Brand.Spacing.item)
+                    .brandCard()
+                    .accessibilityLabel("\(place.name), \(place.label)")
+                }
+            }
+            .padding(Brand.Spacing.page)
+        }
+        .brandPage()
+    }
+
+    private func search() async {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        isSearching = true
+        failed = false
+        defer { isSearching = false; searched = true }
+        do {
+            results = try await geocoder.search(trimmed)
+        } catch {
+            results = []
+            failed = true
+        }
+    }
+
+    /// Saving a searched place also switches to it, which is always the intent.
+    private func save(_ place: GeocodedPlace) {
+        for existing in (try? modelContext.fetch(FetchDescriptor<SavedLocation>())) ?? [] {
+            existing.isActive = false
+        }
+        let location = SavedLocation(name: place.savedName, coordinate: place.coordinate)
+        location.isActive = true
+        modelContext.insert(location)
+        try? modelContext.save()
+        dismiss()
+    }
 }

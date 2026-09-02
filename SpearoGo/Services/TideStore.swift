@@ -41,14 +41,14 @@ struct TideStore {
     func fresh(coordinate: CLLocationCoordinate2D, date: String) -> TideData? {
         guard let entry = read(coordinate), !entry.noCoverage,
               Date().timeIntervalSince(entry.savedAt) < Self.cacheDuration else { return nil }
-        return entry.days.first { $0.date == date }
+        return rollover(entry.days, on: date)
     }
 
     /// A cached day past its life, for when the network is gone. Better than
     /// nothing, and flagged in the UI — but never invented.
     func stale(coordinate: CLLocationCoordinate2D, date: String) -> TideData? {
         guard let entry = read(coordinate), !entry.noCoverage else { return nil }
-        return entry.days.first { $0.date == date }
+        return rollover(entry.days, on: date)
     }
 
     /// Whether this coordinate is already known to have no sea.
@@ -69,4 +69,18 @@ struct TideStore {
     func rememberNoCoverage(coordinate: CLLocationCoordinate2D) {
         write(Entry(savedAt: Date(), days: [], noCoverage: true), for: coordinate)
     }
+}
+
+/// A day, carrying the following day's turns alongside its own.
+///
+/// Without this the page reads "—" for the next high from the day's last high
+/// until midnight — exactly when tomorrow's dive gets planned. It lives beside
+/// the store because both the network and the cache path come through it;
+/// applying it in only one of them is how it was missed on Wear.
+func rollover(_ days: [TideData], on date: String) -> TideData? {
+    guard let index = days.firstIndex(where: { $0.date == date }) else { return nil }
+    var day = days[index]
+    let next = days.indices.contains(index + 1) ? days[index + 1].events : []
+    day.events = day.events + next
+    return day
 }

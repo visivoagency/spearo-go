@@ -15,6 +15,10 @@ object Constants {
         // Cloud Functions for Spearo Go, deployed under the `spearogo` codebase
         // of the shared spearo-tracker project. See spearo-go/functions.
         const val FUNCTIONS_BASE = "https://us-central1-spearo-tracker.cloudfunctions.net/"
+
+        // Place-name search, for adding a spot you are not standing at.
+        // Same provider as the weather API, no key required.
+        const val GEOCODING_BASE = "https://geocoding-api.open-meteo.com/"
     }
 
     object App {

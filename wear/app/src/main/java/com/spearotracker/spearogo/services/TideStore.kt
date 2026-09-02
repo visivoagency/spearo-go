@@ -52,8 +52,20 @@ class TideStore @Inject constructor(
     fun fresh(latitude: Double, longitude: Double, date: String): TideData? {
         val entry = read(latitude, longitude) ?: return null
         if (entry.noCoverage || !isFresh(entry)) return null
-        return entry.days.firstOrNull { it.date == date }
+        return withRollover(entry.days, date)
     }
+
+    /**
+     * A day, carrying the following day's turns alongside its own.
+     *
+     * Without this the page reads "—" for the next high from the day's last
+     * high until midnight — exactly when tomorrow's dive gets planned. The
+     * rollover lives here rather than in the service because both the network
+     * and the cache path come through the store, and applying it in only one of
+     * them is how it was missed the first time.
+     */
+    private fun withRollover(days: List<TideData>, date: String): TideData? =
+        rollover(days, date)
 
     /**
      * A cached day past its life, for when the network is gone. Better than
@@ -62,7 +74,7 @@ class TideStore @Inject constructor(
     fun stale(latitude: Double, longitude: Double, date: String): TideData? {
         val entry = read(latitude, longitude) ?: return null
         if (entry.noCoverage) return null
-        return entry.days.firstOrNull { it.date == date }
+        return withRollover(entry.days, date)
     }
 
     /** Whether this coordinate is already known to have no sea. */
@@ -97,4 +109,19 @@ class TideStore @Inject constructor(
         /** Predictions for a given day do not change. */
         const val CACHE_MILLIS = 24 * 60 * 60 * 1000L
     }
+}
+
+/**
+ * A day, carrying the following day's turns alongside its own.
+ *
+ * Top-level and pure so it can be tested. It was first written inside the
+ * network path only, so a cached day came back without the rollover and the
+ * page still read "—" for the next high all evening — the fix existed but only
+ * one of the two routes reached it.
+ */
+internal fun rollover(days: List<TideData>, date: String): TideData? {
+    val index = days.indexOfFirst { it.date == date }
+    if (index < 0) return null
+    val today = days[index]
+    return today.copy(events = today.events + days.getOrNull(index + 1)?.events.orEmpty())
 }

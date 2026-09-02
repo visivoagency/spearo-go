@@ -39,14 +39,17 @@ struct ContentView: View {
         .task {
             if let active = savedLocations.first(where: { $0.isActive }) {
                 appState.activeOverrideCoordinate = active.coordinate
+                appState.activeOverrideName = active.name
             }
             await appState.refresh()
         }
         .onChange(of: savedLocations) { _, updated in
             if let active = updated.first(where: { $0.isActive }) {
                 appState.activeOverrideCoordinate = active.coordinate
+                appState.activeOverrideName = active.name
             } else {
                 appState.activeOverrideCoordinate = nil
+                appState.activeOverrideName = nil
             }
         }
     }

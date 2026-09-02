@@ -47,6 +47,18 @@ data class TideData(
     /** A grid estimate is materially weaker in the inlets these users dive. */
     val isModelEstimate: Boolean get() = provenance == "model"
 
+    /**
+     * The moment to render, shifted into the tide station's own local time.
+     *
+     * Format the result in UTC. A diver in Germany reading Portuguese tides
+     * must see the time the Portuguese tide table prints, not that instant
+     * translated into German wall clock — the watch was showing 00:50 for a low
+     * that happens at 23:50 in Lagos. Same defect class as the one that started
+     * all this.
+     */
+    fun stationLocalMillis(event: TideEvent): Long =
+        (event.timeSeconds + utcOffsetSeconds) * 1000L
+
     // Derived state takes the moment as a parameter so it can be tested. A week
     // of predictions is cached and "next" changes by the minute, so none of this
     // can be precomputed server-side.

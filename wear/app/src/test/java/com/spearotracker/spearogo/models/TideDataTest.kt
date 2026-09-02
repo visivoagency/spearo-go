@@ -91,4 +91,40 @@ class TideDataTest {
         assertTrue(!lagos.isModelEstimate)
         assertTrue(lagos.copy(provenance = "model").isModelEstimate)
     }
+
+    @Test
+    fun `times render in the station's local zone, not the reader's`() {
+        // The Lagos low at 23:50 WEST was showing as 00:50 on a watch set to
+        // CEST — the next day, and an hour out. A diver comparing the app to a
+        // printed Portuguese tide table must see the printed number.
+        val low = TideEvent(at("2026-09-01T22:50:00Z"), TideType.LOW, 0.9)
+        val lagos = TideData(date = "2026-09-01", events = listOf(low), utcOffsetSeconds = 3600)
+
+        val rendered = java.time.Instant.ofEpochMilli(lagos.stationLocalMillis(low))
+            .atZone(java.time.ZoneOffset.UTC)
+        assertEquals(23, rendered.hour)
+        assertEquals(50, rendered.minute)
+    }
+
+    @Test
+    fun `late in the evening the next high comes from tomorrow`() {
+        // After the day's last high there is no further high today. Reading
+        // only today's events showed "—" from mid-evening until midnight,
+        // which is exactly when tomorrow's dive gets planned.
+        val today = listOf(
+            TideEvent(at("2026-09-01T16:44:00Z"), TideType.HIGH, 3.2),
+            TideEvent(at("2026-09-01T22:50:00Z"), TideType.LOW, 0.9),
+        )
+        val tomorrow = listOf(
+            TideEvent(at("2026-09-02T05:05:00Z"), TideType.HIGH, 3.1),
+        )
+        val withRollover = TideData(
+            date = "2026-09-01",
+            events = today + tomorrow,
+            utcOffsetSeconds = 3600,
+        )
+        val evening = at("2026-09-01T20:00:00Z")
+        assertEquals(at("2026-09-02T05:05:00Z"), withRollover.nextHigh(evening)!!.timeSeconds)
+        assertEquals(at("2026-09-01T22:50:00Z"), withRollover.nextLow(evening)!!.timeSeconds)
+    }
 }

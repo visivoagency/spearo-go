@@ -31,6 +31,11 @@ final class AppState {
     /// Set by ContentView when the user activates a saved location.
     /// Nil means "use live GPS".
     var activeOverrideCoordinate: CLLocationCoordinate2D?
+    /// Name of the saved spot in use, so the verdict can say which water it is
+    /// describing. Wear has always shown this; watchOS did not, which mattered
+    /// little when the only spot was "here" and matters a lot now that a diver
+    /// can save several.
+    var activeOverrideName: String?
 
     // ── Services ─────────────────────────────────────────────────────────────
     let locationService  = LocationService()

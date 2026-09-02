@@ -17,6 +17,10 @@ import javax.inject.Inject
 import com.spearotracker.spearogo.utils.PersonalityCopy
 import com.spearotracker.spearogo.services.NoMarineCoverageException
 import com.spearotracker.spearogo.services.TideLookup
+import com.spearotracker.spearogo.models.GeocodedPlace
+import com.spearotracker.spearogo.services.GeocodingService
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 
 data class AppUiState(
     val weatherData: WeatherData? = null,
@@ -66,7 +70,8 @@ class AppViewModel @Inject constructor(
     private val solunarService: SolunarService,
     private val scoreService: ScoreService,
     private val cacheService: CacheService,
-    private val locationDao: LocationDao
+    private val locationDao: LocationDao,
+    private val geocodingService: GeocodingService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AppUiState())
@@ -76,22 +81,11 @@ class AppViewModel @Inject constructor(
     private val defaultLat = 32.7
     private val defaultLon = -117.2
 
-    private var activeOverrideLat: Double? = null
-    private var activeOverrideLon: Double? = null
-    private var activeOverrideName: String? = null
-
     init {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 hasLocationPermission = locationService.hasPermission()
             )
-            // Load active saved location
-            val active = locationDao.getActiveLocation()
-            if (active != null) {
-                activeOverrideLat = active.latitude
-                activeOverrideLon = active.longitude
-                activeOverrideName = active.name
-            }
         }
     }
 
@@ -104,19 +98,24 @@ class AppViewModel @Inject constructor(
             )
 
             try {
-                // Determine coordinate
-                val overrideLat = activeOverrideLat
-                val overrideLon = activeOverrideLon
+                // Determine coordinate.
+                //
+                // Read from the database rather than an in-memory copy loaded
+                // in init. That copy was populated by a coroutine racing this
+                // one, so on a cold start refresh could read it before the load
+                // finished and silently fall back to GPS - the saved spot
+                // appeared to forget itself every time the app restarted.
+                val active = locationDao.getActiveLocation()
                 var lat: Double
                 var lon: Double
                 var usingFallback = false
 
                 var label: String? = null
 
-                if (overrideLat != null && overrideLon != null) {
-                    lat = overrideLat
-                    lon = overrideLon
-                    label = activeOverrideName
+                if (active != null) {
+                    lat = active.latitude
+                    lon = active.longitude
+                    label = active.name
                 } else {
                     val location = locationService.getLocation()
                     if (location != null) {
@@ -203,14 +202,9 @@ class AppViewModel @Inject constructor(
             locationDao.deactivateAll()
             if (location != null) {
                 locationDao.activateLocation(location.id)
-                activeOverrideLat = location.latitude
-                activeOverrideLon = location.longitude
-                activeOverrideName = location.name
-            } else {
-                activeOverrideLat = null
-                activeOverrideLon = null
-                activeOverrideName = null
             }
+            // refresh() re-reads the active row, so there is nothing to keep in
+            // sync here and no second copy to drift.
             refresh()
         }
     }
@@ -238,6 +232,45 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    /** Saved spots, for the locations screen. */
+    val savedLocations = locationDao.getAllLocations()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val _search = MutableStateFlow(SpotSearchState())
+    val search: StateFlow<SpotSearchState> = _search.asStateFlow()
+
+    fun searchPlaces(query: String) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _search.value = SpotSearchState(query = query, isSearching = true)
+            try {
+                val results = geocodingService.search(query)
+                _search.value = SpotSearchState(query = query, results = results)
+            } catch (e: Exception) {
+                // No invented results. The screen says the search failed.
+                _search.value = SpotSearchState(query = query, failed = true)
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _search.value = SpotSearchState()
+    }
+
+    /** Save a searched place and switch to it, which is always what was meant. */
+    fun saveAndActivate(place: GeocodedPlace) {
+        viewModelScope.launch {
+            val location = SavedLocation(
+                name = place.savedName,
+                latitude = place.latitude,
+                longitude = place.longitude
+            )
+            locationDao.insert(location)
+            clearSearch()
+            setActiveLocation(location)
+        }
+    }
+
     fun addLocation(name: String, latitude: Double, longitude: Double) {
         viewModelScope.launch {
             locationDao.insert(
@@ -261,4 +294,15 @@ class AppViewModel @Inject constructor(
             hasLocationPermission = locationService.hasPermission()
         )
     }
+}
+
+/** What the locations screen shows while and after a place-name search. */
+data class SpotSearchState(
+    val query: String = "",
+    val isSearching: Boolean = false,
+    val results: List<GeocodedPlace> = emptyList(),
+    /** The lookup failed. Distinct from "no places found", which is `results` empty. */
+    val failed: Boolean = false
+) {
+    val hasSearched: Boolean get() = query.isNotEmpty() && !isSearching
 }

@@ -18,12 +18,14 @@ struct VerdictPage: View {
             } else if appState.hasNoSea {
                 // Not a failure and not a bad day — there is no water here.
                 // A verdict computed from wind and moon alone would read as a
-                // recommendation to dive.
+                // recommendation to dive. The headline is warm rather than
+                // blunt; the line under it does the explaining, so the meaning
+                // does not depend on the tone.
                 VStack(spacing: Brand.Spacing.item) {
                     Image(systemName: "water.waves.slash")
                         .font(.title3)
                         .foregroundStyle(Brand.Colors.textSecondary)
-                    Text("No sea here")
+                    Text("THE SEA IS CALLING")
                         .brandFont(Brand.Typography.dataValue)
                         .foregroundStyle(Brand.Colors.textPrimary)
                     Text("No marine or tide data covers this spot. Save a dive spot on the coast.")
@@ -32,7 +34,7 @@ struct VerdictPage: View {
                 }
                 .padding(Brand.Spacing.page)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("No sea here. No marine or tide data covers this spot. Save a dive spot on the coast.")
+                .accessibilityLabel("The sea is calling. No marine or tide data covers this spot. Save a dive spot on the coast.")
             } else if let score = appState.diveScore {
                 VStack(spacing: Brand.Spacing.item) {
                     Text(score.verdict.rawValue)
@@ -41,6 +43,10 @@ struct VerdictPage: View {
 
                     Text(appState.personalityMessage)
                         .personalityStyle()
+                        // Without this the line truncates to "Could be worse.
+                        // Could be…" on a 49mm Ultra, which reads as a bug.
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.85)
                         .foregroundStyle(.white.opacity(0.9))
                         .padding(.horizontal, Brand.Spacing.item)
 
@@ -59,11 +65,14 @@ struct VerdictPage: View {
                             .accessibilityLabel("Score does not include \(score.missingSignals.joined(separator: " or "))")
                     }
 
-                    // Stale cache indicator
+                    // Freshness and the spot it describes, on one line — the
+                    // same footer Wear shows. Without the name there is no way
+                    // to tell which saved spot the verdict belongs to.
                     if let label = appState.lastRefreshedLabel {
-                        Text(label)
+                        Text(footer(label))
                             .brandFont(Brand.Typography.caption)
                             .foregroundStyle(.white.opacity(appState.isStale ? 1 : 0.7))
+                            .lineLimit(1)
                             .accessibilityLabel("Last updated: \(label)")
                     }
 
@@ -118,6 +127,17 @@ struct VerdictPage: View {
             LocationsView()
                 .environment(appState)
         }
+    }
+
+    /// "Just now · Lagos". The region is dropped: the town identifies the spot
+    /// and the region only costs width on a screen this size.
+    private func footer(_ freshness: String) -> String {
+        guard let name = appState.activeOverrideName?
+                .split(separator: ",").first
+                .map(String.init)?
+                .trimmingCharacters(in: .whitespaces),
+              !name.isEmpty else { return freshness }
+        return "\(freshness)  ·  \(name)"
     }
 }
 

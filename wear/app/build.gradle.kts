@@ -38,6 +38,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Same separate identity as the release sideload, so a debuggable
+            // build can be installed next to the Play app. Debuggable means
+            // run-as works, which is the only way to inspect or seed the Room
+            // database on a device without root.
+            if (project.hasProperty("sideload")) {
+                applicationIdSuffix = ".sideload"
+                manifestPlaceholders["appLabel"] = "Spearo Go (test)"
+            }
+        }
         release {
             // Sideload builds install alongside the Play Store copy instead of
             // trying to replace it. A locally built APK can never update the
@@ -134,6 +144,10 @@ dependencies {
 
     // Wear OS core
     implementation("androidx.wear:wear:1.3.0")
+    // RemoteInput: hands text entry to the system input activity, which gives
+    // voice dictation, keyboard and handwriting without the app implementing
+    // any of them. Voice is how people actually type on a watch.
+    implementation("androidx.wear:wear-input:1.1.0")
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
 
     // Splash screen

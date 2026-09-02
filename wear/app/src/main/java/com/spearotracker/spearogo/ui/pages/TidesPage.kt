@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import java.util.TimeZone
 
 @Composable
 fun TidesPage(uiState: AppUiState) {
@@ -43,7 +44,12 @@ fun TidesPage(uiState: AppUiState) {
         val tide = uiState.tideData
 
         if (tide != null) {
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            // UTC, because the value handed to it is already shifted into the
+            // station's local time. Using the device zone here is what showed a
+            // Lagos 23:50 low as 00:50 on a German wrist.
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -53,7 +59,7 @@ fun TidesPage(uiState: AppUiState) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = "HIGH", style = Brand.Typography.itemLabel, color = Brand.Colors.textSecondary)
                     Text(
-                        text = tide.nextHigh()?.let { timeFormat.format(Date(it.timeSeconds * 1000)) } ?: "—",
+                        text = tide.nextHigh()?.let { timeFormat.format(Date(tide.stationLocalMillis(it))) } ?: "—",
                         style = Brand.Typography.timeDisplay,
                         color = Brand.Colors.textPrimary
                     )
@@ -79,7 +85,7 @@ fun TidesPage(uiState: AppUiState) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = "LOW", style = Brand.Typography.itemLabel, color = Brand.Colors.textSecondary)
                     Text(
-                        text = tide.nextLow()?.let { timeFormat.format(Date(it.timeSeconds * 1000)) } ?: "—",
+                        text = tide.nextLow()?.let { timeFormat.format(Date(tide.stationLocalMillis(it))) } ?: "—",
                         style = Brand.Typography.timeDisplay,
                         color = Brand.Colors.textPrimary
                     )

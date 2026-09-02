@@ -74,5 +74,27 @@ https://spearotracker.com/privacy-policy
 - Alcohol/Tobacco/Drug References: No
 - Sexual Content/Nudity: No
 
-## What's New (Version 1.0.0)
-Initial release — your dive-day verdict in one glance.
+## What's New (Version 1.1.0)
+
+Tide times now come from real tide stations.
+
+Until now Spearo Go calculated tides on the watch using a simplified model. It
+was wrong — in some places badly enough to show a high tide as a low. If you
+have been using Spearo Go to time a dive around the tide, please treat any
+earlier reading as unreliable.
+
+Tides are now sourced from NOAA tide stations in US waters and from WorldTides
+gauges elsewhere, and the app tells you which station a reading came from. Where
+a spot has no tide or sea data at all, it now says so instead of estimating.
+
+Also in this release:
+
+• Save dive spots anywhere — search for a place by name and switch between
+  your spots, instead of only getting conditions where you are standing
+• Larger, clearer text throughout, and it now follows your watch's text size
+• A new Today screen — air temperature, conditions, high and low, rain, and
+  sunrise and sunset
+• Corrected sunrise, sunset and moon times, which could be hours out
+• Sea temperature and swell are no longer guessed where there is no data
+• The verdict screen is redesigned, and says which readings it could not include
+

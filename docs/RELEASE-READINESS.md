@@ -9,13 +9,45 @@ Versions: **watchOS 1.1.0 (3)**, **Wear OS 2.1.0 (15)**.
 
 ## Blocking — must be done before submitting
 
-### 1. Enable Firestore TTL policies
+**Status 2026-09-01:** the three original blockers are closed. Both submission
+artifacts are built and signed. Only the store console work remains — the
+privacy answers, screenshots, and pressing submit.
 
-The `tidesGo` backend writes an `expiresAt` timestamp on every document, but the
-TTL policies that act on it are **not yet enabled** — `gcloud` is not installed
-on the machine that deployed it. Until they are, hashed IPs and cached
-coordinates accumulate indefinitely, which contradicts the 24-hour retention the
-privacy disclosure now promises.
+### Artifacts
+
+Built 2026-09-01, in `build/release-2026-09-01/` (gitignored):
+
+| File | What |
+|---|---|
+| `SpearoGo.ipa` | watchOS 1.1.0 (3), signed `Apple Distribution: VISIVO (RBDNV7NG89)` |
+| `spearo-go-2.1.0-15.aab` | Wear OS 2.1.0 (15), signed with the upload key |
+
+Rebuild the iOS one with:
+
+```
+xcodebuild -project SpearoGo.xcodeproj -scheme SpearoGo \
+  -destination 'generic/platform=iOS' -configuration Release \
+  -archivePath <path>/SpearoGo.xcarchive archive -allowProvisioningUpdates
+xcodebuild -exportArchive -archivePath <path>/SpearoGo.xcarchive \
+  -exportPath <path>/export -exportOptionsPlist <path>/ExportOptions.plist \
+  -allowProvisioningUpdates
+```
+
+with `method: app-store-connect`, `teamID: RBDNV7NG89`, `signingStyle: automatic`.
+Uploading still needs an App Store Connect session — Xcode Organizer, Transporter,
+or `xcrun altool` with an API key.
+
+### ~~1. Enable Firestore TTL policies~~ — done 2026-09-01
+
+All three — `tides_cache`, `tides_rate`, `tides_budget` — show **Serving** on
+`expiresAt` with a 0 sec offset. The 24-hour retention the privacy text promises
+is now actually enforced.
+
+Note when creating it: the dropdown only offers fields Firestore has already
+seen. `expiresAt` was added to that collection after the first documents were
+written, so a metered call has to happen before the field appears.
+
+Original instructions, kept for the remaining policy:
 
 ```
 gcloud firestore fields ttls update expiresAt \
@@ -42,13 +74,19 @@ is no longer true.
   Functionality*, **not** linked to identity, **not** used for tracking. This
   matches `SpearoGo/PrivacyInfo.xcprivacy`, which is already updated.
 
-### 3. Set the WorldTides ceiling deliberately
+### ~~3. Set the WorldTides ceiling deliberately~~ — done 2026-09-01
 
-`TIDES_DAILY_CALL_CEILING` in `functions/index.js` is **300 metered calls/day**,
-chosen as a placeholder. Each call covers a week for one ~1km grid square and is
-cached 24h, so it stretches further than it looks — but it should be set against
-the real credit balance before launch. It fails closed: past the ceiling the app
-reports no tide data rather than spending.
+Set to **500 metered calls/day** and deployed.
+
+The plan is 20,000 credits a month and is **shared with Spearo Vision**, which
+reads the same `WORLDTIDES_API_KEY` secret. Vision was running at roughly 63
+credits a day on 2026-09-01. 500/day x 31 = 15,500/month for Go leaves ~4,500
+for Vision, several times its current usage.
+
+A call is not a user: each covers a week for one ~1km square and is cached 24h,
+so this is 500 distinct *spots* a day. A watch checking one spot every 30
+minutes costs one credit a day. Real daily totals accumulate in the
+`tides_budget` collection — look there before changing this.
 
 ---
 

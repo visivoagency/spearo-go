@@ -118,30 +118,24 @@ https://spearotracker.com/privacy-policy
 
 ## Release Notes
 
-### v2.0.9 (versionCode 13) — Play policy compliance release
-- Added branded splash screen (48dp app icon on black background) to meet Wear OS branded-launch guideline.
-- Scrollable views now display a scroll indicator (Wear Material3 `ScreenScaffold`).
-- All pages are scrollable so text no longer clips when users set a large system font size.
-- Updated store listing to mention Tile support.
+### 2.1.0 (15)
 
-### v2.0.7 / 2.0.8 (versionCode 11/12) — Draft iterations
-- Internal iteration on Play Console submission flow; superseded by 2.0.9.
+Tide times now come from real tide stations.
 
-### v2.0.6 (versionCode 10) — First successful Play Console upload
-- Verdict page shows resolved location name (city/region) instead of raw coordinates.
-- Added info page accessible from the verdict screen.
-- Reliability: explicit 10s/15s connect/read timeouts on weather and marine API calls.
-- Permissions: removed `ACCESS_FINE_LOCATION`, `VIBRATE`, `WAKE_LOCK`; now requires only `ACCESS_COARSE_LOCATION`.
-- GPS requests use `PRIORITY_LOW_POWER` for better battery life.
-- Migrated UI to Wear Compose `AppScaffold` + `HorizontalPagerScaffold`.
-- Tiles: migrated imports from `androidx.wear.tiles` to `androidx.wear.protolayout`.
-- ProGuard keep rules for Gson, Retrofit, OkHttp, Hilt, and coroutines to prevent R8 stripping.
-- Background refresh worker scheduled on app startup.
+Until now Spearo Go calculated tides on the watch using a simplified model. It
+was wrong — in some places badly enough to show a high tide as a low. If you
+have been timing dives around the tide, treat any earlier reading as unreliable.
 
-### v1.0.0 — Initial Wear OS release
-Initial release — your dive-day verdict in one glance.
+Tides now come from NOAA stations in US waters and WorldTides gauges elsewhere,
+and the app shows which station answered. Where a spot has no tide or sea data,
+it says so instead of estimating.
 
----
+Also new: save dive spots anywhere. Search for a place by name and switch between your saved spots, rather than only getting conditions where you happen to be standing.
+
+Also: larger text that follows your watch's text size setting; a new Today
+screen with temperature, rain and daylight; corrected sunrise, sunset and moon
+times; sea temperature and swell no longer guessed where there is no data; and a
+redesigned verdict screen that names any reading it could not include.
 
 ## Play Console Checklist
 

@@ -23,6 +23,10 @@ enum Constants {
         // Cloud Functions for Spearo Go, deployed under the `spearogo` codebase
         // of the shared spearo-tracker project. See spearo-go/functions.
         static let tidesBase   = "https://us-central1-spearo-tracker.cloudfunctions.net/tidesGo"
+
+        // Place-name search, for adding a spot you are not standing at.
+        // Same provider as the weather API, no key required.
+        static let geocodingBase = "https://geocoding-api.open-meteo.com/v1/search"
     }
 
     // MARK: - App info

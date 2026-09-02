@@ -12,6 +12,18 @@ and set the WorldTides daily ceiling against the real credit balance.
 Now says "No sea here" when both marine and tide report no coverage — which is
 distinguished from a failed lookup, so a transient outage never triggers it.
 
+### The Swift and Kotlin clients drift
+The backend owns the NOAA/WorldTides decision so it cannot drift, but the
+client-side derivation — which tide is next, station-local rendering, the
+next-day rollover — exists twice. Two fixes made on Kotlin on 2026-09-01 were
+not ported to Swift and shipped broken there for hours, found only by running
+the app. Worth considering whether that derivation belongs in the payload, or
+whether a shared fixture test should assert both languages agree.
+
+### watchOS still has no test target
+Now more pressing: the Swift side has no automated check at all, and the two
+defects above would each have been caught by one line of test.
+
 ### Watch install is blocked by wireless debugging dropping
 The Galaxy Watch turns wireless debugging off whenever the screen sleeps, which
 cost five re-pairings in one session and blocked the final install. Enabling
@@ -34,6 +46,8 @@ orange to blue. Flagged to the owner 2026-08-31, not yet confirmed either way.
 
 ## Done
 
+- **2026-09-01** — Spot search on both platforms; watchOS run for the first
+  time; six UI and correctness defects fixed that the tests had not caught.
 - **2026-08-31** — `tidesGo` built, deployed and verified live; both clients
   wired to it; NOAA + WorldTides logic ported from Vision into the function so
   it exists once rather than twice.
