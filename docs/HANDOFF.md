@@ -32,7 +32,8 @@ the API did not say it, the app does not either.
 Quality Guidelines: Wear font size": text cut off by the screen edges at a
 large system text size. The fix is **Wear 2.1.1 (16)**, built and signed in
 `build/release-2026-09-07/spearo-go-2.1.1-16.aab` (gitignored, rebuild if
-stale). Full account in `docs/SESSION_WEAR_FONT_SIZE_REJECTION.md`; the short
+stale), **uploaded to the Wear OS production track and submitted for review on
+2026-09-07** (afternoon). Reviews take up to 7 days; check Policy status. Full account in `docs/SESSION_WEAR_FONT_SIZE_REJECTION.md`; the short
 version is that the theme capped the font scale (a violation in itself) and
 every page used fixed insets on a round screen. Both gone; one shared
 `ScrollingPage` now owns the geometry.
@@ -46,12 +47,12 @@ required if not already done — `docs/GOOGLE_PLAY_METADATA.md` and
 
 ### Do these next
 
-1. **Sideload 2.1.1 on the Galaxy Watch** (`-Psideload`) at Settings → Display
+1. **Watch the review of 2.1.1 (16)** in Policy status / Publishing overview.
+   If it is rejected again, the evidence screenshots say which screen; the
+   geometry lives in one place, `ui/components/ScrollingPage.kt`.
+2. **Sideload 2.1.1 on the Galaxy Watch** (`-Psideload`) at Settings → Display
    → Text size → Largest and page through every screen. Verified on the emulator
-   at 1.0, 1.24 and 1.5 this session; not on a physical watch.
-2. **Upload `spearo-go-2.1.1-16.aab` to the Wear production track** and submit;
-   the Play Console asks that the noncompliant bundle be deactivated on every
-   track. Release notes are in `docs/GOOGLE_PLAY_METADATA.md`.
+   at 1.0, 1.24 and 1.5; not on a physical watch.
 3. **Screenshots** — stale on both stores. Wear ones can be captured from the
    Galaxy Watch; Apple ones from the simulator (see below).
 4. **watchOS**: privacy answers, upload 1.1.0 (3), then **reply to the Lagos
