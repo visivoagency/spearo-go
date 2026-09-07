@@ -1,9 +1,6 @@
 package com.spearotracker.spearogo.ui.theme
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
 
@@ -20,23 +17,14 @@ fun SpearoGoTheme(content: @Composable () -> Unit) {
         onSurface = Brand.Colors.textPrimary
     )
 
-    // Type scales with Settings -> Display -> Font size, bounded here because a
-    // watch face is 1.5 inches wide: past roughly 1.3x the verdict ring and the
-    // two-column condition rows truncate rather than reflow, which reads as
-    // broken rather than as large. Everything below this ceiling is honoured.
-    // Mirrors the .dynamicTypeSize ceiling in SpearoGoApp.swift.
-    val density = LocalDensity.current
-    val bounded = Density(
-        density = density.density,
-        fontScale = density.fontScale.coerceAtMost(MAX_FONT_SCALE)
+    // The type scale is in sp and follows Settings -> Display -> Text size
+    // without a ceiling. A 1.3x cap lived here from 2026-08-31 to 2026-09-07
+    // and Play rejected the build under "Wear font size": the guideline is
+    // that the app conforms to the size the user chose, and that nothing is
+    // cut off when they choose a large one. Layouts have to reflow and scroll
+    // instead (see ScrollingPage); capping the scale is not a fix.
+    MaterialTheme(
+        colorScheme = colorScheme,
+        content = content
     )
-
-    CompositionLocalProvider(LocalDensity provides bounded) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            content = content
-        )
-    }
 }
-
-private const val MAX_FONT_SCALE = 1.3f

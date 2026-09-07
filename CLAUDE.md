@@ -45,6 +45,22 @@ xcodebuild -project SpearoGo.xcodeproj -target "SpearoGo Watch App" \
 `SUPPORTED_PLATFORMS` must include `watchsimulator`; it did not until
 2026-09-01, which is why the Apple app had never been run.
 
+## Round screens and the user's text size
+
+Google Play rejected Wear 2.1.0 (15) for text cut off at a large system text
+size — the second time for that guideline. Two rules came out of it:
+
+- **Never cap the font scale.** "Conform to the font size set by the user" is
+  the guideline's first sentence. Layouts reflow and scroll; the scale is not
+  bounded.
+- **Every Wear screen lays out through `ui/components/ScrollingPage.kt`**
+  (`ScrollingPage` / `ScrollingList`). It insets the *viewport* — not the
+  content — by percentages of the screen so nothing sits under the clock, on
+  either arc or under the pager dots, and it fades the edges while there is
+  more to scroll. A `Column.verticalScroll().padding(12.dp)` looks fine at the
+  default size and fails review at "Largest". Check any layout change at
+  Settings → Display → Text size → Largest, on the emulator or the watch.
+
 ## Two languages, one behaviour
 
 `SpearoGo/` (Swift) and `wear/` (Kotlin) are the same app twice. The two

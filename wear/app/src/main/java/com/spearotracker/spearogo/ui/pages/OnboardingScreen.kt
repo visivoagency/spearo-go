@@ -2,9 +2,7 @@ package com.spearotracker.spearogo.ui.pages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.Image
 import androidx.compose.ui.Alignment
@@ -19,6 +17,7 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.R
+import com.spearotracker.spearogo.ui.components.ScrollingPage
 import com.spearotracker.spearogo.ui.theme.Brand
 
 @Composable
@@ -46,14 +45,7 @@ fun OnboardingScreen(
 
 @Composable
 private fun WelcomePage() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp)
-    ) {
+    ScrollingPage {
         Image(
             painter = painterResource(id = R.drawable.splash_icon),
             contentDescription = "Spearo Go",
@@ -89,14 +81,7 @@ private fun WelcomePage() {
 
 @Composable
 private fun HowItWorksPage() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp)
-    ) {
+    ScrollingPage {
         Text(
             text = "HOW IT WORKS",
             style = Brand.Typography.sectionHeader,
@@ -125,14 +110,7 @@ private fun HowItWorksPage() {
 
 @Composable
 private fun LocationPage(onRequestPermission: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 28.dp, vertical = 32.dp)
-    ) {
+    ScrollingPage {
         Text(text = "\uD83D\uDCCD", fontSize = 24.sp)
 
         Spacer(modifier = Modifier.height(6.dp))

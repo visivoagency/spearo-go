@@ -7,8 +7,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,11 +17,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.CircularProgressIndicator
-import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.models.Verdict
 import com.spearotracker.spearogo.ui.AppUiState
 import com.spearotracker.spearogo.ui.AppViewModel
+import com.spearotracker.spearogo.ui.components.ScrollingPage
 import com.spearotracker.spearogo.ui.theme.Brand
 import com.spearotracker.spearogo.utils.PersonalityCopy
 import androidx.compose.ui.graphics.Brush
@@ -39,8 +37,6 @@ fun VerdictPage(
     onInfoTap: () -> Unit = {},
     viewModel: AppViewModel
 ) {
-    val scrollState = rememberScrollState()
-    ScreenScaffold(scrollState = scrollState) {
     // Full-bleed verdict colour with white type, matching Spearo Vision's dive
     // score card. Only once a score exists; loading and error states keep the
     // dark page so a colour never implies a verdict that isn't known yet.
@@ -52,163 +48,163 @@ fun VerdictPage(
         ?.takeUnless { uiState.hasNoSea }
         ?.let { Brush.linearGradient(Brand.Colors.gradientForVerdict(it.verdict)) }
 
+    // The colour is painted on the full screen; the text scrolls inside the
+    // inset viewport ScrollingPage keeps clear of the clock and both arcs.
     Box(
         modifier = Modifier
             .fillMaxSize()
             .then(if (verdictBrush != null) Modifier.background(verdictBrush) else Modifier)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 24.dp, vertical = 32.dp)
             .combinedClickable(
                 onClick = { onRefresh() },
                 onLongClick = { onInfoTap() }
-            ),
-        contentAlignment = Alignment.Center
+            )
     ) {
-        when {
-            uiState.isLoading -> {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        colors = androidx.wear.compose.material3.ProgressIndicatorDefaults.colors(
-                            indicatorColor = Brand.Colors.primary
+        ScrollingPage {
+            when {
+                uiState.isLoading -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            colors = androidx.wear.compose.material3.ProgressIndicatorDefaults.colors(
+                                indicatorColor = Brand.Colors.primary
+                            )
                         )
-                    )
-                    Spacer(modifier = Modifier.height(Brand.Spacing.item))
-                    Text(
-                        text = uiState.loadingMessage,
-                        style = Brand.Typography.caption,
-                        color = Brand.Colors.textSecondary,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            uiState.hasNoSea -> {
-                // Not a failure and not a bad day - there is no water here. A
-                // verdict computed from wind and moon alone would read as a
-                // recommendation to dive. The headline is warm rather than
-                // blunt; the line under it does the explaining, so the meaning
-                // does not depend on the tone.
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(Brand.Spacing.page)
-                ) {
-                    Text(
-                        text = "THE SEA IS CALLING",
-                        style = Brand.Typography.dataValue,
-                        color = Brand.Colors.textPrimary,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(Brand.Spacing.item))
-                    Text(
-                        text = "No marine or tide data covers this spot. Save a dive spot on the coast.",
-                        style = Brand.Typography.caption,
-                        color = Brand.Colors.textSecondary,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            uiState.diveScore != null -> {
-                val score = uiState.diveScore
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(Brand.Spacing.page)
-                ) {
-                    Text(
-                        text = score.verdict.label,
-                        style = Brand.Typography.verdictLabel,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = uiState.personalityMessage,
-                        style = Brand.Typography.personalityCopy,
-                        color = Color.White.copy(alpha = 0.9f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = Brand.Spacing.item)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    ScoreRing(score = score.composite, verdict = score.verdict, onColour = true)
-
-                    // Names the signals the verdict could NOT see, so a
-                    // renormalised score is never mistaken for a complete one.
-                    if (score.isPartial) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Brand.Spacing.item))
                         Text(
-                            text = "Scored without ${score.missingSignals.joinToString(" or ")}",
+                            text = uiState.loadingMessage,
                             style = Brand.Typography.caption,
-                            color = Color.White.copy(alpha = 0.75f),
+                            color = Brand.Colors.textSecondary,
                             textAlign = TextAlign.Center
                         )
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Freshness and place share one line. As two rows they
-                    // ran past the bottom of a round display, where the last
-                    // line is clipped by the curve and the page indicator.
-                    // The region is dropped too: "Queidersbach" identifies the
-                    // spot, "Rheinland-Pfalz" only costs width.
-                    val place = uiState.locationLabel?.substringBefore(",")?.trim()
-                    val footer = listOfNotNull(uiState.lastRefreshedLabel, place)
-                        .filter { it.isNotEmpty() }
-                        .joinToString("  \u00B7  ")
-
-                    if (footer.isNotEmpty()) {
-                        val flagged = uiState.isStale || uiState.isUsingFallbackLocation
+                uiState.hasNoSea -> {
+                    // Not a failure and not a bad day - there is no water here. A
+                    // verdict computed from wind and moon alone would read as a
+                    // recommendation to dive. The headline is warm rather than
+                    // blunt; the line under it does the explaining, so the meaning
+                    // does not depend on the tone.
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(Brand.Spacing.page)
+                    ) {
                         Text(
-                            text = footer,
+                            text = "THE SEA IS CALLING",
+                            style = Brand.Typography.dataValue,
+                            color = Brand.Colors.textPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(Brand.Spacing.item))
+                        Text(
+                            text = "No marine or tide data covers this spot. Save a dive spot on the coast.",
                             style = Brand.Typography.caption,
-                            color = Color.White.copy(alpha = if (flagged) 1f else 0.7f),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(horizontal = Brand.Spacing.item)
+                            color = Brand.Colors.textSecondary,
+                            textAlign = TextAlign.Center
                         )
                     }
-
-                    // Clears the page indicator and the curve of the display.
-                    Spacer(modifier = Modifier.height(Brand.Spacing.section))
                 }
-            }
 
-            uiState.error != null -> {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
+                uiState.diveScore != null -> {
+                    val score = uiState.diveScore
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(Brand.Spacing.page)
+                    ) {
+                        Text(
+                            text = score.verdict.label,
+                            style = Brand.Typography.verdictLabel,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = uiState.personalityMessage,
+                            style = Brand.Typography.personalityCopy,
+                            color = Color.White.copy(alpha = 0.9f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = Brand.Spacing.item)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        ScoreRing(score = score.composite, verdict = score.verdict, onColour = true)
+
+                        // Names the signals the verdict could NOT see, so a
+                        // renormalised score is never mistaken for a complete one.
+                        if (score.isPartial) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Scored without ${score.missingSignals.joinToString(" or ")}",
+                                style = Brand.Typography.caption,
+                                color = Color.White.copy(alpha = 0.75f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Freshness and place share one line. As two rows they
+                        // ran past the bottom of a round display, where the last
+                        // line is clipped by the curve and the page indicator.
+                        // The region is dropped too: "Queidersbach" identifies the
+                        // spot, "Rheinland-Pfalz" only costs width.
+                        val place = uiState.locationLabel?.substringBefore(",")?.trim()
+                        val footer = listOfNotNull(uiState.lastRefreshedLabel, place)
+                            .filter { it.isNotEmpty() }
+                            .joinToString("  \u00B7  ")
+
+                        if (footer.isNotEmpty()) {
+                            val flagged = uiState.isStale || uiState.isUsingFallbackLocation
+                            Text(
+                                text = footer,
+                                style = Brand.Typography.caption,
+                                color = Color.White.copy(alpha = if (flagged) 1f else 0.7f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(horizontal = Brand.Spacing.item)
+                            )
+                        }
+
+                        // Clears the page indicator and the curve of the display.
+                        Spacer(modifier = Modifier.height(Brand.Spacing.section))
+                    }
+                }
+
+                uiState.error != null -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Couldn't load conditions",
+                            style = Brand.Typography.caption,
+                            color = Brand.Colors.textSecondary
+                        )
+                        Spacer(modifier = Modifier.height(Brand.Spacing.item))
+                        Text(
+                            text = "Tap to retry",
+                            style = Brand.Typography.caption,
+                            color = Brand.Colors.textSecondary
+                        )
+                    }
+                }
+
+                else -> {
                     Text(
-                        text = "Couldn't load conditions",
+                        text = "Tap to load conditions",
                         style = Brand.Typography.caption,
                         color = Brand.Colors.textSecondary
                     )
-                    Spacer(modifier = Modifier.height(Brand.Spacing.item))
-                    Text(
-                        text = "Tap to retry",
-                        style = Brand.Typography.caption,
-                        color = Brand.Colors.textSecondary
-                    )
                 }
-            }
-
-            else -> {
-                Text(
-                    text = "Tap to load conditions",
-                    style = Brand.Typography.caption,
-                    color = Brand.Colors.textSecondary
-                )
             }
         }
-    }
     }
 }
 

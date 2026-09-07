@@ -5,7 +5,7 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-09-02
+## Start here — state as of 2026-09-07
 
 ### What this app is
 
@@ -28,31 +28,36 @@ the API did not say it, the app does not either.
 
 ### Where the release stands
 
-Both store builds are **made, signed and verified**, in
-`build/release-2026-09-01/` (gitignored, rebuild if stale):
+**Wear 2.1.0 (15) was submitted and rejected on 2026-09-07** — "Wear App
+Quality Guidelines: Wear font size": text cut off by the screen edges at a
+large system text size. The fix is **Wear 2.1.1 (16)**, built and signed in
+`build/release-2026-09-07/spearo-go-2.1.1-16.aab` (gitignored, rebuild if
+stale). Full account in `docs/SESSION_WEAR_FONT_SIZE_REJECTION.md`; the short
+version is that the theme capped the font scale (a violation in itself) and
+every page used fixed insets on a round screen. Both gone; one shared
+`ScrollingPage` now owns the geometry.
 
-- `SpearoGo.ipa` — watchOS 1.1.0 (3), Apple Distribution signed
-- `spearo-go-2.1.0-15.aab` — Wear 2.1.0 (15), upload key
+watchOS 1.1.0 (3) is in `build/release-2026-09-01/SpearoGo.ipa`, not yet
+uploaded. Backend `tidesGo` is deployed and live.
 
-Backend `tidesGo` is **deployed and live**. Neither app has been uploaded to a
-store, so both version numbers are still unused.
-
-**The one remaining blocker is console work only you can do:** the store privacy
-answers. Location now reaches a Spearo server, which was not true when those
-forms were last filled in. Exact selections are in
-`docs/GOOGLE_PLAY_METADATA.md`; the Apple side must match
-`SpearoGo/PrivacyInfo.xcprivacy`. Full checklist in
-`docs/RELEASE-READINESS.md`.
+The store privacy answers (location now reaches a Spearo server) are still
+required if not already done — `docs/GOOGLE_PLAY_METADATA.md` and
+`SpearoGo/PrivacyInfo.xcprivacy`; checklist in `docs/RELEASE-READINESS.md`.
 
 ### Do these next
 
-1. **Store privacy answers**, both consoles — the blocker.
-2. **Screenshots** — stale on both stores. Wear ones can be captured from the
+1. **Sideload 2.1.1 on the Galaxy Watch** (`-Psideload`) at Settings → Display
+   → Text size → Largest and page through every screen. Verified on the emulator
+   at 1.0, 1.24 and 1.5 this session; not on a physical watch.
+2. **Upload `spearo-go-2.1.1-16.aab` to the Wear production track** and submit;
+   the Play Console asks that the noncompliant bundle be deactivated on every
+   track. Release notes are in `docs/GOOGLE_PLAY_METADATA.md`.
+3. **Screenshots** — stale on both stores. Wear ones can be captured from the
    Galaxy Watch; Apple ones from the simulator (see below).
-3. **Upload and submit**, then **reply to the Lagos customer**. He was more
-   right than he knew — his fix is live and verified against his own gauge, and
-   the tides were inverted, not merely late. Spearo Vision's
-   `docs/CUSTOMER-REPLY-alejandro-tides.md` is the template.
+4. **watchOS**: privacy answers, upload 1.1.0 (3), then **reply to the Lagos
+   customer**. He was more right than he knew — his fix is live and verified
+   against his own gauge, and the tides were inverted, not merely late. Spearo
+   Vision's `docs/CUSTOMER-REPLY-alejandro-tides.md` is the template.
 
 ### Things that will bite you
 
@@ -71,6 +76,36 @@ forms were last filled in. Exact selections are in
   stay awake while charging.
 - **A locally built APK can never update the Play install** — Play App Signing
   re-signs uploads. Use `-Psideload` to install a separate copy beside it.
+- **The Wear emulator (API 34 image) crashes the targetSdk 35 build at launch**
+  — wear-compose-foundation 1.4.1 reads a settings key API 34 refuses to
+  targetSdk 35 apps. Real watches are fine. Build with `targetSdk = 34` locally
+  for emulator work and never commit it. `BACKLOG.md`.
+- **Every screen goes through `ui/components/ScrollingPage.kt`.** Do not add a
+  page with its own `Column.verticalScroll().padding(12.dp)` — that is exactly
+  what Play rejected. Test any layout change at Text size → Largest.
+
+---
+
+## 2026-09-07 — Play rejection: Wear font size
+
+Second rejection under the same guideline (the first was 2026-04-19, answered
+by making pages scroll). Root cause was two things: `SpearoGoTheme` clamped the
+font scale to 1.3, which is a violation of "conform to the font size set by the
+user" on its face; and every page laid its content out with a fixed 12 dp inset
+in a full-screen scroll, so once the text outgrew the viewport the first line
+landed under the clock on a ~100 dp chord and the last on the bottom arc.
+Reproduced on the emulator at the picker's "Largest" (font scale 1.24) — the
+cap never even engaged on that device; the clipping is geometry.
+
+Fix: cap removed; new `ScrollingPage` / `ScrollingList` inset the *viewport*
+(top 10%, bottom 12%, sides 8%), start text at 15%, fade the edges while there
+is more to scroll, and add room under the last line only when the page
+overflows — decided at measure time, not from `ScrollState.maxValue`, which is
+unbounded before first layout and made every page scroll when used. Reading
+rows share their width so they wrap instead of overflowing. All eleven screens
+converted. Default size unchanged (screenshot-compared). 2.1.1 (16) built.
+Details, geometry and the emulator crash workaround:
+`docs/SESSION_WEAR_FONT_SIZE_REJECTION.md`.
 
 ---
 
