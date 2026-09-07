@@ -6,16 +6,39 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.ui.theme.Brand
 
+/**
+ * A row of readings, centred, that shares its width between its items.
+ *
+ * Items were laid out at their natural width with a fixed gap, which is fine
+ * until the text size grows enough for two of them to be wider than the
+ * screen; then the row overflowed and the outer digits were cut by the round
+ * edge. Each item is now capped at its share of the row and wraps inside it.
+ */
 @Composable
-fun ConditionItem(icon: String, label: String, value: String, unit: String) {
+fun ConditionRow(
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+        content = content
+    )
+}
+
+@Composable
+fun RowScope.ConditionItem(icon: String, label: String, value: String, unit: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Brand.Spacing.micro),
-        modifier = Modifier.widthIn(min = 60.dp)
+        modifier = Modifier
+            .weight(1f, fill = false)
+            .widthIn(min = 60.dp)
     ) {
         // Icon represented as text emoji for simplicity on Wear OS
         Text(
@@ -27,7 +50,8 @@ fun ConditionItem(icon: String, label: String, value: String, unit: String) {
         Text(
             text = label.uppercase(),
             style = Brand.Typography.itemLabel,
-            color = Brand.Colors.textSecondary
+            color = Brand.Colors.textSecondary,
+            textAlign = TextAlign.Center
         )
 
         Row(
@@ -37,7 +61,8 @@ fun ConditionItem(icon: String, label: String, value: String, unit: String) {
             Text(
                 text = value,
                 style = Brand.Typography.dataValue,
-                color = Brand.Colors.textPrimary
+                color = Brand.Colors.textPrimary,
+                textAlign = TextAlign.Center
             )
             if (unit.isNotEmpty()) {
                 Text(
@@ -51,11 +76,13 @@ fun ConditionItem(icon: String, label: String, value: String, unit: String) {
 }
 
 @Composable
-fun ConditionItemSkeleton() {
+fun RowScope.ConditionItemSkeleton() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Brand.Spacing.micro),
-        modifier = Modifier.widthIn(min = 60.dp)
+        modifier = Modifier
+            .weight(1f, fill = false)
+            .widthIn(min = 60.dp)
     ) {
         Box(
             modifier = Modifier

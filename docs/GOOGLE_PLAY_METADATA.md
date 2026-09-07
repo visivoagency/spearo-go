@@ -118,6 +118,16 @@ https://spearotracker.com/privacy-policy
 
 ## Release Notes
 
+### 2.1.1 (16)
+
+Fixes text being cut off at larger text sizes.
+
+If you set a larger text size in your watch's settings, some screens ran their
+first line into the clock and lost their last line off the bottom of the round
+display. Every screen now keeps its text clear of the clock and the screen
+edges at any text size, and scrolls when there is more to show. The app no
+longer limits how large you can make the text.
+
 ### 2.1.0 (15)
 
 Tide times now come from real tide stations.

@@ -2,6 +2,24 @@
 
 ## Open
 
+### Wear crashes at launch on the API 34 emulator image with targetSdk 35
+`androidx.wear.compose:compose-foundation:1.4.1` reads `Settings.Global`
+`reduce_motion`, which the API 34 settings provider refuses to apps targeting
+35: `SecurityException: Settings key: <reduce_motion> is only readable to apps
+with targetSdkVersion lower than or equal to: 34`. Physical Wear OS 5/6 watches
+are fine (the Play build was reviewed on one). Blocks emulator testing of the
+store configuration; the 2026-09-07 session built with `targetSdk = 34`
+locally to work around it. Check whether a newer wear-compose guards the read,
+and whether any real device with the same settings provider exists.
+
+### watchOS caps Dynamic Type at accessibility2
+`SpearoGoApp.swift` applies `.dynamicTypeSize(...accessibility2)`. The Wear
+equivalent (a 1.3 font-scale ceiling) is what Google Play rejected 2.1.0 (15)
+for; Apple has not objected. The `CLAUDE.md` lockstep rule covers the type
+scale, which is unchanged, but the two platforms now differ in whether they
+bound the user's size. Decide deliberately; if the cap goes, the watchOS pages
+need the same round-screen viewport treatment as `ScrollingPage.kt`.
+
 ### Release blockers
 See `docs/RELEASE-READINESS.md`. Three: enable the Firestore TTL policies
 (`gcloud` was unavailable when the backend was deployed), update the Play Data

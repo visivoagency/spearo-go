@@ -3,37 +3,26 @@ package com.spearotracker.spearogo.ui.pages
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.models.TidePhase
 import com.spearotracker.spearogo.ui.AppUiState
+import com.spearotracker.spearogo.ui.components.ScrollingPage
 import com.spearotracker.spearogo.ui.theme.Brand
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import java.util.TimeZone
 
 @Composable
 fun TidesPage(uiState: AppUiState) {
-    val scrollState = rememberScrollState()
-
-    ScreenScaffold(scrollState = scrollState) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(Brand.Spacing.page),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    ScrollingPage {
         Text(
             text = "TIDES",
             style = Brand.Typography.sectionHeader,
@@ -161,7 +150,8 @@ fun TidesPage(uiState: AppUiState) {
                     style = Brand.Typography.caption,
                     color = Brand.Colors.textSecondary,
                     textAlign = TextAlign.Center,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         } else if (uiState.isLoading) {
@@ -181,6 +171,5 @@ fun TidesPage(uiState: AppUiState) {
                 textAlign = TextAlign.Center
             )
         }
-    }
     }
 }

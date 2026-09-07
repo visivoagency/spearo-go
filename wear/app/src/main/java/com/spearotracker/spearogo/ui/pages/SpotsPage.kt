@@ -11,7 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -27,6 +26,7 @@ import androidx.wear.input.RemoteInputIntentHelper
 import com.spearotracker.spearogo.models.GeocodedPlace
 import com.spearotracker.spearogo.models.SavedLocation
 import com.spearotracker.spearogo.ui.AppViewModel
+import com.spearotracker.spearogo.ui.components.ScrollingList
 import com.spearotracker.spearogo.ui.theme.Brand
 
 private const val QUERY_KEY = "spot_query"
@@ -74,18 +74,13 @@ fun SpotsPage(
         launcher.launch(intent)
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = Brand.Spacing.page),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    ScrollingList {
         item {
             Text(
                 text = "SPOTS",
                 style = Brand.Typography.sectionHeader,
                 color = Brand.Colors.textSecondary,
-                modifier = Modifier.padding(top = 28.dp, bottom = Brand.Spacing.item)
+                modifier = Modifier.padding(bottom = Brand.Spacing.item)
             )
         }
 
@@ -141,7 +136,6 @@ fun SpotsPage(
         }
 
         item { ActionRow(icon = "ℹ️", label = "About") { onAbout() } }
-        item { Spacer(modifier = Modifier.height(24.dp)) }
     }
 }
 
