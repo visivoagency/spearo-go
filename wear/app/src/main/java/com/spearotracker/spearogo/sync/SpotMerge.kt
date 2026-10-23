@@ -1,5 +1,6 @@
 package com.spearotracker.spearogo.sync
 
+import kotlin.math.PI
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.pow
@@ -31,22 +32,30 @@ private const val EARTH_RADIUS_M = 6_371_000.0
 private const val SAME_SPOT_METRES = 100.0
 
 private fun haversineMetres(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val p1 = Math.toRadians(lat1)
-    val p2 = Math.toRadians(lat2)
-    val dp = Math.toRadians(lat2 - lat1)
-    val dl = Math.toRadians(lon2 - lon1)
+    val p1 = lat1 * PI / 180
+    val p2 = lat2 * PI / 180
+    val dp = (lat2 - lat1) * PI / 180
+    val dl = (lon2 - lon1) * PI / 180
     val h = sin(dp / 2).pow(2) + cos(p1) * cos(p2) * sin(dl / 2).pow(2)
     return 2 * EARTH_RADIUS_M * asin(sqrt(h))
 }
 
 /** Case-insensitive trimmed name AND within 100 m. */
 fun isSameSpot(a: LocalSpot, b: RemoteSpot): Boolean =
-    a.name.trim().equals(b.name.trim(), ignoreCase = true) &&
+    a.name.trim().lowercase() == b.name.trim().lowercase() &&
         haversineMetres(a.latitude, a.longitude, b.latitude, b.longitude) <= SAME_SPOT_METRES
 
+private fun refreshed(l: LocalSpot, r: RemoteSpot): LocalSpot = l.copy(
+    name = r.name, latitude = r.latitude, longitude = r.longitude,
+    lastModifiedAt = r.lastModifiedAt ?: l.lastModifiedAt,
+    isDeleted = false, pendingSync = false)
+
 /** Pure two-way merge. `remote` must be complete (both collections, all pages). */
-fun planSync(local: List<LocalSpot>, remote: List<RemoteSpot>, newId: () -> String): SyncPlan {
-    val remoteById = remote.associateBy { it.docId }
+fun planSync(local: List<LocalSpot>, remoteAll: List<RemoteSpot>, newId: () -> String): SyncPlan {
+    // Duplicate docIds: the FIRST occurrence wins (same as Swift).
+    val remoteById = LinkedHashMap<String, RemoteSpot>()
+    for (r in remoteAll) remoteById.putIfAbsent(r.docId, r)
+    val remote = remoteById.values.toList()
     val upsertLocal = mutableListOf<LocalSpot>()
     val deleteLocal = mutableListOf<String>()
     val pushUpsert = mutableListOf<LocalSpot>()
@@ -64,21 +73,23 @@ fun planSync(local: List<LocalSpot>, remote: List<RemoteSpot>, newId: () -> Stri
         if (cloudId != null) {
             val r = remoteById[cloudId]
             if (r == null) {
-                // Rule 2
-                if (l.pendingSync) pushUpsert.add(l) else deleteLocal.add(l.id)
+                // Rule 2. VISION is never pushed: it follows the remote.
+                if (l.origin == SpotOrigin.VISION) deleteLocal.add(l.id)
+                else if (l.pendingSync) pushUpsert.add(l) else deleteLocal.add(l.id)
+            } else if (l.origin == SpotOrigin.VISION) {
+                // VISION local: never pushed, follows the remote.
+                if (r.isDeleted) deleteLocal.add(l.id) else upsertLocal.add(refreshed(l, r))
             } else if (l.isDeleted) {
-                // Rule 1: pending delete. VISION is read-only: neither pushed nor dropped.
-                if (r.origin != SpotOrigin.VISION) pushDelete.add(r)
+                // Rule 1: pending delete. Already deleted remotely: just drop the row.
+                if (r.isDeleted) deleteLocal.add(l.id)
+                else if (r.origin != SpotOrigin.VISION) pushDelete.add(r)
             } else if (r.isDeleted) {
                 if (l.pendingSync && l.lastModifiedAt > (r.lastModifiedAt ?: 0L)) pushUpsert.add(l)
                 else deleteLocal.add(l.id)
             } else if (l.pendingSync && l.lastModifiedAt >= (r.lastModifiedAt ?: 0L)) {
                 pushUpsert.add(l)
             } else {
-                upsertLocal.add(l.copy(
-                    name = r.name, latitude = r.latitude, longitude = r.longitude,
-                    lastModifiedAt = r.lastModifiedAt ?: l.lastModifiedAt,
-                    pendingSync = false))
+                upsertLocal.add(refreshed(l, r))
             }
         } else {
             // Rule 3
@@ -91,6 +102,8 @@ fun planSync(local: List<LocalSpot>, remote: List<RemoteSpot>, newId: () -> Stri
                 if (match != null) {
                     claimed.add(match.docId)
                     upsertLocal.add(l.copy(cloudId = match.docId, origin = match.origin, pendingSync = false))
+                } else if (l.origin == SpotOrigin.VISION) {
+                    deleteLocal.add(l.id)
                 } else {
                     pushUpsert.add(l.copy(cloudId = l.id))
                 }

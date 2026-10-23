@@ -37,8 +37,13 @@ class SpotMergeTest {
             assertEquals("${c.name}: upsertLocal", c.expect.upsertLocal.toSet(), up.toSet())
             assertEquals("${c.name}: upsertLocal size", c.expect.upsertLocal.size, up.size)
             assertEquals("${c.name}: deleteLocal", c.expect.deleteLocal.toSet(), plan.deleteLocal.toSet())
-            assertEquals("${c.name}: pushUpsert", c.expect.pushUpsert.toSet(), plan.pushUpsert.map { it.id }.toSet())
-            assertEquals("${c.name}: pushDelete", c.expect.pushDelete.toSet(), plan.pushDelete.map { it.docId }.toSet())
+            assertEquals("${c.name}: deleteLocal size", c.expect.deleteLocal.size, plan.deleteLocal.size)
+            val pu = plan.pushUpsert.map { it.id }
+            assertEquals("${c.name}: pushUpsert", c.expect.pushUpsert.toSet(), pu.toSet())
+            assertEquals("${c.name}: pushUpsert size", c.expect.pushUpsert.size, pu.size)
+            val pd = plan.pushDelete.map { it.docId }
+            assertEquals("${c.name}: pushDelete", c.expect.pushDelete.toSet(), pd.toSet())
+            assertEquals("${c.name}: pushDelete size", c.expect.pushDelete.size, pd.size)
         }
     }
 

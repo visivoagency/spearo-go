@@ -59,10 +59,23 @@ func isSameSpot(_ a: LocalSpot, _ b: RemoteSpot) -> Bool {
 
 private let epoch = Date(timeIntervalSince1970: 0)
 
+private func refreshed(_ l: LocalSpot, _ r: RemoteSpot) -> LocalSpot {
+    var u = l
+    u.name = r.name
+    u.latitude = r.latitude
+    u.longitude = r.longitude
+    u.lastModifiedAt = r.lastModifiedAt ?? l.lastModifiedAt
+    u.isDeleted = false
+    u.pendingSync = false
+    return u
+}
+
 /// Pure two-way merge. `remote` must be complete (both collections, all pages).
-func planSync(local: [LocalSpot], remote: [RemoteSpot], newId: () -> String) -> SyncPlan {
+func planSync(local: [LocalSpot], remote remoteAll: [RemoteSpot], newId: () -> String) -> SyncPlan {
+    // Duplicate docIds: the FIRST occurrence wins (same as Kotlin).
     var remoteById: [String: RemoteSpot] = [:]
-    for r in remote where remoteById[r.docId] == nil { remoteById[r.docId] = r }
+    var remote: [RemoteSpot] = []
+    for r in remoteAll where remoteById[r.docId] == nil { remoteById[r.docId] = r; remote.append(r) }
     var upsertLocal: [LocalSpot] = []
     var deleteLocal: [String] = []
     var pushUpsert: [LocalSpot] = []
@@ -77,26 +90,25 @@ func planSync(local: [LocalSpot], remote: [RemoteSpot], newId: () -> String) -> 
     for l in local {
         if let cloudId = l.cloudId {
             guard let r = remoteById[cloudId] else {
-                // Rule 2
-                if l.pendingSync { pushUpsert.append(l) } else { deleteLocal.append(l.id) }
+                // Rule 2. VISION is never pushed: it follows the remote.
+                if l.origin == .vision { deleteLocal.append(l.id) }
+                else if l.pendingSync { pushUpsert.append(l) } else { deleteLocal.append(l.id) }
                 continue
             }
-            if l.isDeleted {
-                // Rule 1: pending delete. VISION is read-only: neither pushed nor dropped.
-                if r.origin != .vision { pushDelete.append(r) }
+            if l.origin == .vision {
+                // VISION local: never pushed, follows the remote.
+                if r.isDeleted { deleteLocal.append(l.id) } else { upsertLocal.append(refreshed(l, r)) }
+            } else if l.isDeleted {
+                // Rule 1: pending delete. Already deleted remotely: just drop the row.
+                if r.isDeleted { deleteLocal.append(l.id) }
+                else if r.origin != .vision { pushDelete.append(r) }
             } else if r.isDeleted {
                 if l.pendingSync && l.lastModifiedAt > (r.lastModifiedAt ?? epoch) { pushUpsert.append(l) }
                 else { deleteLocal.append(l.id) }
             } else if l.pendingSync && l.lastModifiedAt >= (r.lastModifiedAt ?? epoch) {
                 pushUpsert.append(l)
             } else {
-                var u = l
-                u.name = r.name
-                u.latitude = r.latitude
-                u.longitude = r.longitude
-                u.lastModifiedAt = r.lastModifiedAt ?? l.lastModifiedAt
-                u.pendingSync = false
-                upsertLocal.append(u)
+                upsertLocal.append(refreshed(l, r))
             }
         } else {
             // Rule 3
@@ -111,6 +123,8 @@ func planSync(local: [LocalSpot], remote: [RemoteSpot], newId: () -> String) -> 
                 u.origin = match.origin
                 u.pendingSync = false
                 upsertLocal.append(u)
+            } else if l.origin == .vision {
+                deleteLocal.append(l.id)
             } else {
                 var p = l
                 p.cloudId = l.id
