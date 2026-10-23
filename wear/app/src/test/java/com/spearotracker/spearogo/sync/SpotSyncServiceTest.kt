@@ -3,6 +3,7 @@ package com.spearotracker.spearogo.sync
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.spearotracker.spearogo.models.SavedLocation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
@@ -21,21 +22,34 @@ import java.util.Collections
 import java.util.concurrent.TimeUnit
 
 /** In-memory stand-in for the Room DAO; counts writes so "applied nothing" is checkable. */
-class FakeSpotStore(vararg initial: SavedLocation) : SpotStore {
-    val rows = LinkedHashMap<String, SavedLocation>().apply { initial.forEach { put(it.id, it) } }
+class FakeSpotStore(vararg initial: SavedLocation) : SpotStore, SpotTransactor {
+    val rows = Collections.synchronizedMap(LinkedHashMap<String, SavedLocation>().apply { initial.forEach { put(it.id, it) } })
     var writes = 0
     var onWrite: () -> Unit = {}
+    var inTransaction = false
+    var transactions = 0
+    /** Sync-path writes that happened outside a transaction (detachAll is sign-out's, so excluded). */
+    var writesOutsideTransaction = 0
+
+    override suspend fun run(block: suspend () -> Unit) {
+        transactions++; inTransaction = true
+        try { block() } finally { inTransaction = false }
+    }
+    private fun syncWrite() { writes++; if (!inTransaction) writesOutsideTransaction++; onWrite() }
 
     override suspend fun getAllIncludingDeleted(): List<SavedLocation> = rows.values.toList()
     override suspend fun upsertAll(rows: List<SavedLocation>) {
-        writes++; onWrite(); rows.forEach { this.rows[it.id] = it }
+        syncWrite(); rows.forEach { this.rows[it.id] = it }
     }
     override suspend fun hardDelete(ids: List<String>) {
-        writes++; onWrite(); ids.forEach { rows.remove(it) }
+        syncWrite(); ids.forEach { rows.remove(it) }
+    }
+    override suspend fun linkCloudId(id: String, cloudId: String) {
+        syncWrite(); rows[id]?.takeIf { it.cloudId == null }?.let { rows[id] = it.copy(cloudId = cloudId) }
     }
     override suspend fun detachAll() {
         writes++; onWrite()
-        rows.values.filter { it.isDeleted }.forEach { rows.remove(it.id) }
+        rows.values.filter { it.isDeleted }.toList().forEach { rows.remove(it.id) }
         rows.replaceAll { _, r -> r.copy(cloudId = null, pendingSync = false) }
     }
 }
@@ -59,6 +73,10 @@ class SpotSyncServiceTest {
     private var listCode = 200
     private var queryCode = 200
     private var spotPatchCode = 200
+    /** Runs on the server thread when a spot PATCH arrives, before it is answered. */
+    private var onSpotPatch: (RecordedRequest) -> Unit = {}
+    /** When true, spot PATCHes are written into [accountDocs], so a later sync reads them back. */
+    private var persistPatches = false
 
     private val http = OkHttpClient.Builder().readTimeout(2, TimeUnit.SECONDS).retryOnConnectionFailure(false).build()
     private val base get() = server.url("/v1/projects/p/databases/(default)/documents").toString()
@@ -67,7 +85,7 @@ class SpotSyncServiceTest {
         tokens.stored = Session("U1", "id-token", "refresh", now + 30L * 24 * 3_600_000L, null)
     }
 
-    private fun service(dao: SpotStore): SpotSyncService {
+    private fun service(dao: FakeSpotStore): SpotSyncService {
         val auth = AuthClient(
             http = http, baseIdentity = server.url("/identity").toString().trimEnd('/'),
             baseSecureToken = server.url("/securetoken").toString().trimEnd('/'),
@@ -75,7 +93,7 @@ class SpotSyncServiceTest {
         )
         val firestore = FirestoreClient(http, base, mapOf("X-Android-Package" to "com.example.go"))
         var n = 0
-        return SpotSyncService(auth, firestore, dao, marker, clock = { now }, newId = { "new-${n++}" }, log = {})
+        return SpotSyncService(auth, firestore, dao, marker, transactor = dao, clock = { now }, newId = { "new-${n++}" }, log = {})
     }
 
     private fun doc(path: String, name: String, lat: Double, lon: Double, modified: String) = JsonObject().apply {
@@ -109,7 +127,11 @@ class SpotSyncServiceTest {
                             add(JsonObject().apply { addProperty("readTime", "2026-10-23T12:00:00Z") })
                         }.toString())
                     }
-                    request.method == "PATCH" && path.contains("/users/U1/spots/") -> json(spotPatchCode, "{}")
+                    request.method == "PATCH" && path.contains("/users/U1/spots/") -> {
+                        onSpotPatch(request)
+                        if (spotPatchCode == 200 && persistPatches) persist(request)
+                        json(spotPatchCode, "{}")
+                    }
                     request.method == "PATCH" && path.endsWith("/users/U1") -> json(200, "{}")
                     else -> json(404, "{}")
                 }
@@ -119,6 +141,19 @@ class SpotSyncServiceTest {
     }
 
     @After fun tearDown() { server.shutdown() }
+
+    private fun persist(request: RecordedRequest) {
+        val docId = request.requestUrl!!.pathSegments.last()
+        val sent = JsonParser.parseString(request.body.clone().readUtf8()).asJsonObject.getAsJsonObject("fields")
+        val existing = accountDocs.firstOrNull { it.get("name").asString.endsWith("/spots/$docId") }
+        val fields = existing?.getAsJsonObject("fields")?.deepCopy() ?: JsonObject()
+        sent.entrySet().forEach { (k, v) -> fields.add(k, v) }
+        val doc = JsonObject().apply {
+            addProperty("name", "projects/p/databases/(default)/documents/users/U1/spots/$docId")
+            add("fields", fields)
+        }
+        accountDocs = accountDocs.filter { it !== existing } + doc
+    }
 
     private fun spotPatches() = requests.filter { it.method == "PATCH" && it.requestUrl!!.encodedPath.contains("/spots/") }
     private fun markerPatches() = requests.filter { it.method == "PATCH" && it.requestUrl!!.encodedPath.endsWith("/users/U1") }
@@ -306,5 +341,103 @@ class SpotSyncServiceTest {
         assertFalse(dao.rows["A"]!!.pendingSync)
         assertEquals(SyncState.SignedOut, svc.state.value)
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun deleteDuringPushIsNotUndone() = runBlocking {
+        signedIn()
+        val dao = FakeSpotStore(
+            SavedLocation(id = "L1", name = "Home reef", latitude = 10.0, longitude = 10.0, createdAt = 1000, pendingSync = true)
+        )
+        persistPatches = true
+        // The user deletes L1 while its upload is on the wire (what LocationDao.markDeleted does).
+        onSpotPatch = {
+            dao.rows["L1"] = dao.rows["L1"]!!.copy(isDeleted = true, pendingSync = true, lastModifiedAt = now, isActive = false)
+            onSpotPatch = {}
+        }
+        val svc = service(dao)
+        svc.sync()
+
+        // The edit survived, and the row still learned which doc its push created.
+        val row = dao.rows["L1"]!!
+        assertTrue(row.isDeleted && row.pendingSync)
+        assertEquals("L1", row.cloudId)
+
+        svc.sync()
+        val deletes = spotPatches().filter { "is_deleted" in it.requestUrl!!.queryParameterValues("updateMask.fieldPaths") &&
+            it.requestUrl!!.queryParameterValues("updateMask.fieldPaths").size == 2 }
+        assertEquals(1, deletes.size)
+        assertTrue(deletes[0].requestUrl!!.encodedPath.endsWith("/users/U1/spots/L1"))
+        assertTrue(dao.rows.isEmpty())
+        assertEquals(0, dao.writesOutsideTransaction)
+    }
+
+    @Test
+    fun signOutMidSyncAppliesNothing() = runBlocking {
+        signedIn()
+        val dao = FakeSpotStore(
+            SavedLocation(id = "L1", name = "Home reef", latitude = 10.0, longitude = 10.0, createdAt = 1000, pendingSync = true)
+        )
+        accountDocs = listOf(doc("users/U1/spots/W1", "Wreck", 20.0, 20.0, "2026-10-01T00:00:00Z"))
+        lateinit var svc: SpotSyncService
+        var signOutJob: kotlinx.coroutines.Job? = null
+        onSpotPatch = {
+            signOutJob = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch { svc.signOut() }
+            val deadline = System.currentTimeMillis() + 2000
+            while (tokens.stored != null && System.currentTimeMillis() < deadline) Thread.sleep(5)
+        }
+        svc = service(dao)
+        svc.sync()
+
+        assertEquals(0, dao.writes)              // apply touched nothing
+        assertTrue(dao.rows.values.none { it.cloudId == "W1" })
+        signOutJob!!.join()
+        assertNull(tokens.stored)
+        assertEquals(SyncState.SignedOut, svc.state.value)
+        val row = dao.rows.values.single()
+        assertNull(row.cloudId)
+        assertFalse(row.pendingSync)
+        assertEquals(1, dao.writes)              // only detachAll
+    }
+
+    @Test
+    fun neverPushesOverCamelCaseAccountDoc() = runBlocking {
+        signedIn()
+        val dao = FakeSpotStore(
+            SavedLocation(id = "A", name = "Local edit", latitude = 20.0, longitude = 20.0, createdAt = 1000,
+                isActive = true, cloudId = "C1", lastModifiedAt = Instant.parse("2026-10-20T00:00:00Z").toEpochMilli(),
+                pendingSync = true, origin = "ACCOUNT")
+        )
+        accountDocs = listOf(JsonObject().apply {
+            addProperty("name", "projects/p/databases/(default)/documents/users/U1/spots/C1")
+            add("fields", JsonParser.parseString("""
+                {"name":{"stringValue":"Tracker name"},"latitude":{"doubleValue":20.0},"longitude":{"doubleValue":20.0},
+                 "isDeleted":{"booleanValue":false},"lastModifiedAt":{"timestampValue":"2026-10-01T00:00:00Z"}}
+            """).asJsonObject)
+        })
+
+        val svc = service(dao)
+        svc.sync()
+
+        assertTrue(spotPatches().isEmpty())
+        val row = dao.rows["A"]!!
+        assertEquals("Tracker name", row.name)
+        assertFalse(row.pendingSync)
+        assertEquals("C1", row.cloudId)
+        assertTrue(row.isActive)
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    @Test
+    fun applyRunsInOneTransaction() = runBlocking {
+        signedIn()
+        val dao = FakeSpotStore(
+            SavedLocation(id = "L1", name = "Home reef", latitude = 10.0, longitude = 10.0, createdAt = 1000, pendingSync = true)
+        )
+        accountDocs = listOf(doc("users/U1/spots/W1", "Wreck", 20.0, 20.0, "2026-10-01T00:00:00Z"))
+        service(dao).sync()
+        assertEquals(1, dao.transactions)
+        assertTrue(dao.writes > 0)
+        assertEquals(0, dao.writesOutsideTransaction)
     }
 }

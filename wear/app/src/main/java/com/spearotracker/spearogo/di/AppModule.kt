@@ -2,6 +2,7 @@ package com.spearotracker.spearogo.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import com.spearotracker.spearogo.services.AppDatabase
 import com.spearotracker.spearogo.services.LocationDao
 import com.spearotracker.spearogo.services.MIGRATION_1_2
@@ -85,6 +86,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSpotSyncService(
-        @ApplicationContext context: Context, auth: AuthClient, firestore: FirestoreClient, dao: LocationDao,
-    ): SpotSyncService = SpotSyncService(auth, firestore, dao, SharedPrefsSyncMarkerStore(context))
+        @ApplicationContext context: Context, auth: AuthClient, firestore: FirestoreClient,
+        database: AppDatabase, dao: LocationDao,
+    ): SpotSyncService = SpotSyncService(
+        auth, firestore, dao, SharedPrefsSyncMarkerStore(context),
+        transactor = { block -> database.withTransaction { block() } },
+    )
 }

@@ -32,6 +32,9 @@ interface LocationDao : SpotStore {
     @Query("DELETE FROM saved_locations WHERE id IN (:ids)")
     override suspend fun hardDelete(ids: List<String>)
 
+    @Query("UPDATE saved_locations SET cloudId = :cloudId WHERE id = :id AND cloudId IS NULL")
+    override suspend fun linkCloudId(id: String, cloudId: String)
+
     @Query("DELETE FROM saved_locations WHERE isDeleted = 1")
     suspend fun deleteSoftDeleted()
 

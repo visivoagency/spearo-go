@@ -13,11 +13,17 @@ import SwiftData
 //  2. Fetch Vision's top-level `spots` FIRST, then `users/{uid}/spots` (first docId
 //     wins in the merge, so a Vision-owned doc stays read-only). Either fetch fails ->
 //     .failed and NOTHING is applied: a partial remote list would make rule 2 delete spots.
-//  3. planSync.
+//  3. planSync. A pushUpsert aimed at an existing camelCase ACCOUNT doc is not pushed
+//     (see withoutCamelCasePushes); the row follows the remote instead.
 //  4. Push upserts, then soft deletes.
 //  5. Apply locally: upsertLocal (keeping each row's isActive), deleteLocal, then the
 //     successful pushes (pendingSync=false + cloudId persisted; pushed deletes removed).
-//     A row the user changed while the sync was on the wire is left for the next sync.
+//     A row the user changed while the sync was on the wire is left for the next sync,
+//     except that a pushed row still without a cloudId is linked to the doc it created
+//     (else the doc would be orphaned and come back as a new spot). Apply runs in one
+//     synchronous main-actor block, so no UI edit can land between its read and its writes.
+//     A local store error (fetch or save) is .failed("Sync failed. Try again."), never an
+//     empty snapshot.
 //  6. Failed pushes stay pending; state .failed("Couldn't upload N spots").
 // The account marker is written on sign-in and at most once per 24 h after that.
 //
@@ -46,6 +52,7 @@ actor SpotSyncService {
     private static let markerKey = "sync.markerWrittenAt"
     private static let markerInterval: TimeInterval = 24 * 60 * 60
     private static let unreachable = "Couldn't reach your account"
+    private static let storeFailed = "Sync failed. Try again."
 
     private let auth: AuthClient
     private let firestore: FirestoreClient
@@ -78,7 +85,12 @@ actor SpotSyncService {
 
     /// Right after a successful sign-in: the marker (always), then a first sync.
     func onSignedIn(session: Session) async {
-        await writeMarker(uid: session.uid, token: session.idToken)
+        // In the queue, so it can't race a sign-out; skipped if one already happened.
+        await enqueue { service in
+            if service.auth.session()?.uid == session.uid {
+                await service.writeMarker(uid: session.uid, token: session.idToken)
+            }
+        }
         await sync()
     }
 
@@ -139,10 +151,17 @@ actor SpotSyncService {
         }
 
         // 3.
-        let snapshot: [LocalSpot] = await MainActor.run {
-            ((try? container.mainContext.fetch(FetchDescriptor<SavedLocation>())) ?? []).map { $0.toLocalSpot() }
+        let snapshot: [LocalSpot]
+        do {
+            snapshot = try await MainActor.run {
+                try container.mainContext.fetch(FetchDescriptor<SavedLocation>()).map { $0.toLocalSpot() }
+            }
+        } catch {
+            print("[SpotSyncService] local read failed; applied nothing")
+            await setState(.failed(Self.storeFailed))
+            return
         }
-        let plan = planSync(local: snapshot, remote: remote, newId: newId)
+        let plan = Self.withoutCamelCasePushes(planSync(local: snapshot, remote: remote, newId: newId), remote: remote)
         let nowIso = SpotCodec.iso(clock())
 
         // 4. Pushes: upserts, then soft deletes.
@@ -153,6 +172,10 @@ actor SpotSyncService {
             linked.cloudId = spot.cloudId ?? spot.id
             let fields = SpotCodec.encodeUpsert(linked, uid: uid, nowIso: nowIso)
             do {
+                // Masked to Go's own 12 snake_case keys, so a website doc keeps its other fields
+                // (notes, photos...). It is never a camelCase doc: withoutCamelCasePushes dropped
+                // those, since adding snake keys beside camel ones would leave the camel
+                // isDeleted/lastModifiedAt that Tracker's restore reads stale.
                 try await firestore.patch(path: "users/\(uid)/spots/\(linked.cloudId!)", fields: fields,
                                           mask: Array(fields.keys), token: token)
                 linked.pendingSync = false
@@ -185,8 +208,19 @@ actor SpotSyncService {
         deletes += snapshot.filter { $0.isDeleted && $0.cloudId.map(pushedDeleteDocIds.contains) == true }.map(\.id)
 
         let toUpsert = upserts, toDelete = deletes
-        let skipped = await MainActor.run { () -> Int in
-            Self.apply(upserts: toUpsert, deletes: toDelete, snapshot: snapshot, context: container.mainContext)
+        var pushedIds: [String: String] = [:]
+        for s in pushedUpserts { pushedIds[s.id] = s.cloudId }
+        let links = pushedIds
+        let skipped: Int
+        do {
+            skipped = try await MainActor.run { () throws -> Int in
+                try Self.apply(upserts: toUpsert, deletes: toDelete, links: links, snapshot: snapshot,
+                               context: container.mainContext)
+            }
+        } catch {
+            print("[SpotSyncService] local write failed; rolled back")
+            await setState(.failed(Self.storeFailed))
+            return
         }
         if skipped > 0 { print("[SpotSyncService] \(skipped) spots changed during sync; left for next time") }
 
@@ -204,10 +238,11 @@ actor SpotSyncService {
 
     /// Writes the plan into the store. Returns how many rows it left alone because the
     /// user changed, added or removed them since `snapshot` was taken.
+    /// `links`: local id -> cloudId of each successful pushUpsert.
     @MainActor
-    private static func apply(upserts: [LocalSpot], deletes: [String], snapshot: [LocalSpot],
-                              context: ModelContext) -> Int {
-        let rows = (try? context.fetch(FetchDescriptor<SavedLocation>())) ?? []
+    private static func apply(upserts: [LocalSpot], deletes: [String], links: [String: String],
+                              snapshot: [LocalSpot], context: ModelContext) throws -> Int {
+        let rows = try context.fetch(FetchDescriptor<SavedLocation>())
         var byId: [String: SavedLocation] = [:]
         for row in rows { byId[row.id.uuidString] = row }
         var before: [String: LocalSpot] = [:]
@@ -240,8 +275,45 @@ actor SpotSyncService {
             guard untouched(id) else { skipped += 1; continue }
             if let row = byId[id] { context.delete(row) }
         }
-        try? context.save()
+        // Pushed, then edited meanwhile: still record which doc it created (only if unlinked).
+        for (id, cloudId) in links where !untouched(id) {
+            if let row = byId[id], row.cloudId == nil { row.cloudId = cloudId }
+        }
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
         return skipped
+    }
+
+    /// Ruling: a pushUpsert never targets an existing camelCase ACCOUNT doc. Such a spot follows
+    /// the remote instead, as merge rule 1's else-branch would: refreshed if the doc is live,
+    /// dropped locally if the doc is deleted.
+    private static func withoutCamelCasePushes(_ plan: SyncPlan, remote: [RemoteSpot]) -> SyncPlan {
+        var byId: [String: RemoteSpot] = [:]
+        for r in remote where byId[r.docId] == nil { byId[r.docId] = r }   // first wins, as in planSync
+        var out = plan
+        out.pushUpsert = []
+        for l in plan.pushUpsert {
+            guard let r = l.cloudId.flatMap({ byId[$0] }), r.origin == .account, r.camelCase else {
+                out.pushUpsert.append(l); continue
+            }
+            if r.isDeleted {
+                out.deleteLocal.append(l.id)
+            } else {
+                var u = l
+                u.name = r.name
+                u.latitude = r.latitude
+                u.longitude = r.longitude
+                u.lastModifiedAt = r.lastModifiedAt ?? l.lastModifiedAt
+                u.isDeleted = false
+                u.pendingSync = false
+                out.upsertLocal.append(u)
+            }
+        }
+        return out
     }
 
     private func writeMarker(uid: String, token: String) async {

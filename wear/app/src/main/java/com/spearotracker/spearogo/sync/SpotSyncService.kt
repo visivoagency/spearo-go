@@ -44,11 +44,15 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  *  2. Fetch Vision's top-level `spots` FIRST, then `users/{uid}/spots` (first docId wins in
  *     the merge, so a Vision-owned doc stays read-only). Either fetch fails -> Failed, and
  *     NOTHING is applied: a partial remote list would make merge rule 2 delete spots.
- *  3. [planSync].
+ *  3. [planSync]. A pushUpsert aimed at an existing camelCase ACCOUNT doc is not pushed
+ *     (see [withoutCamelCasePushes]); the row follows the remote instead.
  *  4. Push upserts, then soft deletes.
  *  5. Apply locally: upsertLocal (keeping each row's isActive), deleteLocal, then the
  *     successful pushes (pendingSync=false + cloudId persisted; pushed deletes hard-deleted).
- *     A row the user changed while the sync was on the wire is left alone for the next sync.
+ *     All of step 5 runs in one transaction ([SpotTransactor]). A row the user changed while
+ *     the sync was on the wire is left for the next sync, except that a pushed row still
+ *     without a cloudId is linked to the doc it created (else the doc would be orphaned and
+ *     come back as a new spot).
  *  6. Failed pushes stay pending; state Failed("Couldn't upload N spots").
  * The account marker is written on sign-in and at most once per 24 h after that.
  * Logs carry counts and status codes only: no uid, email, names, coordinates or tokens.
@@ -58,6 +62,8 @@ class SpotSyncService(
     private val firestore: FirestoreClient,
     private val store: SpotStore,
     private val markers: SyncMarkerStore,
+    /** Makes apply atomic. Wear: `{ db.withTransaction(it) }`. */
+    private val transactor: SpotTransactor,
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val log: (String) -> Unit = { Log.w(TAG, it) },
@@ -81,7 +87,16 @@ class SpotSyncService(
 
     /** Right after a successful sign-in: the marker (always), then a first sync. */
     suspend fun onSignedIn(session: Session) {
-        writeMarker(session.uid, session.idToken)
+        try {
+            // Under the lock, so it can't race a sign-out; skipped if one already happened.
+            mutex.withLock {
+                if (auth.session()?.uid == session.uid) writeMarker(session.uid, session.idToken)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log("marker failed (${e.javaClass.simpleName})")
+        }
         sync()
     }
 
@@ -124,7 +139,7 @@ class SpotSyncService(
 
         // 3.
         val snapshot = store.getAllIncludingDeleted()
-        val plan = planSync(snapshot.map { it.toLocalSpot() }, remote, newId)
+        val plan = withoutCamelCasePushes(planSync(snapshot.map { it.toLocalSpot() }, remote, newId), remote)
         val nowIso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(clock()))
 
         // 4. Pushes: upserts, then soft deletes.
@@ -134,6 +149,10 @@ class SpotSyncService(
             val linked = spot.copy(cloudId = spot.cloudId ?: spot.id)
             val fields = SpotCodec.encodeUpsert(linked, uid, nowIso)
             try {
+                // Masked to Go's own 12 snake_case keys, so a website doc keeps its other fields
+                // (notes, photos...). It is never a camelCase doc: withoutCamelCasePushes dropped
+                // those, since adding snake keys beside camel ones would leave the camel
+                // isDeleted/lastModifiedAt that Tracker's restore reads stale.
                 firestore.patch("users/$uid/spots/${linked.cloudId}", fields, fields.keySet().toList(), token)
                 pushedUpserts.add(linked.copy(pendingSync = false))
             } catch (e: FirestoreException) {
@@ -159,29 +178,35 @@ class SpotSyncService(
             return
         }
         val before = snapshot.associateBy { it.id }
-        val now = store.getAllIncludingDeleted().associateBy { it.id }
-        // A row edited, added or removed by the user since the snapshot waits for the next sync.
-        fun untouched(id: String): Boolean {
-            val was = before[id] ?: return now[id] == null
-            return now[id]?.copy(isActive = was.isActive) == was
-        }
-
         val upserts = mutableListOf<LocalSpot>()
         val deletes = mutableListOf<String>()
         upserts += plan.upsertLocal
         deletes += plan.deleteLocal
         for (s in pushedUpserts) if (s.isDeleted) deletes += s.id else upserts += s
         deletes += snapshot.filter { it.isDeleted && it.cloudId in pushedDeleteDocIds }.map { it.id }
+        val pushedIds = pushedUpserts.associate { it.id to it.cloudId!! }
 
-        val keptUpserts = upserts.filter { untouched(it.id) }
-        val keptDeletes = deletes.filter { untouched(it) }.distinct()
-        val skipped = upserts.size + deletes.distinct().size - keptUpserts.size - keptDeletes.size
-        if (skipped > 0) log("$skipped spots changed during sync; left for next time")
-
-        if (keptUpserts.isNotEmpty()) {
-            store.upsertAll(keptUpserts.map { it.toSavedLocation(isActive = now[it.id]?.isActive ?: false) })
+        var skipped = 0
+        transactor.run {
+            val now = store.getAllIncludingDeleted().associateBy { it.id }
+            // A row edited, added or removed by the user since the snapshot waits for the next sync.
+            fun untouched(id: String): Boolean {
+                val was = before[id] ?: return now[id] == null
+                return now[id]?.copy(isActive = was.isActive) == was
+            }
+            val keptUpserts = upserts.filter { untouched(it.id) }
+            val keptDeletes = deletes.distinct().filter { untouched(it) }
+            skipped = upserts.size + deletes.distinct().size - keptUpserts.size - keptDeletes.size
+            if (keptUpserts.isNotEmpty()) {
+                store.upsertAll(keptUpserts.map { it.toSavedLocation(isActive = now[it.id]?.isActive ?: false) })
+            }
+            if (keptDeletes.isNotEmpty()) store.hardDelete(keptDeletes)
+            // Pushed, then edited meanwhile: still record which doc it created (only if unlinked).
+            for ((id, cloudId) in pushedIds) {
+                if (!untouched(id) && now[id] != null) store.linkCloudId(id, cloudId)
+            }
         }
-        if (keptDeletes.isNotEmpty()) store.hardDelete(keptDeletes)
+        if (skipped > 0) log("$skipped spots changed during sync; left for next time")
 
         // Marker: best effort, at most once per 24 h.
         val last = markers.lastWrittenAt()
@@ -193,6 +218,28 @@ class SpotSyncService(
         } else {
             SyncState.Synced(clock())
         }
+    }
+
+    /**
+     * Ruling: a pushUpsert never targets an existing camelCase ACCOUNT doc. Such a spot follows
+     * the remote instead, as merge rule 1's else-branch would: refreshed if the doc is live,
+     * dropped locally if the doc is deleted.
+     */
+    private fun withoutCamelCasePushes(plan: SyncPlan, remote: List<RemoteSpot>): SyncPlan {
+        val byId = LinkedHashMap<String, RemoteSpot>()
+        for (r in remote) byId.putIfAbsent(r.docId, r)   // first wins, as in planSync
+        val upsertLocal = plan.upsertLocal.toMutableList()
+        val deleteLocal = plan.deleteLocal.toMutableList()
+        val pushUpsert = mutableListOf<LocalSpot>()
+        for (l in plan.pushUpsert) {
+            val r = l.cloudId?.let { byId[it] }
+            if (r == null || r.origin != SpotOrigin.ACCOUNT || !r.camelCase) { pushUpsert += l; continue }
+            if (r.isDeleted) deleteLocal += l.id
+            else upsertLocal += l.copy(
+                name = r.name, latitude = r.latitude, longitude = r.longitude,
+                lastModifiedAt = r.lastModifiedAt ?: l.lastModifiedAt, isDeleted = false, pendingSync = false)
+        }
+        return plan.copy(upsertLocal = upsertLocal, deleteLocal = deleteLocal, pushUpsert = pushUpsert)
     }
 
     private suspend fun writeMarker(uid: String, token: String) {
