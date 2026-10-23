@@ -50,10 +50,18 @@ private func haversineMetres(_ lat1: Double, _ lon1: Double, _ lat2: Double, _ l
     return 2 * earthRadiusMetres * asin(h.squareRoot())
 }
 
+// Trim one explicit set on both platforms: code points <= U+0020, U+0085, U+00A0.
+private func foldName(_ s: String) -> String {
+    func trimmable(_ u: Unicode.Scalar) -> Bool { u.value <= 0x20 || u.value == 0x85 || u.value == 0xA0 }
+    var scalars = Substring(s).unicodeScalars
+    while let f = scalars.first, trimmable(f) { scalars.removeFirst() }
+    while let l = scalars.last, trimmable(l) { scalars.removeLast() }
+    return String(scalars).lowercased()
+}
+
 /// Case-insensitive trimmed name AND within 100 m.
 func isSameSpot(_ a: LocalSpot, _ b: RemoteSpot) -> Bool {
-    let trim = { (s: String) in s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-    return trim(a.name) == trim(b.name)
+    return foldName(a.name) == foldName(b.name)
         && haversineMetres(a.latitude, a.longitude, b.latitude, b.longitude) <= sameSpotMetres
 }
 

@@ -1329,5 +1329,69 @@
    "pushUpsert": [],
    "pushDelete": []
   }
+ },
+ {
+  "name": "first-signin-name-padded-nel",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1700000000000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "\u0085Reef\u0085 ",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1700000000000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-no-cloudid-no-match-deleted",
+  "local": [
+   {
+    "id": "v",
+    "cloudId": null,
+    "name": "Ghost",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1700000000000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "VISION"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "v"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
  }
 ]

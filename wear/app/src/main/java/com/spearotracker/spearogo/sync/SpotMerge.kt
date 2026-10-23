@@ -40,9 +40,13 @@ private fun haversineMetres(lat1: Double, lon1: Double, lat2: Double, lon2: Doub
     return 2 * EARTH_RADIUS_M * asin(sqrt(h))
 }
 
+// Trim one explicit set on both platforms: code points <= U+0020, U+0085, U+00A0.
+private fun foldName(s: String): String =
+    s.trim { it.code <= 0x20 || it.code == 0x85 || it.code == 0xA0 }.lowercase()
+
 /** Case-insensitive trimmed name AND within 100 m. */
 fun isSameSpot(a: LocalSpot, b: RemoteSpot): Boolean =
-    a.name.trim().lowercase() == b.name.trim().lowercase() &&
+    foldName(a.name) == foldName(b.name) &&
         haversineMetres(a.latitude, a.longitude, b.latitude, b.longitude) <= SAME_SPOT_METRES
 
 private fun refreshed(l: LocalSpot, r: RemoteSpot): LocalSpot = l.copy(
