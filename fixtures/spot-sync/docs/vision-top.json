@@ -1,0 +1,41 @@
+{
+ "name": "projects/spearo-tracker/databases/(default)/documents/spots/top-1",
+ "fields": {
+  "userId": {
+   "stringValue": "U1"
+  },
+  "name": {
+   "stringValue": "Top Wreck"
+  },
+  "latitude": {
+   "doubleValue": 38.5
+  },
+  "longitude": {
+   "doubleValue": -9.2
+  },
+  "notes": {
+   "stringValue": "n"
+  },
+  "minDepth": {
+   "doubleValue": 5
+  },
+  "maxDepth": {
+   "doubleValue": 20
+  },
+  "difficulty": {
+   "stringValue": "easy"
+  },
+  "accessType": {
+   "stringValue": "boat"
+  },
+  "isPrivate": {
+   "booleanValue": true
+  },
+  "createdAt": {
+   "timestampValue": "2026-08-01T06:00:00Z"
+  },
+  "updatedAt": {
+   "timestampValue": "2026-08-05T12:00:00.500Z"
+  }
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "name": "projects/spearo-tracker/databases/(default)/documents/users/U1/spots/vc-1",
+ "fields": {
+  "id": {
+   "stringValue": "vc-1"
+  },
+  "userId": {
+   "stringValue": "U1"
+  },
+  "name": {
+   "stringValue": "Lagos Cave"
+  },
+  "latitude": {
+   "doubleValue": 37.1
+  },
+  "longitude": {
+   "doubleValue": -8.67
+  },
+  "description": {
+   "stringValue": "kelp"
+  },
+  "createdAt": {
+   "timestampValue": "2026-09-01T07:00:00Z"
+  },
+  "lastModifiedAt": {
+   "timestampValue": "2026-09-15T09:00:00Z"
+  },
+  "syncStatus": {
+   "stringValue": "synced"
+  },
+  "lastSyncedAt": {
+   "timestampValue": "2026-09-15T09:01:00Z"
+  },
+  "cloudId": {
+   "stringValue": "vc-1"
+  },
+  "isDeleted": {
+   "booleanValue": false
+  }
+ }
+}

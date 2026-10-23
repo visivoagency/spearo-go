@@ -67,6 +67,7 @@ SOURCES = [
     ("CacheService.swift",     "Services/CacheService.swift",     False),
     # Sync
     ("SpotMerge.swift",        "Sync/SpotMerge.swift",            False),
+    ("SpotCodec.swift",        "Sync/SpotCodec.swift",            False),
     # Utils
     ("Constants.swift",        "Utils/Constants.swift",           False),
     ("Brand.swift",            "Utils/Brand.swift",               False),

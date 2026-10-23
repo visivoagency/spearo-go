@@ -1,0 +1,97 @@
+[
+ {
+  "file": "website-snake",
+  "origin": "ACCOUNT",
+  "expect": {
+   "docId": "web-1",
+   "origin": "ACCOUNT",
+   "name": "Sagres Reef",
+   "latitude": 37.0166,
+   "longitude": -8.9467,
+   "createdAt": 1790843400000,
+   "lastModifiedAt": 1792490400000,
+   "isDeleted": false,
+   "camelCase": false
+  }
+ },
+ {
+  "file": "vision-copy-camel",
+  "origin": "ACCOUNT",
+  "expect": {
+   "docId": "vc-1",
+   "origin": "ACCOUNT",
+   "name": "Lagos Cave",
+   "latitude": 37.1,
+   "longitude": -8.67,
+   "createdAt": 1788246000000,
+   "lastModifiedAt": 1789462800000,
+   "isDeleted": false,
+   "camelCase": true
+  }
+ },
+ {
+  "file": "vision-top",
+  "origin": "VISION",
+  "expect": {
+   "docId": "top-1",
+   "origin": "VISION",
+   "name": "Top Wreck",
+   "latitude": 38.5,
+   "longitude": -9.2,
+   "createdAt": 1785564000000,
+   "lastModifiedAt": 1785931200500,
+   "isDeleted": false,
+   "camelCase": true
+  }
+ },
+ {
+  "file": "tracker-camel-deleted",
+  "origin": "ACCOUNT",
+  "expect": {
+   "docId": "tr-1",
+   "origin": "ACCOUNT",
+   "name": "Gone Rock",
+   "latitude": 36.9,
+   "longitude": -8.1,
+   "createdAt": 1782864000000,
+   "lastModifiedAt": 1782950400000,
+   "isDeleted": true,
+   "camelCase": true
+  }
+ },
+ {
+  "file": "go-written",
+  "origin": "ACCOUNT",
+  "expect": {
+   "docId": "go-uuid-1",
+   "origin": "ACCOUNT",
+   "name": "Go Spot",
+   "latitude": -33.9,
+   "longitude": 18.4,
+   "createdAt": 1792645200250,
+   "lastModifiedAt": 1792645200250,
+   "isDeleted": false,
+   "camelCase": false
+  }
+ },
+ {
+  "file": "integer-coords",
+  "origin": "ACCOUNT",
+  "expect": {
+   "docId": "int-1",
+   "origin": "ACCOUNT",
+   "name": "Int Spot",
+   "latitude": 38.0,
+   "longitude": -9.0,
+   "createdAt": 1791626400000,
+   "lastModifiedAt": 1791712800000,
+   "isDeleted": false,
+   "camelCase": false
+  }
+ },
+ {
+  "file": "missing-latitude",
+  "origin": "ACCOUNT",
+  "expect": null
+ }
+]

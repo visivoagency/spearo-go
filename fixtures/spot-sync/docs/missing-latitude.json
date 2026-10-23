@@ -1,0 +1,11 @@
+{
+ "name": "projects/spearo-tracker/databases/(default)/documents/users/U1/spots/bad-1",
+ "fields": {
+  "name": {
+   "stringValue": "No Lat"
+  },
+  "longitude": {
+   "doubleValue": 1.5
+  }
+ }
+}

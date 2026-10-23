@@ -1,0 +1,41 @@
+{
+ "name": "projects/spearo-tracker/databases/(default)/documents/users/U1/spots/go-uuid-1",
+ "fields": {
+  "user_id": {
+   "stringValue": "U1"
+  },
+  "name": {
+   "stringValue": "Go Spot"
+  },
+  "latitude": {
+   "doubleValue": -33.9
+  },
+  "longitude": {
+   "doubleValue": 18.4
+  },
+  "is_private": {
+   "booleanValue": true
+  },
+  "is_deleted": {
+   "booleanValue": false
+  },
+  "created_at": {
+   "stringValue": "2026-10-22T05:00:00.250Z"
+  },
+  "last_modified_at": {
+   "stringValue": "2026-10-22T05:00:00.250Z"
+  },
+  "last_synced_at": {
+   "stringValue": "2026-10-22T05:00:01Z"
+  },
+  "cloud_id": {
+   "stringValue": "go-uuid-1"
+  },
+  "source": {
+   "stringValue": "go"
+  },
+  "sync_status": {
+   "stringValue": "synced"
+  }
+ }
+}
