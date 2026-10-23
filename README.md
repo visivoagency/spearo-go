@@ -23,7 +23,7 @@
 - Error UI with tap-to-retry
 - GPS fallback indicator when no saved location or GPS is available
 - Says so plainly where there is no marine or tide coverage, rather than estimating
-- No subscriptions, no ads, no account required
+- No subscriptions, no ads, no account required. Account optional, for spot sync
 
 ---
 
@@ -188,9 +188,12 @@ All colors are in `Assets.xcassets` — reference via `Brand.Colors.*` in code.
 
 - Location data is used **only** to fetch conditions. It goes to Open-Meteo, and to the
   `tidesGo` backend which passes it to NOAA or WorldTides. The backend rounds it to ~1km
-  and caches that rounded point for 24h so a spot is not looked up twice. Nothing is
-  linked to any identity — there are no accounts.
-- No analytics, no tracking, no user accounts
+  and caches that rounded point for 24h so a spot is not looked up twice. It also keeps
+  a one-way hash of the caller's IP for up to about two hours to limit abuse. Neither
+  is linked to any identity. Place-name search text goes to Open-Meteo geocoding.
+- Sign-in is optional. If a diver signs in, their email, Firebase user ID and saved
+  spots are linked to their Spearo account. Signed out, nothing is linked to anyone.
+- No analytics, no tracking, no ads
 - Open-Meteo APIs are free and keyless — no API secrets in the codebase
 - Privacy manifest (`PrivacyInfo.xcprivacy`) declares UserDefaults API usage
 - Full privacy policy at [spearotracker.com/privacy-policy](https://spearotracker.com/privacy-policy)

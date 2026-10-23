@@ -5,13 +5,68 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-09-07
+## Start here — state as of 2026-10-23
+
+Read this block first. Everything below it is a change log.
+
+### What was built (branch `feature/account-spot-sync`, not merged)
+
+Optional sign-in and spot sync, on both platforms, in lockstep.
+- Signed out, Go behaves exactly as before.
+- Wear signs in over RemoteAuth (Google, via the phone). Apple Watch signs in with Apple.
+- Sign-in uses REST, not the Firebase SDKs. Spots sync with `users/{uid}/spots`.
+- Go writes snake_case spot docs with `source: "go"`, and `apps.go.last_seen_at` (only onto an existing `users/{uid}`; it never creates that doc). It reads every convention.
+- Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it; nothing is deleted from the watch. Deleting on the watch soft-deletes in the account (signed out, a never-linked spot is simply removed).
+- Google sign-in on Wear asks for `openid email` only, so Go collects no name or photo.
+- Privacy text is fixed in the apps, the Apple privacy manifest and both store docs. It now says what sign-in stores.
+- Versions: Wear 2.2.0 (17), watchOS 1.2.0 (4).
+- Spec and amendments: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`. Plan: `docs/superpowers/plans/2026-10-23-go-account-spot-sync.md`.
+
+### Verified
+
+- 90 Kotlin unit tests and the Wear debug build.
+- The Room v1→v2 migration on the Wear emulator (4/4 instrumented tests). An existing spot survives and stays active.
+- The watchOS upgrade on the simulator. A spot from 1.1.0 survives and stays active.
+- The Swift harness on the shared fixtures, every mode: merge 39, codec 9, auth 15, firestore 8. The watch target builds.
+- The signed-out sync rows on the Wear emulator at font scale 1.0 and 1.24 ("Largest"). Nothing clips.
+- Each piece had its own review, then the whole branch had a final review. One Critical and four Important findings came out of the final review; all are fixed.
+
+### NOT RUN
+
+- Live sign-in, either platform. It needs the console work below.
+- The live end-to-end: sign in, save a spot, see it at spearo.pro, and back.
+- Signed-in screenshots.
+- Swift at the largest Dynamic Type (`simctl` can't set it on a watch simulator).
+
+The full device checklist is in `docs/BACKLOG.md` under "Account sync".
+
+### Console prerequisites
+
+Kevin does these. See `docs/ACCOUNT-SYNC-SETUP.md` (P1 to P5). Wear needs P1 and P2.
+Apple Watch needs P3, P4 and P5.
+
+### Next steps
+
+1. Console setup (`docs/ACCOUNT-SYNC-SETUP.md`).
+2. Live E2E, both platforms. Then signed-in screenshots.
+3. Enter the new Data safety and App Privacy answers in the consoles. For the owner:
+   - Controller call to confirm: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).
+   - **Controller call to confirm (final review, 23 Oct): links belong to an account.** Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it (as `source: "go"` docs); nothing is deleted from the watch. The alternative, deleting or withholding them, risks losing a diver's spots after an account is recreated or a backup is restored. If you would rather account B not receive A's spots, say so; the switch is `SpotSyncService.linkTo` (Kotlin) and `link(to:)` (Swift).
+   - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (spots copied, none lost).
+4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
+5. The $0.99 price: the stores charge $0.99, the repo docs still say $2.99.
+6. The More Spearo apps entry.
+7. The rest of `docs/HANDOFF-from-website-2026-10-23.md`: age 18+ (item 2), the safety disclaimer (item 3), the legal links (item 5). Item 4, the privacy disclosures, is done.
+
+---
+
+## Earlier state — as of 2026-09-07 (older; kept as the change log)
 
 ### What this app is
 
 A standalone dive-conditions app for **Apple Watch** (`SpearoGo/`, SwiftUI) and
 **Wear OS** (`wear/`, Kotlin/Compose), plus **its own Cloud Functions**
-(`functions/`). No accounts, no subscriptions. It gives one verdict — GO /
+(`functions/`). No accounts, no subscriptions (at the time). It gives one verdict — GO /
 MAYBE / SKETCHY / NO GO — from weather, sea state, tides and solunar.
 
 ### How it got here

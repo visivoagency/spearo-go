@@ -1,7 +1,7 @@
 # Spearo Go — working notes
 
 Standalone dive-conditions app for Apple Watch (SwiftUI) and Wear OS (Kotlin /
-Compose). No account, no subscription.
+Compose). No subscription. Account optional, for spot sync.
 
 ## The rule that matters most: never fabricate a reading
 
@@ -113,3 +113,25 @@ Never `--force` an index.
 
 `tidesGo` is the tide backend. It owns the NOAA-vs-WorldTides decision so the
 two clients do not have to — see the two-languages rule above.
+
+## Account sync (optional sign-in, added 2026-10-23)
+
+Spec: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`
+(read its Amendments). Console setup: `docs/ACCOUNT-SYNC-SETUP.md`.
+
+- **Both clients talk to Firebase over REST**, with no Firebase SDK on either
+  watch. Auth goes through Identity Toolkit, data through the Firestore REST API.
+- **Go writes spot docs in snake_case only** (`users/{uid}/spots`,
+  `source: "go"`). A Go doc must never carry `isDeleted` or `lastModifiedAt`:
+  Tracker's restore queries those camelCase keys and hard-casts the results, so
+  one Go doc in that result would empty a diver's restore. Go never upserts over
+  a camelCase Tracker/Vision doc. It only soft-deletes them, in their own casing.
+- **Vision's top-level `/spots` are read-only to Go.**
+- **Links belong to an account (`linkedUid`).** Sign-out keeps spots and links.
+  Signing into a different account detaches first, then copies the watch's
+  spots in. Never add a path that deletes local spots because the account changed.
+- **The merge (`SpotMerge`), the codec, `AuthClient` and `FirestoreClient`
+  exist twice.** They are pinned by one fixture set in `fixtures/spot-sync/`.
+  Kotlin tests read it; Swift runs it through `tools/spot-sync-harness/` (the
+  build line, an explicit file list, is at the top of `main.swift`). Change both
+  together, and run both.

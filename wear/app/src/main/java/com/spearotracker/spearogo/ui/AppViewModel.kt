@@ -11,6 +11,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -21,6 +24,10 @@ import com.spearotracker.spearogo.models.GeocodedPlace
 import com.spearotracker.spearogo.services.GeocodingService
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import com.spearotracker.spearogo.sync.RemoteAuthSignIn
+import com.spearotracker.spearogo.sync.SignInResult
+import com.spearotracker.spearogo.sync.SpotSyncService
+import com.spearotracker.spearogo.sync.SyncState
 
 data class AppUiState(
     val weatherData: WeatherData? = null,
@@ -71,7 +78,9 @@ class AppViewModel @Inject constructor(
     private val scoreService: ScoreService,
     private val cacheService: CacheService,
     private val locationDao: LocationDao,
-    private val geocodingService: GeocodingService
+    private val geocodingService: GeocodingService,
+    private val syncService: SpotSyncService,
+    private val remoteAuth: RemoteAuthSignIn
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AppUiState())
@@ -260,14 +269,18 @@ class AppViewModel @Inject constructor(
     /** Save a searched place and switch to it, which is always what was meant. */
     fun saveAndActivate(place: GeocodedPlace) {
         viewModelScope.launch {
+            val now = System.currentTimeMillis()
             val location = SavedLocation(
                 name = place.savedName,
                 latitude = place.latitude,
-                longitude = place.longitude
+                longitude = place.longitude,
+                lastModifiedAt = now,
+                pendingSync = true
             )
             locationDao.insert(location)
             clearSearch()
             setActiveLocation(location)
+            syncSpots()
         }
     }
 
@@ -277,15 +290,85 @@ class AppViewModel @Inject constructor(
                 SavedLocation(
                     name = name,
                     latitude = latitude,
-                    longitude = longitude
+                    longitude = longitude,
+                    lastModifiedAt = System.currentTimeMillis(),
+                    pendingSync = true
                 )
             )
+            syncSpots()
         }
     }
 
+    /** Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs. */
     fun deleteLocation(location: SavedLocation) {
         viewModelScope.launch {
-            locationDao.delete(location)
+            syncService.deleteSpot(location.id)
+            syncSpots()
+        }
+    }
+
+    // ── Spearo account: sign-in and spot sync ──────────────────────────────────
+    // Fire-and-forget. Nothing here is awaited by refresh(), so a slow or failed
+    // sync can never delay or change the verdict.
+
+    val syncState: StateFlow<SyncState> = syncService.state
+
+    private val _signIn = MutableStateFlow<SignInUiState>(SignInUiState.Idle)
+    val signIn: StateFlow<SignInUiState> = _signIn.asStateFlow()
+
+    /** App foreground and every spot edit. A no-op while signed out. */
+    fun syncSpots() {
+        viewModelScope.launch { syncService.sync() }
+    }
+
+    private var signInJob: Job? = null
+    /** The session is saved and onSignedIn is running: too late to cancel. */
+    private var signInHandedOff = false
+
+    /** The user gave up waiting for the phone: stop the sign-in and return the row to its start. */
+    fun cancelSignIn() {
+        if (_signIn.value !is SignInUiState.InProgress || signInHandedOff) return
+        signInJob?.cancel()
+        signInJob = null
+        _signIn.value = SignInUiState.Idle
+    }
+
+    fun signInWithGoogle() {
+        if (_signIn.value is SignInUiState.InProgress) return
+        _signIn.value = SignInUiState.InProgress
+        signInJob = viewModelScope.launch {
+            val result = try {
+                remoteAuth.signIn()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                SignInResult.Failed("Sign-in failed. Try again.")
+            }
+            when (result) {
+                is SignInResult.Success -> {
+                    // Still InProgress until onSignedIn has handed off to sync (state Syncing), so
+                    // a second tap can't start another sign-in during the detach, marker or first
+                    // sync. Not cancellable: the session is already saved.
+                    signInHandedOff = true
+                    try {
+                        withContext(NonCancellable) { syncService.onSignedIn(result.session) }
+                    } finally {
+                        signInHandedOff = false
+                        _signIn.value = SignInUiState.Idle
+                    }
+                }
+                SignInResult.AccountExistsWithDifferentMethod ->
+                    _signIn.value = SignInUiState.AccountExists
+                SignInResult.Cancelled -> _signIn.value = SignInUiState.Idle
+                is SignInResult.Failed -> _signIn.value = SignInUiState.Failed(result.message)
+            }
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            syncService.signOut()
+            _signIn.value = SignInUiState.Idle
         }
     }
 
@@ -294,6 +377,14 @@ class AppViewModel @Inject constructor(
             hasLocationPermission = locationService.hasPermission()
         )
     }
+}
+
+/** Where the Google sign-in stands, for the sync row. */
+sealed interface SignInUiState {
+    data object Idle : SignInUiState
+    data object InProgress : SignInUiState
+    data object AccountExists : SignInUiState
+    data class Failed(val message: String) : SignInUiState
 }
 
 /** What the locations screen shows while and after a place-name search. */

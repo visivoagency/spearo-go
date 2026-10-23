@@ -35,9 +35,9 @@ FEATURES
 • Real tide predictions from NOAA and WorldTides gauges
 • Haptic feedback when conditions change
 • Fully accessible with VoiceOver support
-• No subscriptions, no ads, no account required
+• No subscriptions, no ads. Account optional, for spot sync
 
-Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your location is used only to fetch conditions; the tide service rounds it to about a kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. Nothing is linked to you, and there are no accounts, ads or analytics. Where a location has no marine or tide coverage, the app says so rather than estimating.
+Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your position is used only to fetch conditions. The tide service rounds it to about a kilometre and keeps that point for up to 24 hours so the same spot is not looked up repeatedly, and keeps a one-way hash of your IP address for up to about two hours to limit abuse; neither is linked to you. There are no ads and no analytics. Signing in to a Spearo account is optional; if you do, your email and saved spots are kept in it, private and never shared, so you can see them at spearo.pro. If you search for a place by name, the text you type goes to Open-Meteo's geocoding service. Where a location has no marine or tide coverage, the app says so rather than estimating.
 
 ## Keywords (100 chars max, comma-separated)
 spearfishing,dive,swell,tides,solunar,fishing,marine,weather,surf,ocean,watch,score,conditions,wind
@@ -62,6 +62,46 @@ https://spearotracker.com/contact
 
 ## Privacy Policy URL
 https://spearotracker.com/privacy-policy
+
+## App Privacy (nutrition label)
+
+Both stores must list the same data types. Last aligned 2026-10-23 with the website
+Privacy Policy and with the Play section in `docs/GOOGLE_PLAY_METADATA.md`. The
+app's own manifest is `SpearoGo/PrivacyInfo.xcprivacy`; keep the three in step.
+
+| Data type | Where it goes | Linked to the user | Shared | Purpose |
+|-----------|---------------|--------------------|--------|---------|
+| Location (device position) | Open-Meteo and the tide service (NOAA or WorldTides) | No | Yes, with those services, only to look up conditions | App functionality |
+| Location (saved spot coordinates) | Open-Meteo and the tide service. If signed in, also your Spearo account | Yes, once signed in | No (the account copy is private) | App functionality |
+| Email address (signed in only) | Your Spearo account | Yes | No | App functionality |
+| Saved spot names (signed in only) | Your Spearo account | Yes | No | App functionality |
+| User ID (signed in only): the Firebase uid, written as `user_id` | Your Spearo account | Yes | No | App functionality |
+| Device or other IDs: one-way hash of the IP address, up to about two hours | Spearo tide service | No | No | Fraud prevention and security (Apple: Other) |
+| Place-name search text | Open-Meteo geocoding | No | Yes, with Open-Meteo, only to find the place | App functionality (not stored by Go) |
+
+None of it is used for tracking, advertising or analytics.
+
+What the server keeps:
+- The tide service keeps the coordinate, rounded to about 1 km, for up to 24 hours so it can answer repeat requests.
+- It also keeps a one-way hash of the IP address for up to about two hours to limit abuse (`functions/index.js`).
+- Neither is linked to you.
+
+App Store Connect answers (Data Types you collect):
+
+| Apple data type | Linked to the user | Used to track | Purpose |
+|-----------------|--------------------|---------------|---------|
+| Coarse Location (device position) | No | No | App Functionality |
+| Precise Location (saved spot coordinates) | Yes, once signed in | No | App Functionality |
+| Email Address (signed in only) | Yes | No | App Functionality |
+| Other User Content (saved spot names, signed in only) | Yes | No | App Functionality |
+| User ID (Firebase uid, signed in only) | Yes | No | App Functionality |
+| Device ID (one-way IP hash, up to about two hours) | No | No | Other (fraud prevention and security) |
+
+- Data Used to Track You: none. `NSPrivacyTracking` is false and there are no tracking domains.
+- The IP hash is declared as Device ID. This is a controller call (23 Oct); owner to confirm.
+- Place-name search text goes to Open-Meteo geocoding and is not stored by Go; covered by the location rows.
+- Name and photos: not collected. Sign in with Apple requests the email scope only, and Wear's Google sign-in asks for `openid email` only (no `profile`), so neither provider returns a name or photo to Go.
+- Required-reason API: UserDefaults (CA92.1), already declared.
 
 ## Age Rating Questionnaire
 - Made for Kids: No

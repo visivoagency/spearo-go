@@ -1,0 +1,26 @@
+{
+ "name": "projects/spearo-tracker/databases/(default)/documents/users/U1/spots/tr-1",
+ "fields": {
+  "userId": {
+   "stringValue": "U1"
+  },
+  "name": {
+   "stringValue": "Gone Rock"
+  },
+  "latitude": {
+   "doubleValue": 36.9
+  },
+  "longitude": {
+   "doubleValue": -8.1
+  },
+  "createdAt": {
+   "timestampValue": "2026-07-01T00:00:00Z"
+  },
+  "lastModifiedAt": {
+   "timestampValue": "2026-07-02T00:00:00Z"
+  },
+  "isDeleted": {
+   "booleanValue": true
+  }
+ }
+}

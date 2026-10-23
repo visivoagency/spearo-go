@@ -9,17 +9,17 @@ struct PrivacyPolicyView: View {
 
                 policySection(
                     title: "Location Data",
-                    body: "Spearo Go uses your location solely to fetch weather, marine, and tide conditions for your current position. Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's own tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about one kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. Nothing is linked to you or to any account."
+                    body: "Spearo Go uses your location solely to fetch weather, marine, and tide conditions for your current position. Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state (and, if you search for a place by name, the text you type goes to Open-Meteo's geocoding service), and to Spearo's own tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about one kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. The tide service also keeps a one-way hash of your IP address for up to about two hours to limit abuse. Neither is linked to you."
                 )
 
                 policySection(
                     title: "Saved Locations",
-                    body: "Dive spots you save are stored locally on your Apple Watch using SwiftData. They are never uploaded or shared with any third party."
+                    body: "Dive spots are stored on your watch. If you sign in, they are also kept in your Spearo account so you can see them at spearo.pro. They are private and never shared."
                 )
 
                 policySection(
-                    title: "No Accounts",
-                    body: "Spearo Go does not require or create any user accounts. There is no sign-up, no email collection, and no advertising or analytics. The only thing that leaves your watch is a location, and only to fetch conditions for it."
+                    title: "No Tracking",
+                    body: "No ads, no analytics. An account is optional; if you sign in, your email and saved spots are linked to it."
                 )
 
                 policySection(
@@ -29,7 +29,7 @@ struct PrivacyPolicyView: View {
 
                 policySection(
                     title: "Third-Party APIs",
-                    body: "Weather and marine data are fetched from Open-Meteo (open-meteo.com), a free and open-source weather API. Tide and solunar calculations are performed entirely on-device."
+                    body: "Weather and marine data are fetched from Open-Meteo (open-meteo.com), a free and open-source weather API. Solunar is calculated on-device. Tides come from NOAA or WorldTides via Spearo's tide service."
                 )
 
                 policySection(

@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import CoreLocation
+import AuthenticationServices
 
 // Presented as a sheet from Verdict page long-press (Sprint 2 gesture).
 // For now accessible via Digital Crown or a dedicated navigation entry.
@@ -9,7 +10,8 @@ struct LocationsView: View {
     @Environment(AppState.self)  private var appState
     @Environment(\.dismiss)      private var dismiss
 
-    @Query(sort: \SavedLocation.createdAt, order: .reverse)
+    @Query(filter: #Predicate<SavedLocation> { !$0.isDeleted },
+           sort: \SavedLocation.createdAt, order: .reverse)
     private var locations: [SavedLocation]
 
     @State private var showingAddSheet = false
@@ -25,8 +27,15 @@ struct LocationsView: View {
                 ForEach(locations) { location in
                     LocationRow(location: location, isActive: location.isActive)
                         .onTapGesture { activate(location) }
+                        .accessibilityAddTraits(.isButton)
+                        // Signed in, a Vision-owned spot is read-only here: no swipe-to-delete.
+                        // Signed out it can be removed from the watch (Vision still owns it).
+                        .deleteDisabled(location.origin == "VISION" && SyncServices.status.state != .signedOut)
                 }
                 .onDelete(perform: delete)
+
+                // Spearo account: sign in, or sync status and sign out
+                SyncRows()
 
                 // App info & privacy
                 Section {
@@ -111,6 +120,7 @@ struct LocationsView: View {
         .contentShape(Rectangle())
         .onTapGesture { deactivateAll() }
         .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Current GPS location")
         .accessibilityHint("Double tap to use current location")
     }
@@ -139,8 +149,122 @@ struct LocationsView: View {
     }
 
     private func delete(at offsets: IndexSet) {
-        for i in offsets { modelContext.delete(locations[i]) }
+        // Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs.
+        let signedIn = SyncServices.auth.session() != nil
+        let rows = offsets.map { locations[$0] }
+        for row in rows { deleteSpot(row, signedIn: signedIn, context: modelContext) }
         try? modelContext.save()
+        syncSpotsInBackground()
+    }
+}
+
+/// Fire-and-forget: never awaited by anything that renders the verdict. A no-op while signed out.
+@MainActor
+func syncSpotsInBackground() {
+    Task { await SyncServices.sync.sync() }
+}
+
+// MARK: - Sync rows
+
+/// The account rows: "Sync with spearo.pro" when signed out, status + "Sign out" when signed in.
+struct SyncRows: View {
+    private let status = SyncServices.status
+    @State private var apple = SyncServices.appleSignIn()
+    @State private var signingIn = false
+    @State private var message: String?
+
+    var body: some View {
+        if status.state == .signedOut {
+            signedOutRows
+        } else {
+            signedInRows
+        }
+    }
+
+    private var signedOutRows: some View {
+        VStack(alignment: .leading, spacing: Brand.Spacing.micro) {
+            Text("Sync with spearo.pro")
+                .brandFont(Brand.Typography.personalityCopy)
+                .foregroundStyle(Brand.Colors.textPrimary)
+            if signingIn {
+                Text("Signing in…").captionStyle()
+            } else {
+                Text("Sign in to keep your spots in your Spearo account").captionStyle()
+                SignInWithAppleButton(.signIn) { request in
+                    apple.prepare(request)
+                } onCompletion: { result in
+                    signingIn = true
+                    message = nil
+                    Task { await finish(await apple.complete(result)) }
+                }
+            }
+            if let message {
+                Text(message).captionStyle()
+            }
+        }
+    }
+
+    @MainActor
+    private func finish(_ result: SignInResult) async {
+        switch result {
+        case .success(let session):
+            message = nil
+            // Still "Signing in…" until onSignedIn has handed off to sync (.syncing), so the
+            // button can't start a second sign-in during the detach, marker or first sync.
+            await SyncServices.sync.onSignedIn(session: session)
+            signingIn = false
+        case .accountExistsWithDifferentMethod:
+            message = "You already have a Spearo account with this email. Sign in the way you did before, or link methods at spearo.pro."
+            signingIn = false
+        case .cancelled:
+            message = nil
+            signingIn = false
+        case .failed(let text):
+            message = text
+            signingIn = false
+        }
+    }
+
+    @ViewBuilder
+    private var signedInRows: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("Sync with spearo.pro")
+                .brandFont(Brand.Typography.personalityCopy)
+                .foregroundStyle(Brand.Colors.textPrimary)
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                Text(Self.statusText(status.state, now: context.date)).captionStyle()
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { syncSpotsInBackground() }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Double tap to sync now")
+
+        VStack(alignment: .leading, spacing: 1) {
+            Text("Sign out")
+                .brandFont(Brand.Typography.personalityCopy)
+                .foregroundStyle(Brand.Colors.textPrimary)
+            Text("Your spots stay on this watch").captionStyle()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { Task { await SyncServices.sync.signOut() } }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    /// "Synced · just now" / "Synced · N min ago" / "Syncing…" / the failure message.
+    static func statusText(_ state: SyncState, now: Date) -> String {
+        switch state {
+        case .syncing: return "Syncing…"
+        case .failed(let message): return message
+        case .synced(let at):
+            let minutes = max(0, Int(now.timeIntervalSince(at) / 60))
+            if minutes < 1 { return "Synced · just now" }
+            if minutes < 60 { return "Synced · \(minutes) min ago" }
+            return "Synced · \(minutes / 60) h ago"
+        case .signedOut, .idle: return "Tap to sync"
+        }
     }
 }
 
@@ -163,6 +287,9 @@ struct LocationRow: View {
                     .foregroundStyle(Brand.Colors.textPrimary)
                 Text(coordString(location))
                     .captionStyle()
+                if location.origin == "VISION" {
+                    Text("Saved in Vision").captionStyle()
+                }
             }
 
             Spacer()
@@ -234,8 +361,10 @@ struct AddLocationView: View {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         let location = SavedLocation(name: trimmed, coordinate: coord)
+        location.pendingSync = true   // lastModifiedAt is already now (init)
         modelContext.insert(location)
         try? modelContext.save()
+        syncSpotsInBackground()
         dismiss()
     }
 }
@@ -337,8 +466,10 @@ struct SearchSpotView: View {
         }
         let location = SavedLocation(name: place.savedName, coordinate: place.coordinate)
         location.isActive = true
+        location.pendingSync = true   // lastModifiedAt is already now (init)
         modelContext.insert(location)
         try? modelContext.save()
+        syncSpotsInBackground()
         dismiss()
     }
 }

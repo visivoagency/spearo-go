@@ -66,13 +66,16 @@ document written more than two hours ago has gone.
 Both stores were answered when nothing left the watch for a Spearo server. That
 is no longer true.
 
-- **Play Console → Data safety.** The exact selections are in
-  `docs/GOOGLE_PLAY_METADATA.md` under "Data safety declaration". The change
-  that matters: approximate location is now *shared with third parties* and *not
-  processed ephemerally*.
-- **App Store Connect → App Privacy.** Declare **Coarse Location**, purpose *App
-  Functionality*, **not** linked to identity, **not** used for tracking. This
-  matches `SpearoGo/PrivacyInfo.xcprivacy`, which is already updated.
+- **Play Console → Data safety.** The selections are in
+  `docs/GOOGLE_PLAY_METADATA.md` under "Data Safety Form Responses". Rewritten
+  2026-10-23 for sign-in: coordinates reach Open-Meteo and the tide service; the
+  server keeps a ~1 km point 24 h and a hashed IP; email and saved spots are
+  linked to the account when signed in.
+- **App Store Connect → App Privacy.** The answers are in
+  `docs/APP_STORE_METADATA.md` under "App Privacy". They match
+  `SpearoGo/PrivacyInfo.xcprivacy`, which declares six types: Coarse Location,
+  Precise Location, Email Address, Other User Content, User ID and Device ID
+  (the one-way IP hash). Same data types as Play.
 
 ### ~~3. Set the WorldTides ceiling deliberately~~ — done 2026-09-01
 

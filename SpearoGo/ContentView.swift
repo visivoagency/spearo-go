@@ -3,18 +3,33 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \SavedLocation.createdAt, order: .reverse)
+    @Query(filter: #Predicate<SavedLocation> { !$0.isDeleted },
+           sort: \SavedLocation.createdAt, order: .reverse)
     private var savedLocations: [SavedLocation]
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var appState = AppState()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        if hasCompletedOnboarding {
-            mainContent
-        } else {
-            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-                .environment(appState)
+        Group {
+            if hasCompletedOnboarding {
+                mainContent
+            } else {
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                    .environment(appState)
+            }
+        }
+        // Spots saved before the account-sync model get their creation time as last-modified.
+        .task {
+            // A failure is logged and retried by the sync's own step 0, which fails the sync instead.
+            do { try backfillLastModified(context: modelContext) }
+            catch { print("[ContentView] backfill failed; sync will retry") }
+            syncSpotsInBackground()   // cold start: onChange(of: scenePhase) doesn't fire for the initial value
+        }
+        // Foreground sync: fire-and-forget, a no-op while signed out, never awaited by refresh().
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { syncSpotsInBackground() }
         }
     }
 

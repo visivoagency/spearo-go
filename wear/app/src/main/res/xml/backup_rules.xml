@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below (minSdk is 30). The "auth" prefs hold the Firebase refresh
+     token; a backup would copy a live credential off the device. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="auth.xml" />
+</full-backup-content>

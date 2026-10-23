@@ -1,0 +1,23 @@
+{
+ "name": "projects/spearo-tracker/databases/(default)/documents/users/U1/spots/int-1",
+ "fields": {
+  "user_id": {
+   "stringValue": "U1"
+  },
+  "name": {
+   "stringValue": "Int Spot"
+  },
+  "latitude": {
+   "integerValue": "38"
+  },
+  "longitude": {
+   "integerValue": "-9"
+  },
+  "created_at": {
+   "stringValue": "2026-10-10T10:00:00Z"
+  },
+  "last_modified_at": {
+   "stringValue": "2026-10-11T10:00:00Z"
+  }
+ }
+}

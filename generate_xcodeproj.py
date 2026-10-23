@@ -65,6 +65,15 @@ SOURCES = [
     ("LocationService.swift",  "Services/LocationService.swift",  False),
     ("ScoreService.swift",     "Services/ScoreService.swift",     False),
     ("CacheService.swift",     "Services/CacheService.swift",     False),
+    # Sync
+    ("SpotMerge.swift",        "Sync/SpotMerge.swift",            False),
+    ("SpotCodec.swift",        "Sync/SpotCodec.swift",            False),
+    ("SpotMapping.swift",      "Sync/SpotMapping.swift",          False),
+    ("AuthClient.swift",       "Sync/AuthClient.swift",           False),
+    ("TokenStore.swift",       "Sync/TokenStore.swift",           False),
+    ("AppleSignIn.swift",      "Sync/AppleSignIn.swift",          False),
+    ("FirestoreClient.swift",  "Sync/FirestoreClient.swift",      False),
+    ("SpotSyncService.swift",  "Sync/SpotSyncService.swift",      False),
     # Utils
     ("Constants.swift",        "Utils/Constants.swift",           False),
     ("Brand.swift",            "Utils/Brand.swift",               False),
@@ -140,6 +149,7 @@ VIEWS_GRP    = uid()
 MODELS_GRP   = uid()
 SERVICES_GRP = uid()
 UTILS_GRP    = uid()
+SYNC_GRP     = uid()
 WIDGET_GRP   = uid()
 IOS_STUB_GRP = uid()
 
@@ -247,6 +257,7 @@ def pbxproj():
     models_files = [f for f in files if f["path"].startswith("Models/")]
     svc_files    = [f for f in files if f["path"].startswith("Services/")]
     util_files   = [f for f in files if f["path"].startswith("Utils/")]
+    sync_files   = [f for f in files if f["path"].startswith("Sync/")]
     widget_files = [f for f in files if f["path"].startswith("Widget/")]
 
     a("/* Begin PBXGroup section */")
@@ -272,6 +283,7 @@ def pbxproj():
     a(f"            {MODELS_GRP} /* Models */,")
     a(f"            {SERVICES_GRP} /* Services */,")
     a(f"            {UTILS_GRP} /* Utils */,")
+    a(f"            {SYNC_GRP} /* Sync */,")
     a(f"            {WIDGET_GRP} /* Widget */,")
     a("        );")
     a("        path = SpearoGo;")
@@ -307,6 +319,7 @@ def pbxproj():
         (MODELS_GRP,   "Models",   models_files),
         (SERVICES_GRP, "Services", svc_files),
         (UTILS_GRP,    "Utils",    util_files),
+        (SYNC_GRP,     "Sync",     sync_files),
         (WIDGET_GRP,   "Widget",   widget_files),
     ]:
         a(f"    {grp_uuid} /* {grp_name} */ = {{")
@@ -552,12 +565,12 @@ def pbxproj():
         ("ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME", "OceanBlue"),
         ("CODE_SIGN_ENTITLEMENTS", "SpearoGo/SpearoGo.entitlements"),
         ("CODE_SIGN_STYLE", "Automatic"),
-        ("CURRENT_PROJECT_VERSION", "3"),
+        ("CURRENT_PROJECT_VERSION", "4"),
         ("DEVELOPMENT_TEAM", "RBDNV7NG89"),
         ("ENABLE_PREVIEWS", "YES"),
         ("GENERATE_INFOPLIST_FILE", "NO"),
         ("INFOPLIST_FILE", "SpearoGo/Info.plist"),
-        ("MARKETING_VERSION", "1.1.0"),
+        ("MARKETING_VERSION", "1.2.0"),
         ("PRODUCT_BUNDLE_IDENTIFIER", "agency.visivo.SpearoGo.watchkitapp"),
         ("PRODUCT_NAME", "$(TARGET_NAME)"),
         ("SDKROOT", "watchos"),
@@ -595,11 +608,11 @@ def pbxproj():
     ios_settings = [
         ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
         ("CODE_SIGN_STYLE", "Automatic"),
-        ("CURRENT_PROJECT_VERSION", "3"),
+        ("CURRENT_PROJECT_VERSION", "4"),
         ("DEVELOPMENT_TEAM", "RBDNV7NG89"),
         ("GENERATE_INFOPLIST_FILE", "NO"),
         ("INFOPLIST_FILE", "SpearoGoiOS/Info.plist"),
-        ("MARKETING_VERSION", "1.1.0"),
+        ("MARKETING_VERSION", "1.2.0"),
         ("PRODUCT_BUNDLE_IDENTIFIER", "agency.visivo.SpearoGo"),
         ("PRODUCT_NAME", "$(TARGET_NAME)"),
         ("SDKROOT", "iphoneos"),

@@ -2,21 +2,51 @@ package com.spearotracker.spearogo.services
 
 import androidx.room.*
 import com.spearotracker.spearogo.models.SavedLocation
+import com.spearotracker.spearogo.sync.SpotStore
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface LocationDao {
-    @Query("SELECT * FROM saved_locations ORDER BY createdAt DESC")
+interface LocationDao : SpotStore {
+    @Query("SELECT * FROM saved_locations WHERE isDeleted = 0 ORDER BY createdAt DESC")
     fun getAllLocations(): Flow<List<SavedLocation>>
 
-    @Query("SELECT * FROM saved_locations WHERE isActive = 1 LIMIT 1")
+    @Query("SELECT * FROM saved_locations")
+    override suspend fun getAllIncludingDeleted(): List<SavedLocation>
+
+    @Query("SELECT * FROM saved_locations WHERE isActive = 1 AND isDeleted = 0 LIMIT 1")
     suspend fun getActiveLocation(): SavedLocation?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(location: SavedLocation)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    override suspend fun upsertAll(rows: List<SavedLocation>)
+
     @Delete
     suspend fun delete(location: SavedLocation)
+
+    /** Soft delete: hides the row and queues the delete for the next sync. */
+    @Query("UPDATE saved_locations SET isDeleted = 1, pendingSync = 1, lastModifiedAt = :now, isActive = 0 WHERE id = :id")
+    override suspend fun markDeleted(id: String, now: Long)
+
+    @Query("DELETE FROM saved_locations WHERE id IN (:ids)")
+    override suspend fun hardDelete(ids: List<String>)
+
+    @Query("UPDATE saved_locations SET cloudId = :cloudId WHERE id = :id AND cloudId IS NULL")
+    override suspend fun linkCloudId(id: String, cloudId: String)
+
+    @Query("DELETE FROM saved_locations WHERE isDeleted = 1")
+    suspend fun deleteSoftDeleted()
+
+    @Query("UPDATE saved_locations SET cloudId = NULL, pendingSync = 0")
+    suspend fun clearCloudLinks()
+
+    /** A different account signed in: every live spot stays, unlinked; the old account's pending deletes go. */
+    @Transaction
+    override suspend fun detachAll() {
+        deleteSoftDeleted()
+        clearCloudLinks()
+    }
 
     @Query("UPDATE saved_locations SET isActive = 0")
     suspend fun deactivateAll()

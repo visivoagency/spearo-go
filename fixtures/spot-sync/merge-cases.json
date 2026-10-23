@@ -1,0 +1,1423 @@
+[
+ {
+  "name": "empty",
+  "local": [],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "linked-remote-newer-wins",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Old",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "New",
+    "latitude": 37.10204496608029,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "linked-clean-in-sync",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "linked-pending-local-newer",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "linked-pending-equal-timestamp",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "linked-pending-remote-newer",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Theirs",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "linked-pending-remote-no-timestamp",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": null,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "pending-delete",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": [
+    "a"
+   ]
+  }
+ },
+ {
+  "name": "pending-delete-camelcase-remote",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": true
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": [
+    "a"
+   ]
+  }
+ },
+ {
+  "name": "pending-delete-vision-never-pushed",
+  "local": [
+   {
+    "id": "v",
+    "cloudId": "v",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "VISION"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "v",
+    "origin": "VISION",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "v"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "remote-deleted-local-newer",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "remote-deleted-local-clean",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "remote-deleted-local-pending-older",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "remote-deleted-local-pending-equal",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "hard-deleted-elsewhere",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "gone",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "unknown-cloudid-pending-pushed",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "gone",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "local-deleted-never-synced",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-dedupe",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Lagos",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "lagos1",
+    "origin": "ACCOUNT",
+    "name": "lagos ",
+    "latitude": 37.102539592963545,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-far",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Lagos",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "lagos1",
+    "origin": "ACCOUNT",
+    "name": "Lagos",
+    "latitude": 37.10469796481775,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "new:lagos1"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-within-99m",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "REEF",
+    "latitude": 37.102890328389854,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-beyond-101m",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Reef",
+    "latitude": 37.102908314821974,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "new:r1"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-different-name",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Wreck",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "new:r1"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-ignores-deleted-remote",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "a"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-readonly",
+  "local": [],
+  "remote": [
+   {
+    "docId": "v1",
+    "origin": "VISION",
+    "name": "Vision Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "new:v1"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-match-links-as-vision",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "v1",
+    "origin": "VISION",
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "new-account-remote",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   },
+   {
+    "docId": "b",
+    "origin": "ACCOUNT",
+    "name": "Other",
+    "latitude": 37.14696608029593,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a",
+    "new:b"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "remote-deleted-unlinked-ignored",
+  "local": [],
+  "remote": [
+   {
+    "docId": "d",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "two-locals-one-remote",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   },
+   {
+    "id": "b",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "b"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "already-linked-remote-not-claimed",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "r1",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   },
+   {
+    "id": "b",
+    "cloudId": null,
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [
+    "b"
+   ],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "duplicate-docid-first-wins-linked",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "r1",
+    "name": "Old",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "First",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   },
+   {
+    "docId": "r1",
+    "origin": "VISION",
+    "name": "Second",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "duplicate-docid-first-wins-deleted-first",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "r1",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": true,
+    "camelCase": false
+   },
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "Second",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "duplicate-docid-new-row-once",
+  "local": [],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "First",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   },
+   {
+    "docId": "r1",
+    "origin": "VISION",
+    "name": "Second",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "new:r1"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-pending-live-remote-refreshed-not-pushed",
+  "local": [
+   {
+    "id": "v",
+    "cloudId": "v",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000500,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "VISION"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "v",
+    "origin": "VISION",
+    "name": "Server",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "v"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-remote-missing-deleted-locally",
+  "local": [
+   {
+    "id": "v",
+    "cloudId": "v",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "VISION"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "v"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-remote-deleted-deleted-locally",
+  "local": [
+   {
+    "id": "v",
+    "cloudId": "v",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": false,
+    "origin": "VISION"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "v",
+    "origin": "VISION",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "v"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "pending-delete-remote-already-deleted",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "a",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "a",
+    "origin": "ACCOUNT",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "first-signin-name-padded-nel",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": null,
+    "name": "Reef",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1700000000000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [
+   {
+    "docId": "r1",
+    "origin": "ACCOUNT",
+    "name": "\u0085Reef\u0085 ",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1700000000000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "camelCase": false
+   }
+  ],
+  "expect": {
+   "upsertLocal": [
+    "a"
+   ],
+   "deleteLocal": [],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "vision-no-cloudid-no-match-deleted",
+  "local": [
+   {
+    "id": "v",
+    "cloudId": null,
+    "name": "Ghost",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1700000000000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": false,
+    "pendingSync": true,
+    "origin": "VISION"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "v"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ },
+ {
+  "name": "pending-delete-remote-gone-dropped",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "gone",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
+ }
+]

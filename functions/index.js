@@ -25,7 +25,8 @@ const db = getFirestore();
 // tidesGo — tide predictions for Spearo Go
 // ----------------------------------------------------------------------------
 // Separate from `tidesProxy`, which requires an authenticated caller. Spearo Go
-// has no accounts and ships no Firebase SDK, so this is a plain HTTPS endpoint.
+// ships no Firebase SDK and does not sign requests in (sign-in is optional and
+// uses REST), so this is a plain HTTPS endpoint.
 //
 // That means no App Check: an App Check token needs the client SDK, which Go
 // deliberately does not carry. The cost controls below are what stands in for
@@ -70,7 +71,7 @@ const TIDES_CACHE_HOURS = 24;
 //     --collection-group=tides_cache --enable-ttl --project=spearo-tracker
 //   (likewise tides_rate and tides_budget)
 //
-// Nothing here is linked to a person — no accounts, no identifiers — but a
+// Nothing here is linked to a person — requests carry no account or user ID — but a
 // rounded coordinate and a hashed IP should still not sit around indefinitely,
 // and the privacy disclosure promises 24 hours.
 
