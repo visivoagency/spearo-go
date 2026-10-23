@@ -16,6 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import com.spearotracker.spearogo.sync.SyncState
+import com.spearotracker.spearogo.ui.SignInUiState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +62,8 @@ fun SpotsPage(
     val saved by viewModel.savedLocations.collectAsState()
     val search by viewModel.search.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
+    val signIn by viewModel.signIn.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -121,7 +130,9 @@ fun SpotsPage(
                 SavedRow(
                     location = location,
                     onSelect = { viewModel.setActiveLocation(location) },
-                    onDelete = { viewModel.deleteLocation(location) }
+                    // A Vision-owned spot is read-only here: no long-press delete.
+                    onDelete = if (location.origin == "VISION") null
+                    else ({ viewModel.deleteLocation(location) })
                 )
             }
             item {
@@ -134,6 +145,14 @@ fun SpotsPage(
                 )
             }
         }
+
+        syncRows(
+            syncState = syncState,
+            signIn = signIn,
+            onSignIn = { viewModel.signInWithGoogle() },
+            onSync = { viewModel.syncSpots() },
+            onSignOut = { viewModel.signOut() }
+        )
 
         item { ActionRow(icon = "ℹ️", label = "About") { onAbout() } }
     }
@@ -206,7 +225,7 @@ private fun PlaceRow(place: GeocodedPlace, onSelect: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: () -> Unit) {
+private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: (() -> Unit)?) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Brand.Spacing.item),
@@ -227,13 +246,128 @@ private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: ()
             style = Brand.Typography.caption,
             color = if (location.isActive) Brand.Colors.secondary else Brand.Colors.textSecondary
         )
+        Column {
+            Text(
+                text = location.name,
+                style = Brand.Typography.personalityCopy,
+                color = Brand.Colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (location.origin == "VISION") {
+                Text(
+                    text = "Saved in Vision",
+                    style = Brand.Typography.caption,
+                    color = Brand.Colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+/** The account rows: sign in when signed out; status and sign out when signed in. */
+private fun androidx.compose.foundation.lazy.LazyListScope.syncRows(
+    syncState: SyncState,
+    signIn: SignInUiState,
+    onSignIn: () -> Unit,
+    onSync: () -> Unit,
+    onSignOut: () -> Unit
+) {
+    if (syncState is SyncState.SignedOut) {
+        item {
+            if (signIn is SignInUiState.InProgress) {
+                TwoLineRow("Sync with spearo.pro", "Check your phone to sign in", onClick = null)
+            } else {
+                TwoLineRow(
+                    title = "Sync with spearo.pro",
+                    subtitle = "Sign in to keep your spots in your Spearo account",
+                    action = "Sign in with Google",
+                    onClick = onSignIn
+                )
+            }
+        }
+        when (signIn) {
+            SignInUiState.AccountExists -> item {
+                Hint("You already have a Spearo account with this email. Sign in the way you did before, or link methods at spearo.pro.")
+            }
+            is SignInUiState.Failed -> item { Hint(signIn.message) }
+            else -> Unit
+        }
+    } else {
+        item {
+            var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+            LaunchedEffect(Unit) {
+                while (true) { delay(30_000); now = System.currentTimeMillis() }
+            }
+            TwoLineRow(
+                title = "Sync with spearo.pro",
+                subtitle = syncStatusText(syncState, now),
+                onClick = onSync
+            )
+        }
+        item {
+            TwoLineRow(
+                title = "Sign out",
+                subtitle = "Your spots stay on this watch",
+                onClick = onSignOut
+            )
+        }
+    }
+}
+
+/** "Synced · just now" / "Synced · N min ago" / "Syncing…" / the failure message. */
+internal fun syncStatusText(state: SyncState, now: Long): String = when (state) {
+    SyncState.Syncing -> "Syncing…"
+    is SyncState.Failed -> state.message
+    is SyncState.Synced -> {
+        val minutes = ((now - state.at) / 60_000).coerceAtLeast(0)
+        when {
+            minutes < 1 -> "Synced · just now"
+            minutes < 60 -> "Synced · $minutes min ago"
+            else -> "Synced · ${minutes / 60} h ago"
+        }
+    }
+    else -> "Tap to sync"
+}
+
+@Composable
+private fun TwoLineRow(
+    title: String,
+    subtitle: String,
+    action: String? = null,
+    onClick: (() -> Unit)?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Brand.Spacing.micro)
+            .background(
+                Brand.Colors.textPrimary.copy(alpha = Brand.Opacity.cardFill),
+                RoundedCornerShape(Brand.Radius.card)
+            )
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .padding(horizontal = Brand.Spacing.item, vertical = 10.dp)
+    ) {
         Text(
-            text = location.name,
+            text = title,
             style = Brand.Typography.personalityCopy,
-            color = Brand.Colors.textPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            color = Brand.Colors.textPrimary
         )
+        Text(
+            text = subtitle,
+            style = Brand.Typography.caption,
+            color = Brand.Colors.textSecondary
+        )
+        if (action != null) {
+            Text(
+                text = action,
+                style = Brand.Typography.personalityCopy,
+                color = Brand.Colors.secondary,
+                modifier = Modifier.padding(top = Brand.Spacing.micro)
+            )
+        }
     }
 }
 

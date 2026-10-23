@@ -18,6 +18,8 @@ final class AppleSignIn: NSObject {
     private let auth: AuthClient
     private var continuation: CheckedContinuation<ASAuthorization?, Error>?
     private var controller: ASAuthorizationController?
+    /// The raw nonce for a request handed out by `prepare(_:)`, until `complete(_:)` uses it.
+    private var pendingNonce: String?
 
     init(auth: AuthClient) {
         self.auth = auth
@@ -26,10 +28,8 @@ final class AppleSignIn: NSObject {
     func signIn() async -> SignInResult {
         guard continuation == nil else { return .failed("Sign-in already in progress") }
 
-        let nonce = randomNonceString()
         let request = ASAuthorizationAppleIDProvider().createRequest()
-        request.requestedScopes = [.email]
-        request.nonce = sha256(nonce)
+        let nonce = configure(request)
 
         let authorization: ASAuthorization?
         do {
@@ -47,6 +47,40 @@ final class AppleSignIn: NSObject {
             return .failed("Apple sign-in didn't complete")
         }
 
+        return await exchange(authorization, nonce: nonce)
+    }
+
+    // MARK: - For SwiftUI's SignInWithAppleButton
+
+    /// `onRequest:` of the system button. Sets scopes and the hashed nonce on its request.
+    func prepare(_ request: ASAuthorizationAppleIDRequest) {
+        pendingNonce = configure(request)
+    }
+
+    /// `onCompletion:` of the system button: the same exchange `signIn()` does.
+    func complete(_ result: Result<ASAuthorization, Error>) async -> SignInResult {
+        let nonce = pendingNonce
+        pendingNonce = nil
+        guard let nonce else { return .failed("Apple sign-in didn't complete") }
+        switch result {
+        case .success(let authorization):
+            return await exchange(authorization, nonce: nonce)
+        case .failure(let error):
+            if let error = error as? ASAuthorizationError, error.code == .canceled { return .cancelled }
+            print("[AppleSignIn] authorization failed (\((error as NSError).code))")
+            return .failed("Apple sign-in didn't complete")
+        }
+    }
+
+    /// Scopes + SHA-256 of a fresh nonce on the request; returns the raw nonce for Firebase.
+    private func configure(_ request: ASAuthorizationAppleIDRequest) -> String {
+        let nonce = randomNonceString()
+        request.requestedScopes = [.email]
+        request.nonce = sha256(nonce)
+        return nonce
+    }
+
+    private func exchange(_ authorization: ASAuthorization?, nonce: String) async -> SignInResult {
         guard let credential = authorization?.credential as? ASAuthorizationAppleIDCredential,
               let tokenData = credential.identityToken,
               let idToken = String(data: tokenData, encoding: .utf8),

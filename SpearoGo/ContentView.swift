@@ -9,6 +9,7 @@ struct ContentView: View {
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var appState = AppState()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -20,7 +21,14 @@ struct ContentView: View {
             }
         }
         // Spots saved before the account-sync model get their creation time as last-modified.
-        .task { backfillLastModified(context: modelContext) }
+        .task {
+            backfillLastModified(context: modelContext)
+            syncSpotsInBackground()   // cold start: onChange(of: scenePhase) doesn't fire for the initial value
+        }
+        // Foreground sync: fire-and-forget, a no-op while signed out, never awaited by refresh().
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { syncSpotsInBackground() }
+        }
     }
 
     private var mainContent: some View {
