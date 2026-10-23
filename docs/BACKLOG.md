@@ -7,7 +7,7 @@ The code is built but never run against a live sign-in. Do `docs/ACCOUNT-SYNC-SE
 (P1 to P5), then the E2E in the plan, then enter the new Data safety and App Privacy
 answers, then take signed-in screenshots. Also open: the $0.99 price, the More Spearo
 apps entry, and items 1, 2, 3 and 5 of `docs/HANDOFF-from-website-2026-10-23.md`.
-Confirm with the owner whether the hashed IP needs its own privacy-label type.
+The hashed IP's own privacy-label type (Device ID) was confirmed by Kevin on 23 Oct.
 
 Device checks before release. Each one is something the tests could not reach:
 1. A release AAB with `WEB_CLIENT_SECRET` set. The first REST call is not a 403 `*_APP_BLOCKED`, so the API keys allow the Play signing SHA-1.
@@ -18,7 +18,7 @@ Device checks before release. Each one is something the tests could not reach:
 6. Deletes both ways. A Tracker spot deleted on the watch disappears in Tracker, and a Tracker restore still returns everything.
 7. Airplane mode: save and delete, reconnect, both sync.
 8. A token older than an hour refreshes silently. A revoked token returns to signed out with the spots still on the watch.
-9. Sign out and back into the same account: no duplicates. Sign into a second account: spots are copied and none are lost.
+9. Sign out and back into the same account: no duplicates. Sign into a second account: the first account's spots leave the watch and are not uploaded; unsynced watch spots upload.
 10. A brand-new diver: `users/{uid}` and the website profile come out right. Go never creates that doc.
 11. Upgrade installs over real data: Wear from 2.1.1 and watchOS from 1.1.0. The order and the active spot survive, with no 1970 timestamps. Also a Wear backup restored onto a second watch.
 12. Signed out, a network capture shows only Open-Meteo, geocoding and `tidesGo`.
@@ -31,9 +31,9 @@ None of these blocks the release.
 - The website fixture should use `timestampValue` with microseconds, which is what the website actually writes.
 - The Swift harness checks encoding less strictly than the Kotlin test: it doesn't check value types on soft deletes.
 - Kotlin `Instant.parse` rejects `+00:00` offsets on Android. Firestore and the website always write `Z`.
-- Swift has no test for the mapping, the soft delete or `detachAll`. Only the harness and the device checks cover them.
+- Swift has no test for the mapping, the soft delete or `removeLinked`. Only the harness and the device checks cover them.
 - On Kotlin, a cancelled caller can clear the in-flight refresh, which costs one extra request. Clear it with `invokeOnCompletion` instead.
-- If detaching fails at sign-in, the row shows "Sync failed" while actually signed out, until the next tap.
+- If removing the old account's spots fails at sign-in, the row shows "Sync failed" while actually signed out, until the next tap.
 - On Swift, Vision rows can stay undeletable for a moment after a session expires, because the swipe follows the sync state.
 - The marker treats any HTTP 400 as "no profile yet", which would also hide a bad API key. The spot calls would still show it.
 - The unused androidTest dependency `kotlinx-coroutines-test`.

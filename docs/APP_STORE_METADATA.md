@@ -98,7 +98,7 @@ App Store Connect answers (Data Types you collect):
 | Device ID (one-way IP hash, up to about two hours) | No | No | Other (fraud prevention and security) |
 
 - Data Used to Track You: none. `NSPrivacyTracking` is false and there are no tracking domains.
-- The IP hash is declared as Device ID. This is a controller call (23 Oct); owner to confirm.
+- The IP hash is declared as Device ID. Confirmed by Kevin on 23 Oct.
 - Place-name search text goes to Open-Meteo geocoding and is not stored by Go; covered by the location rows.
 - Name and photos: not collected. Sign in with Apple requests the email scope only, and Wear's Google sign-in asks for `openid email` only (no `profile`), so neither provider returns a name or photo to Go.
 - Required-reason API: UserDefaults (CA92.1), already declared.

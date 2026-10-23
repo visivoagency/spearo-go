@@ -116,7 +116,7 @@ What the server keeps:
 **App info and performance / Device or other IDs** (one-way IP hash)
 - Collected: Yes. Shared: No. Required. Kept up to about two hours.
 - Purpose: Fraud prevention, security and compliance. Linked: No. Tracking: No.
-- Controller call (23 Oct): declared as its own type. Owner to confirm.
+- Declared as its own type. Confirmed by Kevin on 23 Oct.
 
 Place-name search text is sent to Open-Meteo geocoding to find the place. It is not stored by Go. Covered by "Shared" for location above; no separate Play type.
 
