@@ -69,6 +69,9 @@ SOURCES = [
     ("SpotMerge.swift",        "Sync/SpotMerge.swift",            False),
     ("SpotCodec.swift",        "Sync/SpotCodec.swift",            False),
     ("SpotMapping.swift",      "Sync/SpotMapping.swift",          False),
+    ("AuthClient.swift",       "Sync/AuthClient.swift",           False),
+    ("TokenStore.swift",       "Sync/TokenStore.swift",           False),
+    ("AppleSignIn.swift",      "Sync/AppleSignIn.swift",          False),
     # Utils
     ("Constants.swift",        "Utils/Constants.swift",           False),
     ("Brand.swift",            "Utils/Brand.swift",               False),

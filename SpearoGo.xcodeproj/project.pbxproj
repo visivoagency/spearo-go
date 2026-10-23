@@ -6,69 +6,72 @@
   objects = {
 
 /* Begin PBXBuildFile section */
-    E0D6A668610E4C92A5343C49 /* SpearoGoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1248E7C7C3AA4D03A213F265 /* SpearoGoApp.swift */; };
-    2585F3EA6D0A40249B62D941 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45EC2607E0B47B79B336508 /* AppState.swift */; };
-    E6D4D1AEC79C4F8088F2D85B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C6697FFC6F7473EA6B764C8 /* ContentView.swift */; };
-    C4F9113E64E74D828CB349E5 /* VerdictPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6B3509F10F4E65B6482598 /* VerdictPage.swift */; };
-    BD34B18619C9489AAE4AD969 /* ConditionsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C40E679DF548C3BD85ECA4 /* ConditionsPage.swift */; };
-    A8D2CC5CE34F4629907DD784 /* WaterPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00EC02670FA4F539E318CE6 /* WaterPage.swift */; };
-    DA6728396C874E058BFB0EF2 /* TidesPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34E8874E0B5148538CB68F8B /* TidesPage.swift */; };
-    EAF5438A8D2942F185763409 /* TodayPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA6F4972D8F4281B50F0C17 /* TodayPage.swift */; };
-    C4AA264E709C4A73BF11A08C /* FishActivityPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1D1B9DD95E4789ADB68A91 /* FishActivityPage.swift */; };
-    55EB991AB0164735B0173047 /* LocationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A45A069B536405DB0EB54BD /* LocationsView.swift */; };
-    F95D7C6600E14048B99CAED4 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52D40889DC347A2B8DC5625 /* OnboardingView.swift */; };
-    74F03B27C7AA4F3797BBDB6C /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 879F5217FEC2432AAEDA8537 /* PrivacyPolicyView.swift */; };
-    4386CD11EB684194989C6013 /* WeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57351FE88CF4553AFFAD517 /* WeatherData.swift */; };
-    5BA5045AD3114FD683B693A8 /* MarineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFABD8AB8C940FDBF59B424 /* MarineData.swift */; };
-    C1232E5D410643F5A607D0B3 /* TideData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E737E343F8410B92B11366 /* TideData.swift */; };
-    8C0DD703DD5843CCBC371C27 /* GeocodedPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1E002F9C65443DBFAF3E22 /* GeocodedPlace.swift */; };
-    323B3357A97A4DE48120C173 /* SolunarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0506F76B55864E899D4DAE8B /* SolunarData.swift */; };
-    9B68043842074AF4A6C4FEC6 /* DiveScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B523228F422145168FCB4BE7 /* DiveScore.swift */; };
-    7D49F1A88E3B461B94C926AC /* SavedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A5B68ED3C458DB540D283 /* SavedLocation.swift */; };
-    F1D678958BDE4726B3EBF7AC /* SharedScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE85504B153404BB5A2BA98 /* SharedScore.swift */; };
-    6171DBE92C38410EBFBCEA8F /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FB53F2B11A4C3592CE8D1E /* WeatherService.swift */; };
-    0BBA060B2E6E43FA801D871F /* MarineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 014939E3CACC4A6EBDBC438D /* MarineService.swift */; };
-    52EC6A18849D49C28A91F5BF /* TideService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD60AC8824FD499998892C3E /* TideService.swift */; };
-    D5BEA7F8F84F4534B56E0818 /* TideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F19EB2B0904D01A617E3A2 /* TideStore.swift */; };
-    3E7CDE6D78DC4DF39792DB07 /* GeocodingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 194238476298488C8CFCA7E5 /* GeocodingService.swift */; };
-    EB9F2901C3344EA6997E213C /* SolunarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C56F0A0AAE764FB7B8230C78 /* SolunarService.swift */; };
-    A4B6F039AC064A71AFC5FF8D /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A735C4DE4444B768C11B730 /* LocationService.swift */; };
-    2B1C514E43ED484EB6B939F8 /* ScoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82DFFDEB412479A97D7CB89 /* ScoreService.swift */; };
-    B7C3384B816D40CB94FB885F /* CacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D43775C6F0D4002B438269B /* CacheService.swift */; };
-    D74FB88A6E84417EB2350F62 /* SpotMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE04C838E440C5BC56BE54 /* SpotMerge.swift */; };
-    871905CAC50B4148ABC28BF9 /* SpotCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853EB3D0D0614231B12D68B5 /* SpotCodec.swift */; };
-    8B5BF9B059E5470B9DB56908 /* SpotMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643F701AED394C30822BE372 /* SpotMapping.swift */; };
-    6F0202244CDE49A59B81068D /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B3DACFD6A64436EABDDFB8E /* Constants.swift */; };
-    3CCDAE6CF72A40F6A18BA9B1 /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E806B0193044DAA8C13826 /* Brand.swift */; };
-    A45C163C945D4FCABBAAF25D /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F778E3D00FB40C186A1AD88 /* Typography.swift */; };
-    3F8D01C839934C6D872C207D /* Modifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6078FC46EB87411097C39BEC /* Modifiers.swift */; };
-    C47C931489A94E5C91AB4530 /* PersonalityCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49477D7E7B75425D924992AA /* PersonalityCopy.swift */; };
-    40CA3E4DD11B41689273D8C7 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFF7E9441444D78A1C7887B /* PreviewHelpers.swift */; };
-    9EA07B57B0B54E50A263B526 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 82CBF2071A0E49C7B6B70849 /* Assets.xcassets */; };
-    015A627B810945E2BC84B491 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 725DC0DAB7B14C67AB358C46 /* PrivacyInfo.xcprivacy */; };
-    C26F5CE44E404301A0ACE4E0 /* SpearoGoiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B119D692D3FA4E87A3B3005C /* SpearoGoiOSApp.swift */; };
-    5C813EABCD7F47A49D55690E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B99D8ED959D460DBD3673CE /* Assets.xcassets */; };
-    00F979DEC2D84FC58E2D2347 /* SpearoGo Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 27A32BE1A53C47E6A9EA7B48 /* SpearoGo Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+    46CC466494874597A274FE51 /* SpearoGoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A6B57F17284784AB45D946 /* SpearoGoApp.swift */; };
+    7A0CCB5279EA4608AC8084E4 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7710F84DF5024E0AB719E5D7 /* AppState.swift */; };
+    7B757F0229FA4122835BEB79 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540277761AF04838BA065D6D /* ContentView.swift */; };
+    16A466C2E0F24B398E46BBE4 /* VerdictPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58AED2B2ABBE4B889E59B77F /* VerdictPage.swift */; };
+    92722BD288724E03A86FAC29 /* ConditionsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079617FD1AC5469F937E715A /* ConditionsPage.swift */; };
+    2ADE28516E5D42989ADFCD72 /* WaterPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3654DE0444114A27A891D19F /* WaterPage.swift */; };
+    58979413596B49DAA7C86736 /* TidesPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72294A67F1944A98E52A4B9 /* TidesPage.swift */; };
+    1A58A32A0A9B48C5B97FC0B2 /* TodayPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2336056C9843DA8B16B01F /* TodayPage.swift */; };
+    FA1FB7CB9E5F4B4ABB00CA13 /* FishActivityPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FFEE5F95694DBE9A8A9445 /* FishActivityPage.swift */; };
+    2E398CFBD957418EAEA9F08B /* LocationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB072A0C454438EB7AB9DA1 /* LocationsView.swift */; };
+    CAE13736CE23451882473072 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73635BBE53CB4ED882738267 /* OnboardingView.swift */; };
+    2120B842B1C9479F955A1C52 /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76ED53567DA41EC82E3F4B4 /* PrivacyPolicyView.swift */; };
+    98C282CCF9804D8B8FE05708 /* WeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75348407032D4BBC9E372B1B /* WeatherData.swift */; };
+    E58C2C0C27FF4748AC074F4F /* MarineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C984083A9434DC99E0CAF8E /* MarineData.swift */; };
+    C1938CA5FE804FEBA8FD1340 /* TideData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01BD8E7DC294DCA8E95EA14 /* TideData.swift */; };
+    06874B5806EA4ACEBA46582D /* GeocodedPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFBDEE3CC0744734AADE81B9 /* GeocodedPlace.swift */; };
+    65AAFEF41C684D0C96CF2D57 /* SolunarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12C2CB9E198499C90DDE647 /* SolunarData.swift */; };
+    B252A600866A430AAD337EAE /* DiveScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15E06ADC37649A5A172047D /* DiveScore.swift */; };
+    363E75FD9F49448C91CE3DE3 /* SavedLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBF1A3A0B4644C995642256 /* SavedLocation.swift */; };
+    3F52DF95D8B44A9A821650A8 /* SharedScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C8A3098AD9E4A7AA1FB0D4A /* SharedScore.swift */; };
+    FEE5A471C5FF472894C8E5F5 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43751D4C0F944623AF7EC8B9 /* WeatherService.swift */; };
+    92A4263084D34B168C96A465 /* MarineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343A20AB0369413CAAACE68E /* MarineService.swift */; };
+    A8E03ACD739E4B0FA5A206A3 /* TideService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF6071C9B874780B2B2E3CC /* TideService.swift */; };
+    3D5FD6A870F441C5A8B415C4 /* TideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D169059554794197904D0913 /* TideStore.swift */; };
+    ADEF9EEB1FE7474BA829D39C /* GeocodingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08A349BAE6C43A4BF807C85 /* GeocodingService.swift */; };
+    CB104C360FB24451BBAE135B /* SolunarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB03F704433480E8FAA21E6 /* SolunarService.swift */; };
+    9CE88F15316B4C10B82D243B /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56E22DB6C704D4B9E20A4BA /* LocationService.swift */; };
+    D9C96D66D0034EE79FC22322 /* ScoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D6C7BC1DC64F399F914B69 /* ScoreService.swift */; };
+    7DB3B0EA34FE427BBD299D9B /* CacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE24191B6024469B19C0625 /* CacheService.swift */; };
+    D9961881452E41D29984DE43 /* SpotMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B5E55C38414BD9B12C0D6C /* SpotMerge.swift */; };
+    2978228AD71349D8A98114A1 /* SpotCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0B0A2DB5F84152BC44C859 /* SpotCodec.swift */; };
+    3C2DC42DDDFF4C24BEE496A7 /* SpotMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDD36736C0D42CEACABCB9B /* SpotMapping.swift */; };
+    9213174BA9B74E5AB32EF713 /* AuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9564102EF2455D9088680A /* AuthClient.swift */; };
+    FCE49E6C2B784FE594CC357F /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0AA5DE47DB4CA3BC3A5E91 /* TokenStore.swift */; };
+    41D38089486C49D8A716BCF5 /* AppleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76D94F21EBC43D387271AB1 /* AppleSignIn.swift */; };
+    A237FC66BF6C49899ADCDEEA /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7DC9BD7388F441D80EC0E28 /* Constants.swift */; };
+    5366D677BDCD4B95B49249D9 /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143B01DC6F254A928DED433E /* Brand.swift */; };
+    6A124245CBD64CE38A346D69 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573CDFD878F845788361EA06 /* Typography.swift */; };
+    B14801669E31463D837283E6 /* Modifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EADA52EAABF4BDA82B09AA1 /* Modifiers.swift */; };
+    DF1E54C7E4A64B0FA0581392 /* PersonalityCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C1417D7A574193BA947088 /* PersonalityCopy.swift */; };
+    86903D98FB2B4C20B06C5630 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A78DC73DD5448E99B791E2 /* PreviewHelpers.swift */; };
+    3B0F69941E53476BBDBD3E30 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F487458BC12C48FB82C2D562 /* Assets.xcassets */; };
+    33230193C6CC43F49675B532 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9073B63FD8A64B16A198F556 /* PrivacyInfo.xcprivacy */; };
+    2A30A6CFEE444CD5841C6439 /* SpearoGoiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D4EA9AD1E449B5996EC0F3 /* SpearoGoiOSApp.swift */; };
+    B278A977E7794B209A7CA603 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8368498EFDD4DC398D5BB5F /* Assets.xcassets */; };
+    32AB0294764C4019B38DE560 /* SpearoGo Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D6D5A7129FEB46E0827FA900 /* SpearoGo Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-    1616DA67CA7F45AAA459E180 /* PBXContainerItemProxy */ = {
+    EE254CBB60234D938445F9F6 /* PBXContainerItemProxy */ = {
         isa = PBXContainerItemProxy;
-        containerPortal = 53082F58595A4D3EA8700D5F /* Project object */;
+        containerPortal = 633B88AD6C1744D69D103B02 /* Project object */;
         proxyType = 1;
-        remoteGlobalIDString = A87705A3B4104EF882FD2A89;
+        remoteGlobalIDString = 1235D93EF2594DD6B37DE548;
         remoteInfo = "SpearoGo Watch App";
     };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-    933C4F5A2F8441FF8B11C34A /* Embed Watch Content */ = {
+    677790AFB31045C0892646AF /* Embed Watch Content */ = {
         isa = PBXCopyFilesBuildPhase;
         buildActionMask = 2147483647;
         dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
         dstSubfolderSpec = 16;
         files = (
-            00F979DEC2D84FC58E2D2347 /* SpearoGo Watch App.app in Embed Watch Content */,
+            32AB0294764C4019B38DE560 /* SpearoGo Watch App.app in Embed Watch Content */,
         );
         name = "Embed Watch Content";
         runOnlyForDeploymentPostprocessing = 0;
@@ -76,64 +79,67 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-    4B4CBC72DB4C4D8790E4826D /* SpearoGo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SpearoGo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-    27A32BE1A53C47E6A9EA7B48 /* SpearoGo Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SpearoGo Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-    B119D692D3FA4E87A3B3005C /* SpearoGoiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoiOSApp.swift; sourceTree = "<group>"; };
-    2B99D8ED959D460DBD3673CE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-    9872F413B3C948A5BA1B9474 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-    1248E7C7C3AA4D03A213F265 /* SpearoGoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoApp.swift; sourceTree = "<group>"; };
-    E45EC2607E0B47B79B336508 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-    2C6697FFC6F7473EA6B764C8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-    7C6B3509F10F4E65B6482598 /* VerdictPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerdictPage.swift; sourceTree = "<group>"; };
-    54C40E679DF548C3BD85ECA4 /* ConditionsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionsPage.swift; sourceTree = "<group>"; };
-    F00EC02670FA4F539E318CE6 /* WaterPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaterPage.swift; sourceTree = "<group>"; };
-    34E8874E0B5148538CB68F8B /* TidesPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidesPage.swift; sourceTree = "<group>"; };
-    0BA6F4972D8F4281B50F0C17 /* TodayPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayPage.swift; sourceTree = "<group>"; };
-    6E1D1B9DD95E4789ADB68A91 /* FishActivityPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishActivityPage.swift; sourceTree = "<group>"; };
-    8A45A069B536405DB0EB54BD /* LocationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationsView.swift; sourceTree = "<group>"; };
-    A52D40889DC347A2B8DC5625 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-    879F5217FEC2432AAEDA8537 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
-    E57351FE88CF4553AFFAD517 /* WeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherData.swift; sourceTree = "<group>"; };
-    EAFABD8AB8C940FDBF59B424 /* MarineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarineData.swift; sourceTree = "<group>"; };
-    B7E737E343F8410B92B11366 /* TideData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideData.swift; sourceTree = "<group>"; };
-    1E1E002F9C65443DBFAF3E22 /* GeocodedPlace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodedPlace.swift; sourceTree = "<group>"; };
-    0506F76B55864E899D4DAE8B /* SolunarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolunarData.swift; sourceTree = "<group>"; };
-    B523228F422145168FCB4BE7 /* DiveScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiveScore.swift; sourceTree = "<group>"; };
-    5E6A5B68ED3C458DB540D283 /* SavedLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedLocation.swift; sourceTree = "<group>"; };
-    FEE85504B153404BB5A2BA98 /* SharedScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedScore.swift; sourceTree = "<group>"; };
-    94FB53F2B11A4C3592CE8D1E /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
-    014939E3CACC4A6EBDBC438D /* MarineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarineService.swift; sourceTree = "<group>"; };
-    AD60AC8824FD499998892C3E /* TideService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideService.swift; sourceTree = "<group>"; };
-    48F19EB2B0904D01A617E3A2 /* TideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideStore.swift; sourceTree = "<group>"; };
-    194238476298488C8CFCA7E5 /* GeocodingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodingService.swift; sourceTree = "<group>"; };
-    C56F0A0AAE764FB7B8230C78 /* SolunarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolunarService.swift; sourceTree = "<group>"; };
-    2A735C4DE4444B768C11B730 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
-    C82DFFDEB412479A97D7CB89 /* ScoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreService.swift; sourceTree = "<group>"; };
-    3D43775C6F0D4002B438269B /* CacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheService.swift; sourceTree = "<group>"; };
-    37EE04C838E440C5BC56BE54 /* SpotMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotMerge.swift; sourceTree = "<group>"; };
-    853EB3D0D0614231B12D68B5 /* SpotCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotCodec.swift; sourceTree = "<group>"; };
-    643F701AED394C30822BE372 /* SpotMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotMapping.swift; sourceTree = "<group>"; };
-    0B3DACFD6A64436EABDDFB8E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-    24E806B0193044DAA8C13826 /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
-    3F778E3D00FB40C186A1AD88 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
-    6078FC46EB87411097C39BEC /* Modifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifiers.swift; sourceTree = "<group>"; };
-    49477D7E7B75425D924992AA /* PersonalityCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalityCopy.swift; sourceTree = "<group>"; };
-    5EFF7E9441444D78A1C7887B /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
-    B5A3BFC5608A46AB8557A7FD /* SpearoGoWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoWidget.swift; sourceTree = "<group>"; };
-    8DFF285923CC4E2D9CC55563 /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
-    82CBF2071A0E49C7B6B70849 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-    725DC0DAB7B14C67AB358C46 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+    D22E8C2D895C435680BCFA8B /* SpearoGo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SpearoGo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+    D6D5A7129FEB46E0827FA900 /* SpearoGo Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SpearoGo Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+    B5D4EA9AD1E449B5996EC0F3 /* SpearoGoiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoiOSApp.swift; sourceTree = "<group>"; };
+    B8368498EFDD4DC398D5BB5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+    31719A9B4E704DFAB57B7282 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+    13A6B57F17284784AB45D946 /* SpearoGoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoApp.swift; sourceTree = "<group>"; };
+    7710F84DF5024E0AB719E5D7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+    540277761AF04838BA065D6D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+    58AED2B2ABBE4B889E59B77F /* VerdictPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerdictPage.swift; sourceTree = "<group>"; };
+    079617FD1AC5469F937E715A /* ConditionsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionsPage.swift; sourceTree = "<group>"; };
+    3654DE0444114A27A891D19F /* WaterPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaterPage.swift; sourceTree = "<group>"; };
+    B72294A67F1944A98E52A4B9 /* TidesPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidesPage.swift; sourceTree = "<group>"; };
+    8F2336056C9843DA8B16B01F /* TodayPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayPage.swift; sourceTree = "<group>"; };
+    15FFEE5F95694DBE9A8A9445 /* FishActivityPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishActivityPage.swift; sourceTree = "<group>"; };
+    DCB072A0C454438EB7AB9DA1 /* LocationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationsView.swift; sourceTree = "<group>"; };
+    73635BBE53CB4ED882738267 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+    F76ED53567DA41EC82E3F4B4 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
+    75348407032D4BBC9E372B1B /* WeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherData.swift; sourceTree = "<group>"; };
+    0C984083A9434DC99E0CAF8E /* MarineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarineData.swift; sourceTree = "<group>"; };
+    E01BD8E7DC294DCA8E95EA14 /* TideData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideData.swift; sourceTree = "<group>"; };
+    DFBDEE3CC0744734AADE81B9 /* GeocodedPlace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodedPlace.swift; sourceTree = "<group>"; };
+    A12C2CB9E198499C90DDE647 /* SolunarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolunarData.swift; sourceTree = "<group>"; };
+    F15E06ADC37649A5A172047D /* DiveScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiveScore.swift; sourceTree = "<group>"; };
+    EBBF1A3A0B4644C995642256 /* SavedLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedLocation.swift; sourceTree = "<group>"; };
+    0C8A3098AD9E4A7AA1FB0D4A /* SharedScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedScore.swift; sourceTree = "<group>"; };
+    43751D4C0F944623AF7EC8B9 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+    343A20AB0369413CAAACE68E /* MarineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarineService.swift; sourceTree = "<group>"; };
+    4EF6071C9B874780B2B2E3CC /* TideService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideService.swift; sourceTree = "<group>"; };
+    D169059554794197904D0913 /* TideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideStore.swift; sourceTree = "<group>"; };
+    E08A349BAE6C43A4BF807C85 /* GeocodingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodingService.swift; sourceTree = "<group>"; };
+    0BB03F704433480E8FAA21E6 /* SolunarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolunarService.swift; sourceTree = "<group>"; };
+    B56E22DB6C704D4B9E20A4BA /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+    95D6C7BC1DC64F399F914B69 /* ScoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreService.swift; sourceTree = "<group>"; };
+    5CE24191B6024469B19C0625 /* CacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheService.swift; sourceTree = "<group>"; };
+    33B5E55C38414BD9B12C0D6C /* SpotMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotMerge.swift; sourceTree = "<group>"; };
+    7B0B0A2DB5F84152BC44C859 /* SpotCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotCodec.swift; sourceTree = "<group>"; };
+    1DDD36736C0D42CEACABCB9B /* SpotMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotMapping.swift; sourceTree = "<group>"; };
+    FB9564102EF2455D9088680A /* AuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthClient.swift; sourceTree = "<group>"; };
+    DA0AA5DE47DB4CA3BC3A5E91 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+    C76D94F21EBC43D387271AB1 /* AppleSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignIn.swift; sourceTree = "<group>"; };
+    E7DC9BD7388F441D80EC0E28 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+    143B01DC6F254A928DED433E /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
+    573CDFD878F845788361EA06 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+    9EADA52EAABF4BDA82B09AA1 /* Modifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifiers.swift; sourceTree = "<group>"; };
+    61C1417D7A574193BA947088 /* PersonalityCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalityCopy.swift; sourceTree = "<group>"; };
+    58A78DC73DD5448E99B791E2 /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
+    F329A2B197C74A8190DC8D9F /* SpearoGoWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpearoGoWidget.swift; sourceTree = "<group>"; };
+    1950EF2A447A48CF830C7FAE /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
+    F487458BC12C48FB82C2D562 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+    9073B63FD8A64B16A198F556 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-    6434A2B0DD8448C0A30463FD /* Frameworks */ = {
+    6DDAAB5EF6884FD789DEC57B /* Frameworks */ = {
         isa = PBXFrameworksBuildPhase;
         buildActionMask = 2147483647;
         files = (
         );
         runOnlyForDeploymentPostprocessing = 0;
     };
-    E8E263787A0B405DBEEA0653 /* Frameworks */ = {
+    27124C6F6AD94A3FB8FD0859 /* Frameworks */ = {
         isa = PBXFrameworksBuildPhase;
         buildActionMask = 2147483647;
         files = (
@@ -143,133 +149,136 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-    BDB95DC154E34BEA8B3A6EC4 = {
+    12AC11C29AA2463799AE03F0 = {
         isa = PBXGroup;
         children = (
-            C209E1995E274183AB89E6EB /* SpearoGo */,
-            C13AE31279D24452ABC34059 /* iOS Stub */,
-            4D32761A85974644B07AFA05 /* Products */,
+            86FEF4524C954F5296EC6483 /* SpearoGo */,
+            3CE354D33007499FAE0C8AC9 /* iOS Stub */,
+            490CB97F17894D0796B73639 /* Products */,
         );
         sourceTree = "<group>";
     };
-    C209E1995E274183AB89E6EB /* SpearoGo */ = {
+    86FEF4524C954F5296EC6483 /* SpearoGo */ = {
         isa = PBXGroup;
         children = (
-            1248E7C7C3AA4D03A213F265 /* SpearoGoApp.swift */,
-            E45EC2607E0B47B79B336508 /* AppState.swift */,
-            2C6697FFC6F7473EA6B764C8 /* ContentView.swift */,
-            82CBF2071A0E49C7B6B70849 /* Assets.xcassets */,
-            725DC0DAB7B14C67AB358C46 /* PrivacyInfo.xcprivacy */,
-            44A146D207A44B789C4F9C87 /* Views */,
-            C96B8A266E5C4AFCB8CB07A3 /* Models */,
-            42FD274EE6374BBC9A322E2D /* Services */,
-            19AE0834E002452B9E0C5E85 /* Utils */,
-            BB73E6E7CCC34F26B2333416 /* Sync */,
-            9DBCB2802D0542C3883DE053 /* Widget */,
+            13A6B57F17284784AB45D946 /* SpearoGoApp.swift */,
+            7710F84DF5024E0AB719E5D7 /* AppState.swift */,
+            540277761AF04838BA065D6D /* ContentView.swift */,
+            F487458BC12C48FB82C2D562 /* Assets.xcassets */,
+            9073B63FD8A64B16A198F556 /* PrivacyInfo.xcprivacy */,
+            76E5562E9EE441CE8DF0566E /* Views */,
+            8773CDF8C1DA43B3AB11CAC0 /* Models */,
+            9B94CF4E63A84428BF09E750 /* Services */,
+            62729567807C41BAADFD3499 /* Utils */,
+            A8D51540AB3F4426BD8E9A12 /* Sync */,
+            0F0C2D89DC934E87AA520713 /* Widget */,
         );
         path = SpearoGo;
         sourceTree = "<group>";
     };
-    C13AE31279D24452ABC34059 /* iOS Stub */ = {
+    3CE354D33007499FAE0C8AC9 /* iOS Stub */ = {
         isa = PBXGroup;
         children = (
-            B119D692D3FA4E87A3B3005C /* SpearoGoiOSApp.swift */,
-            2B99D8ED959D460DBD3673CE /* Assets.xcassets */,
-            9872F413B3C948A5BA1B9474 /* Info.plist */,
+            B5D4EA9AD1E449B5996EC0F3 /* SpearoGoiOSApp.swift */,
+            B8368498EFDD4DC398D5BB5F /* Assets.xcassets */,
+            31719A9B4E704DFAB57B7282 /* Info.plist */,
         );
         name = "iOS Stub";
         path = "SpearoGoiOS";
         sourceTree = "<group>";
     };
-    4D32761A85974644B07AFA05 /* Products */ = {
+    490CB97F17894D0796B73639 /* Products */ = {
         isa = PBXGroup;
         children = (
-            4B4CBC72DB4C4D8790E4826D /* SpearoGo.app */,
-            27A32BE1A53C47E6A9EA7B48 /* SpearoGo Watch App.app */,
+            D22E8C2D895C435680BCFA8B /* SpearoGo.app */,
+            D6D5A7129FEB46E0827FA900 /* SpearoGo Watch App.app */,
         );
         name = Products;
         sourceTree = "<group>";
     };
-    44A146D207A44B789C4F9C87 /* Views */ = {
+    76E5562E9EE441CE8DF0566E /* Views */ = {
         isa = PBXGroup;
         children = (
-            7C6B3509F10F4E65B6482598 /* VerdictPage.swift */,
-            54C40E679DF548C3BD85ECA4 /* ConditionsPage.swift */,
-            F00EC02670FA4F539E318CE6 /* WaterPage.swift */,
-            34E8874E0B5148538CB68F8B /* TidesPage.swift */,
-            0BA6F4972D8F4281B50F0C17 /* TodayPage.swift */,
-            6E1D1B9DD95E4789ADB68A91 /* FishActivityPage.swift */,
-            8A45A069B536405DB0EB54BD /* LocationsView.swift */,
-            A52D40889DC347A2B8DC5625 /* OnboardingView.swift */,
-            879F5217FEC2432AAEDA8537 /* PrivacyPolicyView.swift */,
+            58AED2B2ABBE4B889E59B77F /* VerdictPage.swift */,
+            079617FD1AC5469F937E715A /* ConditionsPage.swift */,
+            3654DE0444114A27A891D19F /* WaterPage.swift */,
+            B72294A67F1944A98E52A4B9 /* TidesPage.swift */,
+            8F2336056C9843DA8B16B01F /* TodayPage.swift */,
+            15FFEE5F95694DBE9A8A9445 /* FishActivityPage.swift */,
+            DCB072A0C454438EB7AB9DA1 /* LocationsView.swift */,
+            73635BBE53CB4ED882738267 /* OnboardingView.swift */,
+            F76ED53567DA41EC82E3F4B4 /* PrivacyPolicyView.swift */,
         );
         name = Views;
         path = "Views";
         sourceTree = "<group>";
     };
-    C96B8A266E5C4AFCB8CB07A3 /* Models */ = {
+    8773CDF8C1DA43B3AB11CAC0 /* Models */ = {
         isa = PBXGroup;
         children = (
-            E57351FE88CF4553AFFAD517 /* WeatherData.swift */,
-            EAFABD8AB8C940FDBF59B424 /* MarineData.swift */,
-            B7E737E343F8410B92B11366 /* TideData.swift */,
-            1E1E002F9C65443DBFAF3E22 /* GeocodedPlace.swift */,
-            0506F76B55864E899D4DAE8B /* SolunarData.swift */,
-            B523228F422145168FCB4BE7 /* DiveScore.swift */,
-            5E6A5B68ED3C458DB540D283 /* SavedLocation.swift */,
-            FEE85504B153404BB5A2BA98 /* SharedScore.swift */,
+            75348407032D4BBC9E372B1B /* WeatherData.swift */,
+            0C984083A9434DC99E0CAF8E /* MarineData.swift */,
+            E01BD8E7DC294DCA8E95EA14 /* TideData.swift */,
+            DFBDEE3CC0744734AADE81B9 /* GeocodedPlace.swift */,
+            A12C2CB9E198499C90DDE647 /* SolunarData.swift */,
+            F15E06ADC37649A5A172047D /* DiveScore.swift */,
+            EBBF1A3A0B4644C995642256 /* SavedLocation.swift */,
+            0C8A3098AD9E4A7AA1FB0D4A /* SharedScore.swift */,
         );
         name = Models;
         path = "Models";
         sourceTree = "<group>";
     };
-    42FD274EE6374BBC9A322E2D /* Services */ = {
+    9B94CF4E63A84428BF09E750 /* Services */ = {
         isa = PBXGroup;
         children = (
-            94FB53F2B11A4C3592CE8D1E /* WeatherService.swift */,
-            014939E3CACC4A6EBDBC438D /* MarineService.swift */,
-            AD60AC8824FD499998892C3E /* TideService.swift */,
-            48F19EB2B0904D01A617E3A2 /* TideStore.swift */,
-            194238476298488C8CFCA7E5 /* GeocodingService.swift */,
-            C56F0A0AAE764FB7B8230C78 /* SolunarService.swift */,
-            2A735C4DE4444B768C11B730 /* LocationService.swift */,
-            C82DFFDEB412479A97D7CB89 /* ScoreService.swift */,
-            3D43775C6F0D4002B438269B /* CacheService.swift */,
+            43751D4C0F944623AF7EC8B9 /* WeatherService.swift */,
+            343A20AB0369413CAAACE68E /* MarineService.swift */,
+            4EF6071C9B874780B2B2E3CC /* TideService.swift */,
+            D169059554794197904D0913 /* TideStore.swift */,
+            E08A349BAE6C43A4BF807C85 /* GeocodingService.swift */,
+            0BB03F704433480E8FAA21E6 /* SolunarService.swift */,
+            B56E22DB6C704D4B9E20A4BA /* LocationService.swift */,
+            95D6C7BC1DC64F399F914B69 /* ScoreService.swift */,
+            5CE24191B6024469B19C0625 /* CacheService.swift */,
         );
         name = Services;
         path = "Services";
         sourceTree = "<group>";
     };
-    19AE0834E002452B9E0C5E85 /* Utils */ = {
+    62729567807C41BAADFD3499 /* Utils */ = {
         isa = PBXGroup;
         children = (
-            0B3DACFD6A64436EABDDFB8E /* Constants.swift */,
-            24E806B0193044DAA8C13826 /* Brand.swift */,
-            3F778E3D00FB40C186A1AD88 /* Typography.swift */,
-            6078FC46EB87411097C39BEC /* Modifiers.swift */,
-            49477D7E7B75425D924992AA /* PersonalityCopy.swift */,
-            5EFF7E9441444D78A1C7887B /* PreviewHelpers.swift */,
+            E7DC9BD7388F441D80EC0E28 /* Constants.swift */,
+            143B01DC6F254A928DED433E /* Brand.swift */,
+            573CDFD878F845788361EA06 /* Typography.swift */,
+            9EADA52EAABF4BDA82B09AA1 /* Modifiers.swift */,
+            61C1417D7A574193BA947088 /* PersonalityCopy.swift */,
+            58A78DC73DD5448E99B791E2 /* PreviewHelpers.swift */,
         );
         name = Utils;
         path = "Utils";
         sourceTree = "<group>";
     };
-    BB73E6E7CCC34F26B2333416 /* Sync */ = {
+    A8D51540AB3F4426BD8E9A12 /* Sync */ = {
         isa = PBXGroup;
         children = (
-            37EE04C838E440C5BC56BE54 /* SpotMerge.swift */,
-            853EB3D0D0614231B12D68B5 /* SpotCodec.swift */,
-            643F701AED394C30822BE372 /* SpotMapping.swift */,
+            33B5E55C38414BD9B12C0D6C /* SpotMerge.swift */,
+            7B0B0A2DB5F84152BC44C859 /* SpotCodec.swift */,
+            1DDD36736C0D42CEACABCB9B /* SpotMapping.swift */,
+            FB9564102EF2455D9088680A /* AuthClient.swift */,
+            DA0AA5DE47DB4CA3BC3A5E91 /* TokenStore.swift */,
+            C76D94F21EBC43D387271AB1 /* AppleSignIn.swift */,
         );
         name = Sync;
         path = "Sync";
         sourceTree = "<group>";
     };
-    9DBCB2802D0542C3883DE053 /* Widget */ = {
+    0F0C2D89DC934E87AA520713 /* Widget */ = {
         isa = PBXGroup;
         children = (
-            B5A3BFC5608A46AB8557A7FD /* SpearoGoWidget.swift */,
-            8DFF285923CC4E2D9CC55563 /* WidgetViews.swift */,
+            F329A2B197C74A8190DC8D9F /* SpearoGoWidget.swift */,
+            1950EF2A447A48CF830C7FAE /* WidgetViews.swift */,
         );
         name = Widget;
         path = "Widget";
@@ -278,13 +287,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-    A87705A3B4104EF882FD2A89 /* SpearoGo Watch App */ = {
+    1235D93EF2594DD6B37DE548 /* SpearoGo Watch App */ = {
         isa = PBXNativeTarget;
-        buildConfigurationList = 4A6F4E1FC41F4325AB0444AF /* Build configuration list for PBXNativeTarget "SpearoGo Watch App" */;
+        buildConfigurationList = 5DFF729CF25542229D829804 /* Build configuration list for PBXNativeTarget "SpearoGo Watch App" */;
         buildPhases = (
-            E4EDEC643EF748E38CC2A928 /* Sources */,
-            6434A2B0DD8448C0A30463FD /* Frameworks */,
-            62CE4E22973849349DB0F00C /* Resources */,
+            59BA59D5A1E34E29A79D2321 /* Sources */,
+            6DDAAB5EF6884FD789DEC57B /* Frameworks */,
+            E082F2A009904B4AA861066F /* Resources */,
         );
         buildRules = (
         );
@@ -292,47 +301,47 @@
         );
         name = "SpearoGo Watch App";
         productName = "SpearoGo Watch App";
-        productReference = 27A32BE1A53C47E6A9EA7B48 /* SpearoGo Watch App.app */;
+        productReference = D6D5A7129FEB46E0827FA900 /* SpearoGo Watch App.app */;
         productType = "com.apple.product-type.application";
     };
-    02A2DA3E34894E5ABAF37672 /* SpearoGo */ = {
+    7CACFB84156E4205A9988A0B /* SpearoGo */ = {
         isa = PBXNativeTarget;
-        buildConfigurationList = 168B559F2BA84DB89DFA182A /* Build configuration list for PBXNativeTarget "SpearoGo" */;
+        buildConfigurationList = 63F5933ACCBF4A03833A4325 /* Build configuration list for PBXNativeTarget "SpearoGo" */;
         buildPhases = (
-            67A0416EF7FA4CE5A1200BB1 /* Sources */,
-            E8E263787A0B405DBEEA0653 /* Frameworks */,
-            CD072886C0B14D209B92125D /* Resources */,
-            933C4F5A2F8441FF8B11C34A /* Embed Watch Content */,
+            B515ACB660AB4DA98A3F101A /* Sources */,
+            27124C6F6AD94A3FB8FD0859 /* Frameworks */,
+            D8276C3FEF134A20B2DB76BE /* Resources */,
+            677790AFB31045C0892646AF /* Embed Watch Content */,
         );
         buildRules = (
         );
         dependencies = (
-            88A4D6B7DDFD4C0F9E34099B /* PBXTargetDependency */,
+            680CC72E35BA40CEA906287C /* PBXTargetDependency */,
         );
         name = SpearoGo;
         productName = SpearoGo;
-        productReference = 4B4CBC72DB4C4D8790E4826D /* SpearoGo.app */;
+        productReference = D22E8C2D895C435680BCFA8B /* SpearoGo.app */;
         productType = "com.apple.product-type.application";
     };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-    53082F58595A4D3EA8700D5F /* Project object */ = {
+    633B88AD6C1744D69D103B02 /* Project object */ = {
         isa = PBXProject;
         attributes = {
             BuildIndependentTargetsInParallel = 1;
             LastSwiftUpdateCheck = 1500;
             LastUpgradeCheck = 1500;
             TargetAttributes = {
-                A87705A3B4104EF882FD2A89 = {
+                1235D93EF2594DD6B37DE548 = {
                     CreatedOnToolsVersion = 15.0;
                 };
-                02A2DA3E34894E5ABAF37672 = {
+                7CACFB84156E4205A9988A0B = {
                     CreatedOnToolsVersion = 15.0;
                 };
             };
         };
-        buildConfigurationList = 2B224350366A4128A8294D6C /* Build configuration list for PBXProject "SpearoGo" */;
+        buildConfigurationList = 7656BB7E671448D282250A96 /* Build configuration list for PBXProject "SpearoGo" */;
         compatibilityVersion = "Xcode 14.0";
         developmentRegion = en;
         hasScannedForEncodings = 0;
@@ -340,103 +349,106 @@
             en,
             Base,
         );
-        mainGroup = BDB95DC154E34BEA8B3A6EC4;
-        productRefGroup = 4D32761A85974644B07AFA05 /* Products */;
+        mainGroup = 12AC11C29AA2463799AE03F0;
+        productRefGroup = 490CB97F17894D0796B73639 /* Products */;
         projectDirPath = "";
         projectRoot = "";
         targets = (
-            02A2DA3E34894E5ABAF37672 /* SpearoGo */,
-            A87705A3B4104EF882FD2A89 /* SpearoGo Watch App */,
+            7CACFB84156E4205A9988A0B /* SpearoGo */,
+            1235D93EF2594DD6B37DE548 /* SpearoGo Watch App */,
         );
     };
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-    62CE4E22973849349DB0F00C /* Resources */ = {
+    E082F2A009904B4AA861066F /* Resources */ = {
         isa = PBXResourcesBuildPhase;
         buildActionMask = 2147483647;
         files = (
-            9EA07B57B0B54E50A263B526 /* Assets.xcassets in Resources */,
-            015A627B810945E2BC84B491 /* PrivacyInfo.xcprivacy in Resources */,
+            3B0F69941E53476BBDBD3E30 /* Assets.xcassets in Resources */,
+            33230193C6CC43F49675B532 /* PrivacyInfo.xcprivacy in Resources */,
         );
         runOnlyForDeploymentPostprocessing = 0;
     };
-    CD072886C0B14D209B92125D /* Resources */ = {
+    D8276C3FEF134A20B2DB76BE /* Resources */ = {
         isa = PBXResourcesBuildPhase;
         buildActionMask = 2147483647;
         files = (
-            5C813EABCD7F47A49D55690E /* Assets.xcassets in Resources */,
+            B278A977E7794B209A7CA603 /* Assets.xcassets in Resources */,
         );
         runOnlyForDeploymentPostprocessing = 0;
     };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-    E4EDEC643EF748E38CC2A928 /* Sources */ = {
+    59BA59D5A1E34E29A79D2321 /* Sources */ = {
         isa = PBXSourcesBuildPhase;
         buildActionMask = 2147483647;
         files = (
-            E0D6A668610E4C92A5343C49 /* SpearoGoApp.swift in Sources */,
-            2585F3EA6D0A40249B62D941 /* AppState.swift in Sources */,
-            E6D4D1AEC79C4F8088F2D85B /* ContentView.swift in Sources */,
-            C4F9113E64E74D828CB349E5 /* VerdictPage.swift in Sources */,
-            BD34B18619C9489AAE4AD969 /* ConditionsPage.swift in Sources */,
-            A8D2CC5CE34F4629907DD784 /* WaterPage.swift in Sources */,
-            DA6728396C874E058BFB0EF2 /* TidesPage.swift in Sources */,
-            EAF5438A8D2942F185763409 /* TodayPage.swift in Sources */,
-            C4AA264E709C4A73BF11A08C /* FishActivityPage.swift in Sources */,
-            55EB991AB0164735B0173047 /* LocationsView.swift in Sources */,
-            F95D7C6600E14048B99CAED4 /* OnboardingView.swift in Sources */,
-            74F03B27C7AA4F3797BBDB6C /* PrivacyPolicyView.swift in Sources */,
-            4386CD11EB684194989C6013 /* WeatherData.swift in Sources */,
-            5BA5045AD3114FD683B693A8 /* MarineData.swift in Sources */,
-            C1232E5D410643F5A607D0B3 /* TideData.swift in Sources */,
-            8C0DD703DD5843CCBC371C27 /* GeocodedPlace.swift in Sources */,
-            323B3357A97A4DE48120C173 /* SolunarData.swift in Sources */,
-            9B68043842074AF4A6C4FEC6 /* DiveScore.swift in Sources */,
-            7D49F1A88E3B461B94C926AC /* SavedLocation.swift in Sources */,
-            F1D678958BDE4726B3EBF7AC /* SharedScore.swift in Sources */,
-            6171DBE92C38410EBFBCEA8F /* WeatherService.swift in Sources */,
-            0BBA060B2E6E43FA801D871F /* MarineService.swift in Sources */,
-            52EC6A18849D49C28A91F5BF /* TideService.swift in Sources */,
-            D5BEA7F8F84F4534B56E0818 /* TideStore.swift in Sources */,
-            3E7CDE6D78DC4DF39792DB07 /* GeocodingService.swift in Sources */,
-            EB9F2901C3344EA6997E213C /* SolunarService.swift in Sources */,
-            A4B6F039AC064A71AFC5FF8D /* LocationService.swift in Sources */,
-            2B1C514E43ED484EB6B939F8 /* ScoreService.swift in Sources */,
-            B7C3384B816D40CB94FB885F /* CacheService.swift in Sources */,
-            D74FB88A6E84417EB2350F62 /* SpotMerge.swift in Sources */,
-            871905CAC50B4148ABC28BF9 /* SpotCodec.swift in Sources */,
-            8B5BF9B059E5470B9DB56908 /* SpotMapping.swift in Sources */,
-            6F0202244CDE49A59B81068D /* Constants.swift in Sources */,
-            3CCDAE6CF72A40F6A18BA9B1 /* Brand.swift in Sources */,
-            A45C163C945D4FCABBAAF25D /* Typography.swift in Sources */,
-            3F8D01C839934C6D872C207D /* Modifiers.swift in Sources */,
-            C47C931489A94E5C91AB4530 /* PersonalityCopy.swift in Sources */,
-            40CA3E4DD11B41689273D8C7 /* PreviewHelpers.swift in Sources */,
+            46CC466494874597A274FE51 /* SpearoGoApp.swift in Sources */,
+            7A0CCB5279EA4608AC8084E4 /* AppState.swift in Sources */,
+            7B757F0229FA4122835BEB79 /* ContentView.swift in Sources */,
+            16A466C2E0F24B398E46BBE4 /* VerdictPage.swift in Sources */,
+            92722BD288724E03A86FAC29 /* ConditionsPage.swift in Sources */,
+            2ADE28516E5D42989ADFCD72 /* WaterPage.swift in Sources */,
+            58979413596B49DAA7C86736 /* TidesPage.swift in Sources */,
+            1A58A32A0A9B48C5B97FC0B2 /* TodayPage.swift in Sources */,
+            FA1FB7CB9E5F4B4ABB00CA13 /* FishActivityPage.swift in Sources */,
+            2E398CFBD957418EAEA9F08B /* LocationsView.swift in Sources */,
+            CAE13736CE23451882473072 /* OnboardingView.swift in Sources */,
+            2120B842B1C9479F955A1C52 /* PrivacyPolicyView.swift in Sources */,
+            98C282CCF9804D8B8FE05708 /* WeatherData.swift in Sources */,
+            E58C2C0C27FF4748AC074F4F /* MarineData.swift in Sources */,
+            C1938CA5FE804FEBA8FD1340 /* TideData.swift in Sources */,
+            06874B5806EA4ACEBA46582D /* GeocodedPlace.swift in Sources */,
+            65AAFEF41C684D0C96CF2D57 /* SolunarData.swift in Sources */,
+            B252A600866A430AAD337EAE /* DiveScore.swift in Sources */,
+            363E75FD9F49448C91CE3DE3 /* SavedLocation.swift in Sources */,
+            3F52DF95D8B44A9A821650A8 /* SharedScore.swift in Sources */,
+            FEE5A471C5FF472894C8E5F5 /* WeatherService.swift in Sources */,
+            92A4263084D34B168C96A465 /* MarineService.swift in Sources */,
+            A8E03ACD739E4B0FA5A206A3 /* TideService.swift in Sources */,
+            3D5FD6A870F441C5A8B415C4 /* TideStore.swift in Sources */,
+            ADEF9EEB1FE7474BA829D39C /* GeocodingService.swift in Sources */,
+            CB104C360FB24451BBAE135B /* SolunarService.swift in Sources */,
+            9CE88F15316B4C10B82D243B /* LocationService.swift in Sources */,
+            D9C96D66D0034EE79FC22322 /* ScoreService.swift in Sources */,
+            7DB3B0EA34FE427BBD299D9B /* CacheService.swift in Sources */,
+            D9961881452E41D29984DE43 /* SpotMerge.swift in Sources */,
+            2978228AD71349D8A98114A1 /* SpotCodec.swift in Sources */,
+            3C2DC42DDDFF4C24BEE496A7 /* SpotMapping.swift in Sources */,
+            9213174BA9B74E5AB32EF713 /* AuthClient.swift in Sources */,
+            FCE49E6C2B784FE594CC357F /* TokenStore.swift in Sources */,
+            41D38089486C49D8A716BCF5 /* AppleSignIn.swift in Sources */,
+            A237FC66BF6C49899ADCDEEA /* Constants.swift in Sources */,
+            5366D677BDCD4B95B49249D9 /* Brand.swift in Sources */,
+            6A124245CBD64CE38A346D69 /* Typography.swift in Sources */,
+            B14801669E31463D837283E6 /* Modifiers.swift in Sources */,
+            DF1E54C7E4A64B0FA0581392 /* PersonalityCopy.swift in Sources */,
+            86903D98FB2B4C20B06C5630 /* PreviewHelpers.swift in Sources */,
         );
         runOnlyForDeploymentPostprocessing = 0;
     };
-    67A0416EF7FA4CE5A1200BB1 /* Sources */ = {
+    B515ACB660AB4DA98A3F101A /* Sources */ = {
         isa = PBXSourcesBuildPhase;
         buildActionMask = 2147483647;
         files = (
-            C26F5CE44E404301A0ACE4E0 /* SpearoGoiOSApp.swift in Sources */,
+            2A30A6CFEE444CD5841C6439 /* SpearoGoiOSApp.swift in Sources */,
         );
         runOnlyForDeploymentPostprocessing = 0;
     };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-    88A4D6B7DDFD4C0F9E34099B /* PBXTargetDependency */ = {
+    680CC72E35BA40CEA906287C /* PBXTargetDependency */ = {
         isa = PBXTargetDependency;
-        target = A87705A3B4104EF882FD2A89 /* SpearoGo Watch App */;
-        targetProxy = 1616DA67CA7F45AAA459E180 /* PBXContainerItemProxy */;
+        target = 1235D93EF2594DD6B37DE548 /* SpearoGo Watch App */;
+        targetProxy = EE254CBB60234D938445F9F6 /* PBXContainerItemProxy */;
     };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-    D97671B4B3D44168B3659D1D /* Debug */ = {
+    67C18E46260A46C48E4C6CB2 /* Debug */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
             ALWAYS_SEARCH_USER_PATHS = NO;
@@ -489,7 +501,7 @@
         };
         name = Debug;
     };
-    254BC6E4C664441DBAEF2DB7 /* Release */ = {
+    D262784EAA8E4458928CB3F1 /* Release */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
             ALWAYS_SEARCH_USER_PATHS = NO;
@@ -539,7 +551,7 @@
         };
         name = Release;
     };
-    1E9B8C63DCD9409DB9D75875 /* Debug */ = {
+    8E030B0034FE469EB8AA9A86 /* Debug */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
             ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -566,7 +578,7 @@
         };
         name = Debug;
     };
-    B6B2B302108E48EC9F637851 /* Release */ = {
+    DC8DBBE73906450EB8089200 /* Release */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
             ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -592,7 +604,7 @@
         };
         name = Release;
     };
-    C06FBF363B124FA9AD3E28D3 /* Debug */ = {
+    270D4F83010A46D181DE6299 /* Debug */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
             ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -616,7 +628,7 @@
         };
         name = Debug;
     };
-    B9790AD2877440648FD6149C /* Release */ = {
+    A5B778BF95E54192BB2E0592 /* Release */ = {
         isa = XCBuildConfiguration;
         buildSettings = {
             ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -642,29 +654,29 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-    2B224350366A4128A8294D6C /* Build configuration list for PBXProject "SpearoGo" */ = {
+    7656BB7E671448D282250A96 /* Build configuration list for PBXProject "SpearoGo" */ = {
         isa = XCConfigurationList;
         buildConfigurations = (
-            D97671B4B3D44168B3659D1D /* Debug */,
-            254BC6E4C664441DBAEF2DB7 /* Release */,
+            67C18E46260A46C48E4C6CB2 /* Debug */,
+            D262784EAA8E4458928CB3F1 /* Release */,
         );
         defaultConfigurationIsVisible = 0;
         defaultConfigurationName = Release;
     };
-    4A6F4E1FC41F4325AB0444AF /* Build configuration list for PBXNativeTarget "SpearoGo Watch App" */ = {
+    5DFF729CF25542229D829804 /* Build configuration list for PBXNativeTarget "SpearoGo Watch App" */ = {
         isa = XCConfigurationList;
         buildConfigurations = (
-            1E9B8C63DCD9409DB9D75875 /* Debug */,
-            B6B2B302108E48EC9F637851 /* Release */,
+            8E030B0034FE469EB8AA9A86 /* Debug */,
+            DC8DBBE73906450EB8089200 /* Release */,
         );
         defaultConfigurationIsVisible = 0;
         defaultConfigurationName = Release;
     };
-    168B559F2BA84DB89DFA182A /* Build configuration list for PBXNativeTarget "SpearoGo" */ = {
+    63F5933ACCBF4A03833A4325 /* Build configuration list for PBXNativeTarget "SpearoGo" */ = {
         isa = XCConfigurationList;
         buildConfigurations = (
-            C06FBF363B124FA9AD3E28D3 /* Debug */,
-            B9790AD2877440648FD6149C /* Release */,
+            270D4F83010A46D181DE6299 /* Debug */,
+            A5B778BF95E54192BB2E0592 /* Release */,
         );
         defaultConfigurationIsVisible = 0;
         defaultConfigurationName = Release;
@@ -672,5 +684,5 @@
 /* End XCConfigurationList section */
 
   };
-  rootObject = 53082F58595A4D3EA8700D5F /* Project object */;
+  rootObject = 633B88AD6C1744D69D103B02 /* Project object */;
 }

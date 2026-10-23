@@ -47,4 +47,8 @@ Register an Apple app with bundle ID `agency.visivo.SpearoGo.watchkitapp`, so Fi
 
 - Note that the Apnea Watch Android app uses a different key (`AIzaSyCCzSR...`). Go's Wear client must not assume the iOS key works for Android calls. If the iOS key is iOS-restricted, Wear needs the Android key or a second package entry.
 
+**What Go uses (Task 5):** each platform uses its own key, in `Constants.Firebase`.
+- Wear: the Android key `AIzaSyCCzSR...` (from Apnea's `google-services.json`, project `spearo-tracker`). It sends `X-Android-Package` and `X-Android-Cert` (the SHA-1 of the running APK's signing cert). If that key is Android-restricted, add `com.spearotracker.spearogo` with the Play app-signing and upload SHA-1s, and `com.spearotracker.spearogo.sideload` with the local release and debug SHA-1s.
+- Apple Watch: the iOS key `AIzaSyCx0Fk...`. It sends `X-Ios-Bundle-Identifier: agency.visivo.SpearoGo.watchkitapp`.
+
 **How to check:** the first REST call from Go returns HTTP 403 `API_KEY_IOS_APP_BLOCKED` or `API_KEY_ANDROID_APP_BLOCKED` when a restriction blocks it. HTTP 400 `API key not valid` means the key is wrong for the project.

@@ -29,6 +29,18 @@ enum Constants {
         static let geocodingBase = "https://geocoding-api.open-meteo.com/v1/search"
     }
 
+    // MARK: - Firebase (optional sign-in and spot sync, over REST — no Firebase SDK)
+    // The API key is a Firebase client identifier, not a secret: this is the
+    // project's iOS key (Wear uses the Android key). Twin of Constants.Firebase in Kotlin.
+    enum Firebase {
+        static let apiKey          = "AIzaSyCx0FkVdpNN7jXgnJztnb622wPbw7GMBL0"
+        static let projectId       = "spearo-tracker"
+        // Same web client as Apnea, so one Google account gives one uid across apps.
+        static let webClientId     = "420670186721-fgqn7l067ppl3mk9mm2cq1lt5ke5i0kk.apps.googleusercontent.com"
+        static let identityBase    = URL(string: "https://identitytoolkit.googleapis.com")!
+        static let secureTokenBase = URL(string: "https://securetoken.googleapis.com")!
+    }
+
     // MARK: - App info
     enum App {
         static let name    = "Spearo Go"

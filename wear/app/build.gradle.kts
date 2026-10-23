@@ -27,6 +27,15 @@ android {
         manifestPlaceholders["appLabel"] = "@string/app_name"
         versionCode = 16
         versionName = "2.1.1"
+
+        // OAuth client secret for the RemoteAuth code exchange (Wear sign-in). It is a
+        // secret, so it lives only in wear/local.properties and is never committed. A
+        // build without it still succeeds; sign-in then fails with a clear message.
+        buildConfigField(
+            "String",
+            "WEB_CLIENT_SECRET",
+            "\"${localProps.getProperty("WEB_CLIENT_SECRET", "")}\""
+        )
     }
 
     // Shared spot-sync fixtures live at the repo root so Swift and Kotlin read the same file.
@@ -91,6 +100,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -165,11 +175,15 @@ dependencies {
     // any of them. Voice is how people actually type on a watch.
     implementation("androidx.wear:wear-input:1.1.0")
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
+    // RemoteAuth: Google sign-in runs in the phone's browser. On-watch GoogleSignIn
+    // fails with 12501 on Wear, so it is never used.
+    implementation("androidx.wear:wear-phone-interactions:1.0.1")
 
     // Splash screen
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
