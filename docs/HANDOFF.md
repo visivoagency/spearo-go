@@ -16,7 +16,7 @@ Optional sign-in and spot sync, on both platforms, in lockstep.
 - Wear signs in over RemoteAuth (Google, via the phone). Apple Watch signs in with Apple.
 - Sign-in uses REST, not the Firebase SDKs. Spots sync with `users/{uid}/spots`.
 - Go writes snake_case spot docs with `source: "go"`, and `apps.go.last_seen_at` (only onto an existing `users/{uid}`; it never creates that doc). It reads every convention.
-- Sign-out keeps spots and their links. Spots stay with the account they were saved to: signing into a different account removes the first account's spots from the watch (they stay safe in that account and return if it signs in again) and never uploads them to the new one. Spots saved on the watch and never synced upload to the new account. Deleting on the watch soft-deletes in the account (signed out, a never-linked spot is simply removed).
+- Sign-out keeps spots and their links. Spots stay with the account they were saved to: signing into a different account removes the first account's spots from the watch, including ones saved under it but not yet pushed, and never uploads them to the new one (the pushed ones stay safe in that account and return if it signs in again). Spots saved while signed out upload to the new account. Deleting on the watch soft-deletes in the account (signed out, a never-linked spot is simply removed).
 - Google sign-in on Wear asks for `openid email` only, so Go collects no name or photo.
 - Privacy text is fixed in the apps, the Apple privacy manifest and both store docs. It now says what sign-in stores.
 - Versions: Wear 2.2.0 (17), watchOS 1.2.0 (4).
@@ -30,7 +30,7 @@ Optional sign-in and spot sync, on both platforms, in lockstep.
 - The Swift harness on the shared fixtures, every mode: merge 39, codec 9, auth 15, firestore 8. The watch target builds.
 - The signed-out sync rows on the Wear emulator at font scale 1.0 and 1.24 ("Largest"). Nothing clips.
 - Each piece had its own review, then the whole branch had a final review. One Critical and four Important findings came out of the final review; all are fixed.
-- Account switch (branch `feature/account-switch-keeps-spots`, 23 Oct): 92 Kotlin unit tests (SpotSyncServiceTest 26/26) and the Wear debug build; the instrumented tests on the WearOS5_SpearoGo emulator, 4/4, including `accountChangeRemovesOldAccountSpots` (targetSdk 34 set locally for the run, then reverted); the Swift harness, merge 39, codec 9, auth 15, firestore 8; the watch target builds. Not run on a device: a real second-account sign-in.
+- Account switch (branch `feature/account-switch-keeps-spots`, 23 Oct): 98 Kotlin unit tests (SpotSyncServiceTest 32/32) and the Wear debug build; the instrumented tests on the WearOS5_SpearoGo emulator, including `accountChangeRemovesOldAccountSpots` and the Room v2→v3 migration `migrate2To3KeepsSpots` (targetSdk 34 set locally for the run, then reverted); a SwiftData v2→v3 store opened by the v3 model on macOS (row intact, ownerUid nil); the Swift harness, merge 39, codec 9, auth 15, firestore 8; the watch target builds. Not run on a device: a real second-account sign-in.
 
 ### NOT RUN
 
@@ -52,8 +52,8 @@ Apple Watch needs P3, P4 and P5.
 2. Live E2E, both platforms. Then signed-in screenshots.
 3. Enter the new Data safety and App Privacy answers in the consoles. For the owner:
    - CONFIRMED by Kevin on 23 Oct: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).
-   - **DECIDED by Kevin on 23 Oct: spots stay with the account they were saved to.** Sign-out keeps spots and their links. Signing into a different account removes every linked spot (soft-deleted ones included) from the watch; they are not uploaded to the new account and no old-account delete is pushed. Spots never synced to any account upload to the new one. If the active spot leaves, the app falls back to "Use my location". Built on branch `feature/account-switch-keeps-spots` (`SpotSyncService.linkTo` / `link(to:)`, `removeLinked` on both platforms).
-   - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (the first account's spots leave the watch and are not uploaded; unsynced watch spots upload).
+   - **DECIDED by Kevin on 23 Oct: spots stay with the account they were saved to.** Sign-out keeps spots and their links. Signing into a different account removes every linked spot, and every spot saved under the old account but not yet pushed (`ownerUid`, Room v3), soft-deleted ones included, from the watch. They are not uploaded to the new account and no old-account delete is pushed. Spots saved while signed out upload to the new one. If the active spot leaves, or is deleted, the app falls back to "Use my location" on both watches. Built on branch `feature/account-switch-keeps-spots` (`SpotSyncService.linkTo` / `link(to:)`, `removeAccountSpots` on both platforms).
+   - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (the first account's spots leave the watch and are not uploaded; spots saved while signed out upload).
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
 5. The $0.99 price: the stores charge $0.99, the repo docs still say $2.99.
 6. The More Spearo apps entry.

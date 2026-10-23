@@ -128,12 +128,14 @@ Spec: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`
   a camelCase Tracker/Vision doc. It only soft-deletes them, in their own casing.
 - **Vision's top-level `/spots` are read-only to Go.**
 - **Links belong to an account (`linkedUid`), and so do spots** (Kevin's decision,
-  23 Oct). Sign-out keeps spots and links. Signing into a different account runs
-  `removeLinked` first: every row with a cloudId (soft-deleted too) leaves the
-  watch and is never uploaded to the new account; it stays safe in the old one.
-  Rows never synced (no cloudId) stay and upload to the new account. If that
-  removal fails, the sign-in fails. Never copy one account's spots into another,
-  and never delete an UNSYNCED spot because the account changed.
+  23 Oct). Each spot records `ownerUid`, the account it was saved to (stamped
+  when created or deleted signed in, and by every sync write). Sign-out keeps
+  spots and links. Signing into a different account runs `removeAccountSpots`
+  first: every row with a cloudId, or owned by another uid (soft-deleted too),
+  leaves the watch and is never uploaded to the new account. Rows saved while
+  signed out (no cloudId, no ownerUid) stay and upload to the new account. If
+  that removal fails, the sign-in fails. Never copy one account's spots into
+  another, and never delete a signed-out spot because the account changed.
 - **The merge (`SpotMerge`), the codec, `AuthClient` and `FirestoreClient`
   exist twice.** They are pinned by one fixture set in `fixtures/spot-sync/`.
   Kotlin tests read it; Swift runs it through `tools/spot-sync-harness/` (the

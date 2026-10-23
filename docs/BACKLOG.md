@@ -18,7 +18,7 @@ Device checks before release. Each one is something the tests could not reach:
 6. Deletes both ways. A Tracker spot deleted on the watch disappears in Tracker, and a Tracker restore still returns everything.
 7. Airplane mode: save and delete, reconnect, both sync.
 8. A token older than an hour refreshes silently. A revoked token returns to signed out with the spots still on the watch.
-9. Sign out and back into the same account: no duplicates. Sign into a second account: the first account's spots leave the watch and are not uploaded; unsynced watch spots upload.
+9. Sign out and back into the same account: no duplicates. Sign into a second account: the first account's spots leave the watch and are not uploaded; spots saved while signed out upload; a spot saved under the first account while offline does not. Delete the active spot on each watch; both fall back to your location.
 10. A brand-new diver: `users/{uid}` and the website profile come out right. Go never creates that doc.
 11. Upgrade installs over real data: Wear from 2.1.1 and watchOS from 1.1.0. The order and the active spot survive, with no 1970 timestamps. Also a Wear backup restored onto a second watch.
 12. Signed out, a network capture shows only Open-Meteo, geocoding and `tidesGo`.
@@ -31,7 +31,7 @@ None of these blocks the release.
 - The website fixture should use `timestampValue` with microseconds, which is what the website actually writes.
 - The Swift harness checks encoding less strictly than the Kotlin test: it doesn't check value types on soft deletes.
 - Kotlin `Instant.parse` rejects `+00:00` offsets on Android. Firestore and the website always write `Z`.
-- Swift has no test for the mapping, the soft delete or `removeLinked`. Only the harness and the device checks cover them.
+- Swift has no test for the mapping, the soft delete or `removeAccountSpots`. Only the harness and the device checks cover them.
 - On Kotlin, a cancelled caller can clear the in-flight refresh, which costs one extra request. Clear it with `invokeOnCompletion` instead.
 - If removing the old account's spots fails at sign-in, the row shows "Sync failed" while actually signed out, until the next tap.
 - On Swift, Vision rows can stay undeletable for a moment after a session expires, because the swipe follows the sync state.
