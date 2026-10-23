@@ -110,3 +110,22 @@ Built in this order, with Swift and Kotlin in the same commits (CLAUDE.md lockst
 - $0.99 price fixes in the docs (`HANDOFF-from-website-2026-10-23.md` item 1).
 - "More Spearo apps" in Settings on both watches (item 4 of the 21 Oct handoff).
 - The other 23 Oct items: 18+, safety disclaimer, privacy and legal links. These are folded into the disclosure work above where they overlap.
+
+## Amendments (plan, 23 Oct)
+
+These change the design above. Where they disagree, this section wins.
+
+- **REST on both platforms, not the Firebase SDKs.**
+  - The two apps stay in lockstep, with the same calls and the same code shape.
+  - The Xcode project is made by a generator that has no Swift Package Manager support.
+  - The Firestore SDK does not support watchOS anyway.
+- **Snake_case writes, with forbidden keys.**
+  - Go writes `user_id, name, latitude, longitude, is_private, is_deleted, created_at, last_modified_at, last_synced_at, cloud_id, source, sync_status`.
+  - A Go doc never contains `isDeleted` or `lastModifiedAt`. Tracker's restore queries on those and hard-casts the results.
+  - Reads accept every convention (camelCase, snake_case, Vision's `updatedAt`).
+- **Sign-out detaches spots.** It clears `cloudId` and `pendingSync` on every local spot and purges pending deletes. Signing into a different account later never deletes or uploads the first account's spots.
+- **Swift is verified by a harness, not an XCTest target.** The harness runs against the same shared fixtures as the Kotlin tests. Go still has no Swift test target.
+- **A sign-in failure never falls back to a local Apple user ID.**
+  - Apnea's `AuthManager` does this. It would write under a uid that is not a Firebase uid.
+  - Go stays signed out and shows an error instead.
+
