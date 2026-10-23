@@ -112,12 +112,19 @@ class AuthClientTest {
 
     @Test
     fun otherErrorIsFailedAndKeepsNoSession() = runBlocking {
-        server.enqueue(json(400, """{"error":{"code":400,"message":"INVALID_IDP_RESPONSE"}}"""))
+        server.enqueue(json(400, """{"error":{"code":400,"message":"INVALID_IDP_RESPONSE : Invalid id_token"}}"""))
 
         val result = client().signInWithIdp("google.com", "t", null)
 
-        assertTrue(result is SignInResult.Failed)
+        // Plain copy, never the raw Firebase code.
+        assertEquals(SignInResult.Failed("Sign-in failed. Try again."), result)
         assertNull(store.stored)
+
+        server.enqueue(json(200, """{"errorMessage":"INVALID_IDP_RESPONSE : bad"}"""))
+        assertEquals(SignInResult.Failed("Sign-in failed. Try again."), client().signInWithIdp("google.com", "t", null))
+
+        server.enqueue(json(503, ""))
+        assertEquals(SignInResult.Failed("Sign-in failed. Try again."), client().signInWithIdp("google.com", "t", null))
     }
 
     @Test

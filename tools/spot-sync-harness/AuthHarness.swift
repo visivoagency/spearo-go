@@ -148,10 +148,17 @@ func runAuth() -> Never {
 
     cases.append(("otherErrorIsFailedAndKeepsNoSession", {
         let store = MemoryStore()
-        StubProtocol.reset { _, _ in .http(400, #"{"error":{"code":400,"message":"INVALID_IDP_RESPONSE"}}"#) }
+        let plain = SignInResult.failed("Sign-in failed. Try again.")
+        StubProtocol.reset { _, _ in .http(400, #"{"error":{"code":400,"message":"INVALID_IDP_RESPONSE : Invalid id_token"}}"#) }
         let r = await client(store).signInWithIdp(providerId: "google.com", idToken: "t", nonce: nil)
-        guard case .failed = r else { return "result \(r)" }
-        return store.load() == nil ? nil : "stored a session"
+        if r != plain { return "result \(r)" }   // plain copy, never the raw Firebase code
+        if store.load() != nil { return "stored a session" }
+        StubProtocol.reset { _, _ in .http(200, #"{"errorMessage":"INVALID_IDP_RESPONSE : bad"}"#) }
+        let r2 = await client(store).signInWithIdp(providerId: "google.com", idToken: "t", nonce: nil)
+        if r2 != plain { return "errorMessage result \(r2)" }
+        StubProtocol.reset { _, _ in .http(503, "") }
+        let r3 = await client(store).signInWithIdp(providerId: "google.com", idToken: "t", nonce: nil)
+        return r3 == plain ? nil : "503 result \(r3)"
     }))
 
     cases.append(("freshTokenNeedsNoNetwork", {

@@ -42,6 +42,8 @@ protocol TokenStore: AnyObject {
 
 actor AuthClient {
     private static let refreshWindowMs: Int64 = 5 * 60_000
+    /// The copy for every sign-in failure we don't recognise.
+    private static let signInFailed = "Sign-in failed. Try again."
 
     private let http: URLSession
     private let baseIdentity: URL
@@ -109,21 +111,25 @@ actor AuthClient {
             let message = Self.str(json?["error"] as? [String: Any], "message") ?? ""
             log("signInWithIdp: HTTP \(code) \(message.split(separator: " ").first ?? "")")
             if Self.isAccountExists(message) { return .accountExistsWithDifferentMethod }
-            return .failed(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Sign-in failed (HTTP \(code))" : message)
+            // Never show Firebase's raw codes ("INVALID_IDP_RESPONSE : ...") to the diver.
+            return .failed(Self.signInFailed)
         }
-        guard let json else { return .failed("Sign-in failed: unreadable response") }
+        guard let json else { return .failed(Self.signInFailed) }
 
         let errorMessage = Self.str(json, "errorMessage") ?? ""
         if Self.isTrue(json["needConfirmation"]) || Self.isAccountExists(errorMessage) {
             return .accountExistsWithDifferentMethod
         }
-        if !errorMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return .failed(errorMessage) }
+        if !errorMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            log("signInWithIdp: \(errorMessage.split(separator: " ").first ?? "")")
+            return .failed(Self.signInFailed)
+        }
 
         guard let uid = Self.nonBlank(Self.str(json, "localId")),
               let firebaseIdToken = Self.nonBlank(Self.str(json, "idToken")),
               let refreshToken = Self.nonBlank(Self.str(json, "refreshToken")),
               let expiresIn = Self.str(json, "expiresIn").flatMap({ Int64($0) })
-        else { return .failed("Sign-in failed: incomplete response") }
+        else { return .failed(Self.signInFailed) }
 
         let session = Session(
             uid: uid,

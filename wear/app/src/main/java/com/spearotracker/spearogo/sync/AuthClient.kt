@@ -90,9 +90,10 @@ class AuthClient(
             val message = (json?.get("error") as? JsonObject)?.str("message").orEmpty()
             log("signInWithIdp: HTTP $code ${message.substringBefore(' ')}")
             if (isAccountExists(message)) return SignInResult.AccountExistsWithDifferentMethod
-            return SignInResult.Failed(message.ifBlank { "Sign-in failed (HTTP $code)" })
+            // Never show Firebase's raw codes ("INVALID_IDP_RESPONSE : ...") to the diver.
+            return SignInResult.Failed(SIGN_IN_FAILED)
         }
-        if (json == null) return SignInResult.Failed("Sign-in failed: unreadable response")
+        if (json == null) return SignInResult.Failed(SIGN_IN_FAILED)
 
         val needConfirmation = json.get("needConfirmation")
             ?.takeIf { it.isJsonPrimitive }?.asJsonPrimitive?.takeIf { it.isBoolean }?.asBoolean == true
@@ -100,14 +101,17 @@ class AuthClient(
         if (needConfirmation || isAccountExists(errorMessage)) {
             return SignInResult.AccountExistsWithDifferentMethod
         }
-        if (errorMessage.isNotBlank()) return SignInResult.Failed(errorMessage)
+        if (errorMessage.isNotBlank()) {
+            log("signInWithIdp: ${errorMessage.substringBefore(' ')}")
+            return SignInResult.Failed(SIGN_IN_FAILED)
+        }
 
         val uid = json.str("localId")
         val firebaseIdToken = json.str("idToken")
         val refreshToken = json.str("refreshToken")
         val expiresIn = json.str("expiresIn")?.toLongOrNull()
         if (uid.isNullOrBlank() || firebaseIdToken.isNullOrBlank() || refreshToken.isNullOrBlank() || expiresIn == null) {
-            return SignInResult.Failed("Sign-in failed: incomplete response")
+            return SignInResult.Failed(SIGN_IN_FAILED)
         }
         val session = Session(
             uid = uid,
@@ -214,6 +218,8 @@ class AuthClient(
     companion object {
         private const val TAG = "AuthClient"
         private const val REFRESH_WINDOW_MS = 5 * 60_000L
+        /** The copy for every sign-in failure we don't recognise. */
+        private const val SIGN_IN_FAILED = "Sign-in failed. Try again."
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
