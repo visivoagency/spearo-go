@@ -150,9 +150,9 @@ struct LocationsView: View {
 
     private func delete(at offsets: IndexSet) {
         // Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs.
-        let signedIn = SyncServices.auth.session() != nil
+        let sessionUid = SyncServices.auth.session()?.uid
         let rows = offsets.map { locations[$0] }
-        for row in rows { deleteSpot(row, signedIn: signedIn, context: modelContext) }
+        for row in rows { deleteSpot(row, sessionUid: sessionUid, context: modelContext) }
         try? modelContext.save()
         syncSpotsInBackground()
     }
@@ -210,7 +210,8 @@ struct SyncRows: View {
         case .success(let session):
             message = nil
             // Still "Signing in…" until onSignedIn has handed off to sync (.syncing), so the
-            // button can't start a second sign-in during the account-switch removal, marker or first sync.
+            // button can't start a second sign-in during the account-switch removal, marker or
+            // first sync.
             await SyncServices.sync.onSignedIn(session: session)
             signingIn = false
         case .accountExistsWithDifferentMethod:
@@ -362,6 +363,7 @@ struct AddLocationView: View {
         guard !trimmed.isEmpty else { return }
         let location = SavedLocation(name: trimmed, coordinate: coord)
         location.pendingSync = true   // lastModifiedAt is already now (init)
+        location.ownerUid = SyncServices.auth.session()?.uid   // the signed-in account, if any
         modelContext.insert(location)
         try? modelContext.save()
         syncSpotsInBackground()
@@ -467,6 +469,7 @@ struct SearchSpotView: View {
         let location = SavedLocation(name: place.savedName, coordinate: place.coordinate)
         location.isActive = true
         location.pendingSync = true   // lastModifiedAt is already now (init)
+        location.ownerUid = SyncServices.auth.session()?.uid   // the signed-in account, if any
         modelContext.insert(location)
         try? modelContext.save()
         syncSpotsInBackground()

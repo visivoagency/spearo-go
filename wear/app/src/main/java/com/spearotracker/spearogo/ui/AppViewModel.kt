@@ -277,7 +277,7 @@ class AppViewModel @Inject constructor(
                 lastModifiedAt = now,
                 pendingSync = true
             )
-            locationDao.insert(location)
+            syncService.addSpot(location)   // stamps the signed-in account, if any
             clearSearch()
             setActiveLocation(location)
             syncSpots()
@@ -286,7 +286,7 @@ class AppViewModel @Inject constructor(
 
     fun addLocation(name: String, latitude: Double, longitude: Double) {
         viewModelScope.launch {
-            locationDao.insert(
+            syncService.addSpot(
                 SavedLocation(
                     name = name,
                     latitude = latitude,
@@ -300,10 +300,13 @@ class AppViewModel @Inject constructor(
     }
 
     /** Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs. */
+    /** Deleting the active spot falls back to "Use my location", as on watchOS. */
     fun deleteLocation(location: SavedLocation) {
         viewModelScope.launch {
-            syncService.deleteSpot(location.id)
-            syncSpots()
+            refreshIfActiveSpotGone {
+                syncService.deleteSpot(location.id)
+                syncService.sync()
+            }
         }
     }
 

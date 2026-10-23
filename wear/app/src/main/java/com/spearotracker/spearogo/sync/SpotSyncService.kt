@@ -2,6 +2,7 @@ package com.spearotracker.spearogo.sync
 
 import android.content.Context
 import android.util.Log
+import com.spearotracker.spearogo.models.SavedLocation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -80,10 +81,11 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  * Links are scoped to an account ([SyncMarkerStore.linkedUid]). Sign-out (planned, or a session a
  * refresh 400 cleared) keeps every row and cloudId, so the same account signing back in finds its
  * spots linked and nothing is duplicated. Spots stay with the account they were saved to (owner
- * ruling, 23 Oct): when a DIFFERENT account syncs, [SpotStore.removeLinked] runs first and every
- * row with a cloudId (the old account's, soft-deleted ones included) leaves the watch. They are
- * safe in that account and come back if it signs in again. Rows never synced to any account stay
- * and upload to the new one. An active spot removed this way takes its isActive with it, so the
+ * ruling, 23 Oct): when a DIFFERENT account syncs, [SpotStore.removeAccountSpots] runs first and
+ * every row with a cloudId, or with an ownerUid other than the new account's, leaves the watch
+ * (soft-deleted ones included). They are safe in that account (or were never pushed to it) and
+ * come back if it signs in again. Rows saved while signed out (no cloudId, no ownerUid) stay and
+ * upload to the new one. An active spot removed this way takes its isActive with it, so the
  * app falls back to "Use my location".
  * Logs carry counts and status codes only: no uid, email, names, coordinates or tokens.
  */
@@ -159,28 +161,40 @@ class SpotSyncService(
     }
 
     /**
+     * Saves a new spot the user made. Signed in, it belongs to that account (ownerUid), even
+     * before it is pushed; signed out, it belongs to none and uploads to whichever account signs
+     * in next.
+     */
+    suspend fun addSpot(row: SavedLocation) {
+        store.upsertAll(listOf(row.copy(ownerUid = auth.session()?.uid)))
+    }
+
+    /**
      * The user removed a spot. Signed out and never linked: it is simply gone. Otherwise it is
      * soft-deleted and waits for its account (pushed when that account syncs, removed with the
-     * rest of that account's spots if another one signs in). Signed in, a Vision-owned spot is read-only, so nothing happens.
+     * rest of that account's spots if another one signs in). Signed in, the row is stamped with
+     * that account, and a Vision-owned spot is read-only, so nothing happens.
      */
     suspend fun deleteSpot(id: String) {
         val row = store.getAllIncludingDeleted().firstOrNull { it.id == id } ?: return
-        val signedIn = auth.session() != null
+        val uid = auth.session()?.uid
+        val signedIn = uid != null
         if (signedIn && row.origin == SpotOrigin.VISION.name) return
-        if (signedIn || row.cloudId != null) store.markDeleted(id, clock())
+        if (signedIn || row.cloudId != null) store.markDeleted(id, clock(), uid)
         else store.hardDelete(listOf(id))
     }
 
     /**
-     * Makes the local links belong to [uid]: if they belong to another account, that account's
-     * spots are removed first ([SpotStore.removeLinked]). Call under [mutex]. False if the removal
-     * (or recording the uid) failed: the caller must not sync.
+     * Makes the local links belong to [uid]: any other account's spots are removed first
+     * ([SpotStore.removeAccountSpots]): rows owned by another uid, and, if the links belonged to
+     * another account, every linked row. Call under [mutex]. False if the removal (or recording
+     * the uid) failed: the caller must not sync.
      */
     private suspend fun linkTo(uid: String): Boolean {
         val linked = markers.linkedUid()
         if (linked == uid) return true
         return try {
-            if (linked != null) store.removeLinked()
+            store.removeAccountSpots(uid, includeLinked = linked != null)
             markers.setLinkedUid(uid)
             true
         } catch (e: CancellationException) {
@@ -287,12 +301,14 @@ class SpotSyncService(
             val keptDeletes = deletes.distinct().filter { untouched(it) }
             skipped = upserts.size + deletes.distinct().size - keptUpserts.size - keptDeletes.size
             if (keptUpserts.isNotEmpty()) {
-                store.upsertAll(keptUpserts.map { it.toSavedLocation(isActive = now[it.id]?.isActive ?: false) })
+                store.upsertAll(keptUpserts.map {
+                    it.toSavedLocation(isActive = now[it.id]?.isActive ?: false, ownerUid = uid)
+                })
             }
             if (keptDeletes.isNotEmpty()) store.hardDelete(keptDeletes)
             // Pushed, then edited meanwhile: still record which doc it created (only if unlinked).
             for ((id, cloudId) in pushedIds) {
-                if (!untouched(id) && now[id] != null) store.linkCloudId(id, cloudId)
+                if (!untouched(id) && now[id] != null) store.linkCloudId(id, cloudId, uid)
             }
         }
         if (skipped > 0) log("$skipped spots changed during sync; left for next time")

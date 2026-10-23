@@ -20,5 +20,11 @@ data class SavedLocation(
     val isDeleted: Boolean = false,
     val pendingSync: Boolean = false,
     /** A SpotOrigin enum name: "GO", "ACCOUNT" or "VISION". */
-    val origin: String = "GO"
+    val origin: String = "GO",
+    /**
+     * The uid of the account this spot was saved to: stamped when it is created or edited while
+     * signed in, and when a sync links or pushes it. Null for a spot saved while signed out.
+     * An account switch removes the old account's spots by this (and by cloudId).
+     */
+    val ownerUid: String? = null
 )

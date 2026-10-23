@@ -25,6 +25,11 @@ final class SavedLocation {
     var pendingSync: Bool = false
     /// A `SpotOrigin` raw value: "GO", "ACCOUNT" or "VISION".
     var origin: String = "GO"
+    // Added in spot model v3, defaulted like the v2 properties so existing stores migrate.
+    /// The uid of the account this spot was saved to: stamped when it is created or edited while
+    /// signed in, and when a sync links or pushes it. Nil for a spot saved while signed out.
+    /// An account switch removes the old account's spots by this (and by cloudId).
+    var ownerUid: String? = nil
 
     init(name: String, coordinate: CLLocationCoordinate2D) {
         self.id = UUID()
@@ -39,7 +44,8 @@ final class SavedLocation {
 
     /// Rebuilds a row from a merged `LocalSpot` (see SpotMapping.swift).
     init(id: UUID, name: String, latitude: Double, longitude: Double, createdAt: Date, isActive: Bool,
-         cloudId: String?, lastModifiedAt: Date, isDeleted: Bool, pendingSync: Bool, origin: String) {
+         cloudId: String?, lastModifiedAt: Date, isDeleted: Bool, pendingSync: Bool, origin: String,
+         ownerUid: String?) {
         self.id = id
         self.name = name
         self.latitude = latitude
@@ -51,6 +57,7 @@ final class SavedLocation {
         self.isDeleted = isDeleted
         self.pendingSync = pendingSync
         self.origin = origin
+        self.ownerUid = ownerUid
     }
 
     var coordinate: CLLocationCoordinate2D {

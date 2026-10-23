@@ -9,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.spearotracker.spearogo.models.SavedLocation
 import com.spearotracker.spearogo.services.AppDatabase
 import com.spearotracker.spearogo.services.MIGRATION_1_2
+import com.spearotracker.spearogo.services.MIGRATION_2_3
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -60,6 +61,32 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate2To3KeepsSpots() {
+        helper.createDatabase(dbName, 2).apply {
+            execSQL(
+                "INSERT INTO saved_locations (id, name, latitude, longitude, createdAt, isActive, cloudId, " +
+                    "lastModifiedAt, isDeleted, pendingSync, origin) " +
+                    "VALUES ('a', 'Lagos', 37.10, -8.67, 1000, 1, 'doc1', 2000, 0, 1, 'ACCOUNT')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 3, true, MIGRATION_2_3)
+        db.query("SELECT * FROM saved_locations").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals("a", c.getString(c.getColumnIndexOrThrow("id")))
+            assertEquals("Lagos", c.getString(c.getColumnIndexOrThrow("name")))
+            assertEquals(1, c.getInt(c.getColumnIndexOrThrow("isActive")))
+            assertEquals("doc1", c.getString(c.getColumnIndexOrThrow("cloudId")))
+            assertEquals(2000L, c.getLong(c.getColumnIndexOrThrow("lastModifiedAt")))
+            assertEquals(1, c.getInt(c.getColumnIndexOrThrow("pendingSync")))
+            assertEquals("ACCOUNT", c.getString(c.getColumnIndexOrThrow("origin")))
+            assertTrue(c.isNull(c.getColumnIndexOrThrow("ownerUid")))
+        }
+    }
+
+    @Test
     fun migratedDatabaseOpensThroughRoomAndListsTheSpot() = runBlocking {
         helper.createDatabase(dbName, 1).apply {
             execSQL(
@@ -70,7 +97,7 @@ class MigrationTest {
         }
         val room = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(), AppDatabase::class.java, dbName
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
         try {
             val all = room.locationDao().getAllLocations().first()
             assertEquals(1, all.size)
@@ -84,8 +111,9 @@ class MigrationTest {
     }
 
     /**
-     * removeLinked runs when a DIFFERENT account signs in (sign-out keeps links): the old account's
-     * spots (every row with a cloudId, soft-deleted included) leave; never-synced spots stay.
+     * removeAccountSpots runs when a DIFFERENT account signs in (sign-out keeps links): the old
+     * account's spots (every row with a cloudId, or owned by another uid, soft-deleted included)
+     * leave; spots saved while signed out stay.
      */
     @Test
     fun accountChangeRemovesOldAccountSpots() = runBlocking {
@@ -103,18 +131,62 @@ class MigrationTest {
                     createdAt = 2, cloudId = "doc2", isDeleted = true, pendingSync = true)
             )
             dao.insert(
+                SavedLocation(id = "unpushed", name = "Albufeira", latitude = 37.1, longitude = -8.2,
+                    createdAt = 3, pendingSync = true, ownerUid = "U1")
+            )
+            dao.insert(
+                SavedLocation(id = "mine", name = "Tavira", latitude = 37.1, longitude = -7.6,
+                    createdAt = 4, pendingSync = true, ownerUid = "U2")
+            )
+            dao.insert(
                 SavedLocation(id = "local", name = "Faro", latitude = 37.0, longitude = -7.9,
-                    createdAt = 3, pendingSync = true)
+                    createdAt = 5, pendingSync = true)
             )
 
-            dao.removeLinked()
+            dao.removeAccountSpots("U2", includeLinked = true)
 
-            val rows = dao.getAllIncludingDeleted()
-            assertEquals(1, rows.size)
-            assertEquals("local", rows[0].id)
-            assertNull(rows[0].cloudId)
-            assertTrue(rows[0].pendingSync)          // still queued for the new account
-            assertNull(dao.getActiveLocation())      // the active spot left: "Use my location"
+            val rows = dao.getAllIncludingDeleted().associateBy { it.id }
+            assertEquals(setOf("mine", "local"), rows.keys)
+            assertTrue(rows.getValue("local").pendingSync)   // still queued for the new account
+            assertNull(dao.getActiveLocation())              // the active spot left: "Use my location"
+        } finally {
+            room.close()
+        }
+    }
+
+    /** First sign-in (no links yet): linked rows are kept; only another uid's owned rows go. */
+    @Test
+    fun firstSignInRemovesOnlyOtherOwners() = runBlocking {
+        val room = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(), AppDatabase::class.java
+        ).build()
+        try {
+            val dao = room.locationDao()
+            dao.insert(SavedLocation(id = "linked", name = "a", latitude = 1.0, longitude = 2.0, cloudId = "doc1"))
+            dao.insert(SavedLocation(id = "other", name = "b", latitude = 1.0, longitude = 2.0, ownerUid = "U1"))
+            dao.insert(SavedLocation(id = "local", name = "c", latitude = 1.0, longitude = 2.0))
+            dao.removeAccountSpots("U2", includeLinked = false)
+            assertEquals(setOf("linked", "local"), dao.getAllIncludingDeleted().map { it.id }.toSet())
+        } finally {
+            room.close()
+        }
+    }
+
+    @Test
+    fun markDeletedAndLinkStampTheOwner() = runBlocking {
+        val room = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(), AppDatabase::class.java
+        ).build()
+        try {
+            val dao = room.locationDao()
+            dao.insert(SavedLocation(id = "a", name = "a", latitude = 1.0, longitude = 2.0, ownerUid = "U1"))
+            dao.insert(SavedLocation(id = "b", name = "b", latitude = 1.0, longitude = 2.0))
+            dao.markDeleted("a", 5000, null)            // signed out: the owner is kept
+            dao.linkCloudId("b", "doc", "U1")
+            val rows = dao.getAllIncludingDeleted().associateBy { it.id }
+            assertEquals("U1", rows.getValue("a").ownerUid)
+            assertEquals("doc", rows.getValue("b").cloudId)
+            assertEquals("U1", rows.getValue("b").ownerUid)
         } finally {
             room.close()
         }
@@ -129,7 +201,7 @@ class MigrationTest {
             val dao = room.locationDao()
             dao.insert(SavedLocation(id = "a", name = "Lagos", latitude = 37.1, longitude = -8.67,
                 createdAt = 1, isActive = true))
-            dao.markDeleted("a", 5000)
+            dao.markDeleted("a", 5000, null)
 
             assertTrue(dao.getAllLocations().first().isEmpty())
             assertNull(dao.getActiveLocation())
