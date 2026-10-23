@@ -7,9 +7,12 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.spearotracker.spearogo.utils.Constants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
@@ -34,7 +37,10 @@ sealed interface SignInResult {
  * by AuthClientTest:
  *  - the ID token is refreshed when it expires within 5 minutes;
  *  - a refresh answered with HTTP 400 means the grant is dead: the store is cleared;
- *  - any other refresh failure (network, 5xx, bad body) returns null and keeps the session.
+ *  - any other refresh failure (network, 5xx, bad body) returns null and keeps the session;
+ *  - one refresh at a time: concurrent callers share its result, success or failure;
+ *  - a refresh only saves or clears if the store still holds the session it started from,
+ *    so it can never undo a sign-out or overwrite/clear a newer sign-in.
  * Never logs tokens, uid or email.
  */
 class AuthClient(
@@ -49,7 +55,10 @@ class AuthClient(
     /** Warning sink; never given tokens, uid or email. Injectable because android.util.Log is absent in JVM tests. */
     private val log: (String) -> Unit = { Log.w(TAG, it) },
 ) {
-    private val refreshLock = Mutex()
+    /** Guards [inFlight] and every store write, so check-then-write is atomic. */
+    private val gate = Any()
+    private var inFlight: Deferred<String?>? = null
+    private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     suspend fun signInWithIdp(providerId: String, idToken: String, nonce: String?): SignInResult {
         val postBody = buildString {
@@ -107,20 +116,44 @@ class AuthClient(
             expiresAt = clock() + expiresIn * 1000L,
             email = json.str("email")?.takeIf { it.isNotBlank() },
         )
-        store.save(session)
+        synchronized(gate) { store.save(session) }
         return SignInResult.Success(session)
     }
 
     /** Valid ID token, refreshing if expiring within 5 min; null and store cleared if refresh is rejected. */
-    suspend fun currentIdToken(): String? = refreshLock.withLock {
-        val session = store.load() ?: return@withLock null
-        if (clock() < session.expiresAt - REFRESH_WINDOW_MS) return@withLock session.idToken
-        refresh(session)
+    suspend fun currentIdToken(): String? {
+        val refresh = synchronized(gate) {
+            inFlight ?: run {
+                val session = store.load() ?: return null
+                if (isFresh(session)) return session.idToken
+                refreshScope.async(start = CoroutineStart.LAZY) { refresh(session) }.also { inFlight = it }
+            }
+        }
+        refresh.start()
+        try {
+            return refresh.await()
+        } finally {
+            synchronized(gate) { if (inFlight === refresh) inFlight = null }
+        }
     }
 
     fun session(): Session? = store.load()
 
-    fun signOut() = store.clear()
+    fun signOut() = synchronized(gate) { store.clear() }
+
+    private fun isFresh(session: Session) = clock() < session.expiresAt - REFRESH_WINDOW_MS
+
+    /**
+     * Saves or clears only if the store still holds [started] (same refresh token).
+     * Otherwise someone signed out or in meanwhile: hand back their token if it is fresh.
+     */
+    private fun commitIfUnchanged(started: Session, write: () -> String?): String? = synchronized(gate) {
+        val current = store.load()
+        if (current?.refreshToken != started.refreshToken) {
+            return current?.takeIf(::isFresh)?.idToken
+        }
+        write()
+    }
 
     private suspend fun refresh(session: Session): String? {
         val request = Request.Builder()
@@ -142,8 +175,7 @@ class AuthClient(
         }
         if (code == 400) {
             log("refresh: rejected (HTTP 400); signing out")
-            store.clear()
-            return null
+            return commitIfUnchanged(session) { store.clear(); null }
         }
         if (code !in 200..299) {
             log("refresh: HTTP $code; keeping session")
@@ -154,10 +186,12 @@ class AuthClient(
         val expiresIn = json.str("expires_in")?.toLongOrNull()
         if (idToken.isNullOrBlank() || expiresIn == null) return null
         val refreshToken = json.str("refresh_token")?.takeIf { it.isNotBlank() } ?: session.refreshToken
-        store.save(
-            session.copy(idToken = idToken, refreshToken = refreshToken, expiresAt = clock() + expiresIn * 1000L)
-        )
-        return idToken
+        return commitIfUnchanged(session) {
+            store.save(
+                session.copy(idToken = idToken, refreshToken = refreshToken, expiresAt = clock() + expiresIn * 1000L)
+            )
+            idToken
+        }
     }
 
     private fun Request.Builder.withAppHeaders(): Request.Builder = apply {

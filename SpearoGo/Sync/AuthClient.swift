@@ -1,16 +1,19 @@
 import Foundation
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthClient.swift — Firebase Auth over REST, no Firebase SDK. Foundation-only,
-// so it can join the Swift harness later.
+// AuthClient.swift — Firebase Auth over REST, no Firebase SDK. Foundation-only:
+// tools/spot-sync-harness compiles it (mode `auth`), so keep it that way.
 //
 // Twin of wear/.../sync/AuthClient.kt. The rules are pinned by the Kotlin
-// AuthClientTest (Swift has no test target) and must stay identical:
+// AuthClientTest and the harness `auth` mode, and must stay identical:
 //  - the ID token is refreshed when it expires within 5 minutes;
 //  - a refresh answered with HTTP 400 means the grant is dead: the store is cleared;
 //  - any other refresh failure (network, 5xx, bad body) returns nil and keeps the session;
 //  - needConfirmation, FEDERATED_USER_ID_ALREADY_LINKED or EMAIL_EXISTS on sign-in
-//    is .accountExistsWithDifferentMethod.
+//    is .accountExistsWithDifferentMethod;
+//  - one refresh at a time: concurrent callers share its result, success or failure;
+//  - a refresh only saves or clears if the store still holds the session it started
+//    from, so it can never undo a sign-out or overwrite/clear a newer sign-in.
 // Never logs tokens, uid or email.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -44,6 +47,9 @@ actor AuthClient {
     private let baseIdentity: URL
     private let baseSecureToken: URL
     private nonisolated let store: TokenStore
+    /// Guards every store write, so a refresh's check-then-write is atomic with
+    /// sign-in and sign-out (signOut is nonisolated, so the actor alone can't).
+    private nonisolated let gate = NSLock()
     private let clock: () -> Int64
     private let apiKey: String
     /// API-key restriction headers (`AuthClient.appHeaders()`); FirestoreClient sends the same.
@@ -126,7 +132,7 @@ actor AuthClient {
             expiresAt: clock() + expiresIn * 1000,
             email: Self.nonBlank(Self.str(json, "email"))
         )
-        store.save(session)
+        gate.withLock { store.save(session) }
         return .success(session)
     }
 
@@ -136,7 +142,7 @@ actor AuthClient {
     func currentIdToken() async -> String? {
         if let inFlight = refreshInFlight { return await inFlight.value }
         guard let session = store.load() else { return nil }
-        if clock() < session.expiresAt - Self.refreshWindowMs { return session.idToken }
+        if isFresh(session) { return session.idToken }
         let task = Task { await self.refresh(session) }
         refreshInFlight = task
         let token = await task.value
@@ -146,7 +152,23 @@ actor AuthClient {
 
     nonisolated func session() -> Session? { store.load() }
 
-    nonisolated func signOut() { store.clear() }
+    nonisolated func signOut() { gate.withLock { store.clear() } }
+
+    private func isFresh(_ session: Session) -> Bool {
+        clock() < session.expiresAt - Self.refreshWindowMs
+    }
+
+    /// Saves or clears only if the store still holds `started` (same refresh token).
+    /// Otherwise someone signed out or in meanwhile: hand back their token if it is fresh.
+    private func commitIfUnchanged(_ started: Session, _ write: () -> String?) -> String? {
+        gate.withLock {
+            let current = store.load()
+            if current?.refreshToken != started.refreshToken {
+                return current.flatMap { isFresh($0) ? $0.idToken : nil }
+            }
+            return write()
+        }
+    }
 
     private func refresh(_ session: Session) async -> String? {
         var request = makeRequest(base: baseSecureToken, path: "v1/token")
@@ -161,8 +183,7 @@ actor AuthClient {
         }
         if code == 400 {
             log("refresh: rejected (HTTP 400); signing out")
-            store.clear()
-            return nil
+            return commitIfUnchanged(session) { store.clear(); return nil }
         }
         if !(200...299).contains(code) {
             log("refresh: HTTP \(code); keeping session")
@@ -173,14 +194,17 @@ actor AuthClient {
               let expiresIn = Self.str(json, "expires_in").flatMap({ Int64($0) })
         else { return nil }
         let refreshToken = Self.nonBlank(Self.str(json, "refresh_token")) ?? session.refreshToken
-        store.save(Session(
-            uid: session.uid,
-            idToken: idToken,
-            refreshToken: refreshToken,
-            expiresAt: clock() + expiresIn * 1000,
-            email: session.email
-        ))
-        return idToken
+        let expiresAt = clock() + expiresIn * 1000
+        return commitIfUnchanged(session) {
+            store.save(Session(
+                uid: session.uid,
+                idToken: idToken,
+                refreshToken: refreshToken,
+                expiresAt: expiresAt,
+                email: session.email
+            ))
+            return idToken
+        }
     }
 
     // MARK: - HTTP

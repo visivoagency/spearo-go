@@ -1,6 +1,7 @@
 package com.spearotracker.spearogo.sync
 
 import android.content.Context
+import android.util.Log
 
 /** The Firebase session Go holds after sign-in. [expiresAt] is epoch milliseconds. */
 data class Session(
@@ -35,20 +36,22 @@ class SharedPrefsTokenStore(context: Context) : TokenStore {
     }
 
     override fun save(session: Session) {
-        prefs.edit()
+        val ok = prefs.edit()
             .putString(UID, session.uid)
             .putString(ID_TOKEN, session.idToken)
             .putString(REFRESH_TOKEN, session.refreshToken)
             .putLong(EXPIRES_AT, session.expiresAt)
             .putString(EMAIL, session.email)
             .commit()
+        if (!ok) Log.w(TAG, "auth prefs save failed")
     }
 
     override fun clear() {
-        prefs.edit().clear().commit()
+        if (!prefs.edit().clear().commit()) Log.w(TAG, "auth prefs clear failed")
     }
 
     private companion object {
+        const val TAG = "TokenStore"
         const val PREFS = "auth"
         const val UID = "uid"
         const val ID_TOKEN = "id_token"

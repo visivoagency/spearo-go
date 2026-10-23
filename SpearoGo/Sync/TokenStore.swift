@@ -38,15 +38,19 @@ final class KeychainTokenStore: TokenStore {
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
-        let status = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
+        var status = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
             var add = baseQuery
             add.merge(attributes) { _, new in new }
-            SecItemAdd(add as CFDictionary, nil)
+            status = SecItemAdd(add as CFDictionary, nil)
         }
+        if status != errSecSuccess { print("[TokenStore] keychain save failed (OSStatus \(status))") }
     }
 
     func clear() {
-        SecItemDelete(baseQuery as CFDictionary)
+        let status = SecItemDelete(baseQuery as CFDictionary)
+        if status != errSecSuccess && status != errSecItemNotFound {
+            print("[TokenStore] keychain clear failed (OSStatus \(status))")
+        }
     }
 }

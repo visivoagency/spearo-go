@@ -1,6 +1,8 @@
 package com.spearotracker.spearogo.sync
 
 import com.google.gson.JsonParser
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
@@ -178,6 +180,77 @@ class AuthClientTest {
 
         val c = client()
         assertNull(c.currentIdToken())
+        assertNotNull(c.session())
+    }
+
+    // ── Races: a refresh in flight must never undo a sign-out or a newer sign-in ──
+
+    @Test
+    fun signOutDuringRefreshStaysSignedOut() = runBlocking {
+        store.stored = storedSession(expiresAt = now + 60_000L)
+        val c = client()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                c.signOut()
+                return json(200, """{"id_token":"new-id","refresh_token":"refresh-2","expires_in":"3600"}""")
+            }
+        }
+
+        assertNull(c.currentIdToken())
+        assertNull(c.session())
+    }
+
+    @Test
+    fun signInDuringRejectedRefreshSurvives() = runBlocking {
+        store.stored = storedSession(expiresAt = now + 60_000L)
+        val c = client()
+        val newSignIn = """
+            {"localId":"uid-2","idToken":"id-new","refreshToken":"refresh-new","expiresIn":"3600"}
+        """.trimIndent()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse =
+                if (request.path!!.startsWith("/identity")) json(200, newSignIn)
+                else {
+                    // A sign-in completes while the refresh is on the wire; then the old grant is rejected.
+                    runBlocking { c.signInWithIdp("google.com", "t", null) }
+                    json(400, """{"error":{"code":400,"message":"TOKEN_EXPIRED"}}""")
+                }
+        }
+
+        assertEquals("id-new", c.currentIdToken())
+        assertEquals(Session("uid-2", "id-new", "refresh-new", now + 3_600_000L, null), c.session())
+    }
+
+    // ── One refresh at a time: concurrent callers share its result, success or failure ──
+
+    @Test
+    fun concurrentCallersShareOneRefresh() = runBlocking {
+        store.stored = storedSession(expiresAt = now + 60_000L)
+        server.enqueue(json(200, """{"id_token":"new-id","refresh_token":"refresh-2","expires_in":"3600"}""")
+            .setBodyDelay(200, TimeUnit.MILLISECONDS))
+        val c = client()
+
+        val tokens = listOf(async { c.currentIdToken() }, async { c.currentIdToken() }).awaitAll()
+
+        assertEquals(listOf("new-id", "new-id"), tokens)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun concurrentCallersShareOneFailedRefresh() = runBlocking {
+        store.stored = storedSession(expiresAt = now + 60_000L)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                Thread.sleep(200)
+                return MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START)
+            }
+        }
+        val c = client()
+
+        val tokens = listOf(async { c.currentIdToken() }, async { c.currentIdToken() }).awaitAll()
+
+        assertEquals(listOf(null, null), tokens)
+        assertEquals(1, server.requestCount)
         assertNotNull(c.session())
     }
 

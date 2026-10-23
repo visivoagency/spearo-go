@@ -14,6 +14,7 @@ import com.spearotracker.spearogo.utils.Constants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -55,7 +56,9 @@ class RemoteAuthSignIn(
             .setCodeChallenge(CodeChallenge(verifier))
             .build()
 
-        val outcome = requestOnPhone(request)
+        // RemoteAuth can stay silent forever (phone asleep, browser abandoned): give up after 5 min.
+        val outcome = withTimeoutOrNull(PHONE_TIMEOUT_MS) { requestOnPhone(request) }
+            ?: return SignInResult.Failed("Sign-in timed out. Try again.")
         val responseUrl = when (outcome) {
             is PhoneOutcome.Error -> return outcome.result
             is PhoneOutcome.Response -> outcome.response.responseUrl
@@ -147,5 +150,6 @@ class RemoteAuthSignIn(
         const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
         const val GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
         const val SCOPES = "openid email profile"
+        const val PHONE_TIMEOUT_MS = 5 * 60_000L
     }
 }
