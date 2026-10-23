@@ -15,10 +15,11 @@ interface SpotStore {
     /** Soft delete: hides the row and queues the delete for the next sync. */
     suspend fun markDeleted(id: String, now: Long)
     /**
-     * A different account signed in: forget the old one's links. Every live spot stays (unlinked,
-     * not pending); soft-deleted rows, whose deletes belonged to the old account, are purged.
+     * A different account signed in: remove every row that belongs to the old one, i.e. every row
+     * with a cloudId, soft-deleted ones included. They are safe in that account and come back if
+     * it signs in again. Rows never synced to any account (no cloudId) stay and upload to the new one.
      */
-    suspend fun detachAll()
+    suspend fun removeLinked()
 }
 
 /**

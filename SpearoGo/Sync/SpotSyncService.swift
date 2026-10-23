@@ -31,10 +31,12 @@ import SwiftData
 //
 // Links are scoped to an account (UserDefaults "sync.linkedUid"). Sign-out (planned, or a
 // session a refresh 400 cleared) keeps every row and cloudId, so the same account signing back
-// in finds its spots linked and nothing is duplicated. When a DIFFERENT account syncs,
-// detachAll runs first: every live spot is kept and unlinked, so it is copied into the new
-// account; the old account's pending deletes are purged. Nothing is ever deleted from the
-// watch by an account change.
+// in finds its spots linked and nothing is duplicated. Spots stay with the account they were
+// saved to (owner ruling, 23 Oct): when a DIFFERENT account syncs, removeLinked runs first and
+// every row with a cloudId (the old account's, soft-deleted ones included) leaves the watch.
+// They are safe in that account and come back if it signs in again. Rows never synced to any
+// account stay and upload to the new one. An active spot removed this way takes its isActive
+// with it, so the app falls back to "Use my location".
 //
 // Local reads and writes go through the app's ModelContainer's mainContext on the main
 // actor: the same context the UI's @Query reads, so it never sees a stale row and the
@@ -94,10 +96,10 @@ actor SpotSyncService {
         await enqueue { await $0.runSync() }
     }
 
-    /// Right after a successful sign-in: detach if the spots are linked to another account, the
-    /// marker (always), then a first sync. The state is .syncing from the start, so the sign-in
-    /// row can't be tapped again meanwhile. If the detach fails the sign-in is undone (.failed):
-    /// syncing on with the old account's links would delete or misfile spots.
+    /// Right after a successful sign-in: remove the old account's spots if they are linked to
+    /// another account, the marker (always), then a first sync. The state is .syncing from the
+    /// start, so the sign-in row can't be tapped again meanwhile. If the removal fails the sign-in
+    /// is undone (.failed): syncing on with the old account's links would misfile spots.
     func onSignedIn(session: Session) async {
         // In the queue, so it can't race a sign-out; skipped if one already happened.
         let proceed = await enqueue { service -> Bool in
@@ -129,17 +131,18 @@ actor SpotSyncService {
         await setState(.signedOut)
     }
 
-    /// Makes the local links belong to `uid`: if they belong to another account, detachAll
-    /// first. Runs in the queue. False if the detach failed: the caller must not sync.
+    /// Makes the local links belong to `uid`: if they belong to another account, that account's
+    /// spots are removed first (removeLinked). Runs in the queue. False if the removal failed:
+    /// the caller must not sync.
     private func link(to uid: String) async -> Bool {
         let linked = defaults.string(forKey: Self.linkedUidKey)
         if linked == uid { return true }
         if linked != nil {
             let container = self.container
             do {
-                try await MainActor.run { try detachAll(context: container.mainContext) }
+                try await MainActor.run { try removeLinked(context: container.mainContext) }
             } catch {
-                print("[SpotSyncService] detach failed; not syncing")
+                print("[SpotSyncService] account switch: removing old spots failed; not syncing")
                 return false
             }
         }
@@ -183,7 +186,7 @@ actor SpotSyncService {
         }
         await setState(.syncing)
         // The session's account may differ from the links' (e.g. the app died between sign-in
-        // and onSignedIn): detach first, or fail without touching anything.
+        // and onSignedIn): remove the old account's spots first, or fail without touching anything.
         guard await link(to: uid) else {
             await setState(.failed(Self.storeFailed))
             return

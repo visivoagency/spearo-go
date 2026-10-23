@@ -83,30 +83,38 @@ class MigrationTest {
         }
     }
 
-    /** detachAll runs when a DIFFERENT account signs in (sign-out keeps links): every live spot stays, unlinked. */
+    /**
+     * removeLinked runs when a DIFFERENT account signs in (sign-out keeps links): the old account's
+     * spots (every row with a cloudId, soft-deleted included) leave; never-synced spots stay.
+     */
     @Test
-    fun accountChangeDetachesEverySpot() = runBlocking {
+    fun accountChangeRemovesOldAccountSpots() = runBlocking {
         val room = Room.inMemoryDatabaseBuilder(
             ApplicationProvider.getApplicationContext(), AppDatabase::class.java
         ).build()
         try {
             val dao = room.locationDao()
             dao.insert(
-                SavedLocation(id = "keep", name = "Lagos", latitude = 37.1, longitude = -8.67,
-                    createdAt = 1, cloudId = "doc1", pendingSync = true, origin = "ACCOUNT")
+                SavedLocation(id = "linked", name = "Lagos", latitude = 37.1, longitude = -8.67,
+                    createdAt = 1, isActive = true, cloudId = "doc1", pendingSync = true, origin = "ACCOUNT")
             )
             dao.insert(
-                SavedLocation(id = "gone", name = "Sagres", latitude = 37.0, longitude = -8.9,
+                SavedLocation(id = "tombstone", name = "Sagres", latitude = 37.0, longitude = -8.9,
                     createdAt = 2, cloudId = "doc2", isDeleted = true, pendingSync = true)
             )
+            dao.insert(
+                SavedLocation(id = "local", name = "Faro", latitude = 37.0, longitude = -7.9,
+                    createdAt = 3, pendingSync = true)
+            )
 
-            dao.detachAll()
+            dao.removeLinked()
 
             val rows = dao.getAllIncludingDeleted()
             assertEquals(1, rows.size)
-            assertEquals("keep", rows[0].id)
+            assertEquals("local", rows[0].id)
             assertNull(rows[0].cloudId)
-            assertFalse(rows[0].pendingSync)
+            assertTrue(rows[0].pendingSync)          // still queued for the new account
+            assertNull(dao.getActiveLocation())      // the active spot left: "Use my location"
         } finally {
             room.close()
         }

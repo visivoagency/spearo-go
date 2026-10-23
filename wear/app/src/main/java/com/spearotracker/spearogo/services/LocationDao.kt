@@ -35,18 +35,9 @@ interface LocationDao : SpotStore {
     @Query("UPDATE saved_locations SET cloudId = :cloudId WHERE id = :id AND cloudId IS NULL")
     override suspend fun linkCloudId(id: String, cloudId: String)
 
-    @Query("DELETE FROM saved_locations WHERE isDeleted = 1")
-    suspend fun deleteSoftDeleted()
-
-    @Query("UPDATE saved_locations SET cloudId = NULL, pendingSync = 0")
-    suspend fun clearCloudLinks()
-
-    /** A different account signed in: every live spot stays, unlinked; the old account's pending deletes go. */
-    @Transaction
-    override suspend fun detachAll() {
-        deleteSoftDeleted()
-        clearCloudLinks()
-    }
+    /** A different account signed in: the old account's spots (every linked row) leave the watch. */
+    @Query("DELETE FROM saved_locations WHERE cloudId IS NOT NULL")
+    override suspend fun removeLinked()
 
     @Query("UPDATE saved_locations SET isActive = 0")
     suspend fun deactivateAll()

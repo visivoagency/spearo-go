@@ -79,9 +79,12 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  *
  * Links are scoped to an account ([SyncMarkerStore.linkedUid]). Sign-out (planned, or a session a
  * refresh 400 cleared) keeps every row and cloudId, so the same account signing back in finds its
- * spots linked and nothing is duplicated. When a DIFFERENT account syncs, [SpotStore.detachAll]
- * runs first: every live spot is kept and unlinked, so it is copied into the new account; the old
- * account's pending deletes are purged. Nothing is ever deleted from the watch by an account change.
+ * spots linked and nothing is duplicated. Spots stay with the account they were saved to (owner
+ * ruling, 23 Oct): when a DIFFERENT account syncs, [SpotStore.removeLinked] runs first and every
+ * row with a cloudId (the old account's, soft-deleted ones included) leaves the watch. They are
+ * safe in that account and come back if it signs in again. Rows never synced to any account stay
+ * and upload to the new one. An active spot removed this way takes its isActive with it, so the
+ * app falls back to "Use my location".
  * Logs carry counts and status codes only: no uid, email, names, coordinates or tokens.
  */
 class SpotSyncService(
@@ -114,10 +117,10 @@ class SpotSyncService(
     }
 
     /**
-     * Right after a successful sign-in: detach if the spots are linked to another account, the
-     * marker (always), then a first sync. The state is [SyncState.Syncing] from the start, so the
-     * sign-in row can't be tapped again meanwhile. If the detach fails the sign-in is undone
-     * (state Failed): syncing on with the old account's links would delete or misfile spots.
+     * Right after a successful sign-in: remove the old account's spots if they are linked to
+     * another account, the marker (always), then a first sync. The state is [SyncState.Syncing]
+     * from the start, so the sign-in row can't be tapped again meanwhile. If the removal fails the
+     * sign-in is undone (state Failed): syncing on with the old account's links would misfile spots.
      */
     suspend fun onSignedIn(session: Session) {
         val proceed = try {
@@ -157,8 +160,8 @@ class SpotSyncService(
 
     /**
      * The user removed a spot. Signed out and never linked: it is simply gone. Otherwise it is
-     * soft-deleted and waits for its account (pushed when that account syncs, purged by a detach
-     * if another one signs in). Signed in, a Vision-owned spot is read-only, so nothing happens.
+     * soft-deleted and waits for its account (pushed when that account syncs, removed with the
+     * rest of that account's spots if another one signs in). Signed in, a Vision-owned spot is read-only, so nothing happens.
      */
     suspend fun deleteSpot(id: String) {
         val row = store.getAllIncludingDeleted().firstOrNull { it.id == id } ?: return
@@ -169,21 +172,21 @@ class SpotSyncService(
     }
 
     /**
-     * Makes the local links belong to [uid]: if they belong to another account, [SpotStore.detachAll]
-     * first. Call under [mutex]. False if the detach (or recording the uid) failed: the caller must
-     * not sync.
+     * Makes the local links belong to [uid]: if they belong to another account, that account's
+     * spots are removed first ([SpotStore.removeLinked]). Call under [mutex]. False if the removal
+     * (or recording the uid) failed: the caller must not sync.
      */
     private suspend fun linkTo(uid: String): Boolean {
         val linked = markers.linkedUid()
         if (linked == uid) return true
         return try {
-            if (linked != null) store.detachAll()
+            if (linked != null) store.removeLinked()
             markers.setLinkedUid(uid)
             true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log("detach failed (${e.javaClass.simpleName})")
+            log("account switch: removing old spots failed (${e.javaClass.simpleName})")
             false
         }
     }
@@ -198,7 +201,7 @@ class SpotSyncService(
         }
         _state.value = SyncState.Syncing
         // The session's account may differ from the links' (e.g. the app died between sign-in
-        // and onSignedIn): detach first, or fail without touching anything.
+        // and onSignedIn): remove the old account's spots first, or fail without touching anything.
         if (!linkTo(uid)) {
             _state.value = SyncState.Failed(STORE_FAILED)
             return

@@ -210,7 +210,7 @@ struct SyncRows: View {
         case .success(let session):
             message = nil
             // Still "Signing in…" until onSignedIn has handed off to sync (.syncing), so the
-            // button can't start a second sign-in during the detach, marker or first sync.
+            // button can't start a second sign-in during the account-switch removal, marker or first sync.
             await SyncServices.sync.onSignedIn(session: session)
             signingIn = false
         case .accountExistsWithDifferentMethod:

@@ -31,20 +31,16 @@ extension LocalSpot {
     }
 }
 
-/// A different account signed in: forget the old one's links. Every live spot stays (unlinked,
-/// not pending); soft-deleted rows, whose deletes belonged to the old account, are purged.
+/// A different account signed in: spots stay with the account they were saved to, so every row
+/// with a cloudId (the old account's, soft-deleted ones included) leaves the watch. They are safe
+/// in that account and come back if it signs in again. Rows never synced (no cloudId) stay and
+/// upload to the new account. Twin of LocationDao.removeLinked in Kotlin.
 /// Throws if the store can't be read or saved (rolled back): the caller must not sync on.
 @MainActor
-func detachAll(context: ModelContext) throws {
-    let rows = try context.fetch(FetchDescriptor<SavedLocation>())
-    for row in rows {
-        if row.isDeleted {
-            context.delete(row)
-        } else {
-            row.cloudId = nil
-            row.pendingSync = false
-        }
-    }
+func removeLinked(context: ModelContext) throws {
+    let rows = try context.fetch(FetchDescriptor<SavedLocation>(predicate: #Predicate { $0.cloudId != nil }))
+    guard !rows.isEmpty else { return }
+    for row in rows { context.delete(row) }
     try saveOrRollback(context)
 }
 
@@ -63,7 +59,8 @@ func backfillLastModified(context: ModelContext) throws {
 
 /// The user removed a spot. Twin of SpotSyncService.deleteSpot in Kotlin.
 /// Signed out and never linked: it is simply gone. Otherwise it is soft-deleted and waits for its
-/// account (pushed when that account syncs, purged by a detach if another one signs in).
+/// account (pushed when that account syncs, removed with the rest of that account's spots if
+/// another one signs in).
 /// Signed in, a Vision-owned spot is read-only, so nothing happens.
 @MainActor
 func deleteSpot(_ row: SavedLocation, signedIn: Bool, context: ModelContext) {
