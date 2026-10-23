@@ -25,8 +25,8 @@ android {
         targetSdk = 35
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appLabel"] = "@string/app_name"
-        versionCode = 16
-        versionName = "2.1.1"
+        versionCode = 17
+        versionName = "2.2.0"
 
         // OAuth client secret for the RemoteAuth code exchange (Wear sign-in). It is a
         // secret, so it lives only in wear/local.properties and is never committed. A

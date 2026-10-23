@@ -2,6 +2,13 @@
 
 ## Open
 
+### Account sync: console setup, live E2E and store forms (added 2026-10-23)
+The code is built but never run against a live sign-in. Do `docs/ACCOUNT-SYNC-SETUP.md`
+(P1 to P5), then the E2E in the plan, then enter the new Data safety and App Privacy
+answers, then take signed-in screenshots. Also open: the $0.99 price, the More Spearo
+apps entry, and items 1, 2, 3 and 5 of `docs/HANDOFF-from-website-2026-10-23.md`.
+Confirm with the owner whether the hashed IP needs its own privacy-label type.
+
 ### Wear crashes at launch on the API 34 emulator image with targetSdk 35
 `androidx.wear.compose:compose-foundation:1.4.1` reads `Settings.Global`
 `reduce_motion`, which the API 34 settings provider refuses to apps targeting
@@ -23,7 +30,8 @@ need the same round-screen viewport treatment as `ScrollingPage.kt`.
 ### Release blockers
 See `docs/RELEASE-READINESS.md`. Three: enable the Firestore TTL policies
 (`gcloud` was unavailable when the backend was deployed), update the Play Data
-Safety and App Store privacy answers now that location reaches a Spearo server,
+Safety and App Store privacy answers now that location reaches a Spearo server
+(the docs were rewritten 2026-10-23; the console forms still need entering),
 and set the WorldTides daily ceiling against the real credit balance.
 
 ### ~~A landlocked spot still gets a dive verdict~~ — fixed 2026-08-31

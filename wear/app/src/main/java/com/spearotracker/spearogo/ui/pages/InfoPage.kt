@@ -26,22 +26,22 @@ fun InfoPage(onDismiss: () -> Unit) {
 
         PolicySection(
             title = "Location Data",
-            body = "Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about 1km and keeps that rounded point 24 hours so the same spot is not looked up twice. Nothing is linked to you."
+            body = "Your spot's coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's tide service, which passes them to NOAA or WorldTides. The tide service rounds the position to about 1km and keeps that point 24 hours so the same spot is not looked up twice. It also keeps a one-way hash of your IP address for a short time to limit abuse. Neither is linked to you."
         )
 
         PolicySection(
             title = "Saved Locations",
-            body = "Dive spots are stored locally on your watch. Never uploaded or shared."
+            body = "Dive spots are stored on your watch. If you sign in, they are also kept in your Spearo account so you can see them at spearo.pro. They are private and never shared."
         )
 
         PolicySection(
             title = "No Tracking",
-            body = "No accounts, no analytics, no ads. Zero personal data collected."
+            body = "No ads, no analytics. An account is optional; if you sign in, your email and saved spots are linked to it."
         )
 
         PolicySection(
             title = "APIs",
-            body = "Weather and marine data from Open-Meteo. Tides and solunar calculated on-device."
+            body = "Weather and marine data from Open-Meteo. Solunar calculated on-device. Tides from NOAA or WorldTides via Spearo's tide service."
         )
 
         Spacer(modifier = Modifier.height(Brand.Spacing.section))

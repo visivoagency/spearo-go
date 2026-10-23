@@ -5,7 +5,53 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-09-07
+## Start here — state as of 2026-10-23
+
+Read this block first. Everything below it is a change log.
+
+### What was built (branch `feature/account-spot-sync`, not merged)
+
+Optional sign-in and spot sync, on both platforms, in lockstep.
+- Signed out, Go behaves exactly as before.
+- Wear signs in over RemoteAuth (Google, via the phone). Apple Watch signs in with Apple.
+- Sign-in uses REST, not the Firebase SDKs. Spots sync with `users/{uid}/spots`.
+- Go writes snake_case spot docs with `source: "go"`, and `apps.go.last_seen_at`. It reads every convention.
+- Sign-out detaches spots. Deleting on the watch soft-deletes in the account.
+- Privacy text is fixed in the apps, the Apple privacy manifest and both store docs. It now says what sign-in stores.
+- Versions: Wear 2.2.0 (17), watchOS 1.2.0 (4).
+- Spec and amendments: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`. Plan: `docs/superpowers/plans/2026-10-23-go-account-spot-sync.md`.
+
+### Verified
+
+- Kotlin unit tests and the Wear build.
+- The Swift harness, all modes, on the shared fixtures. The watch target builds.
+
+### NOT RUN
+
+- Live sign-in, either platform. It needs the console work below.
+- The live end-to-end: sign in, save a spot, see it at spearo.pro, and back.
+- Signed-in screenshots.
+- Swift at the largest Dynamic Type.
+- The Wear emulator at Text size, Largest, with the new sign-in rows.
+
+### Console prerequisites
+
+Kevin does these. See `docs/ACCOUNT-SYNC-SETUP.md` (P1 to P5). Wear needs P1 and P2.
+Apple Watch needs P3, P4 and P5.
+
+### Next steps
+
+1. Console setup (`docs/ACCOUNT-SYNC-SETUP.md`).
+2. Live E2E, both platforms. Then signed-in screenshots.
+3. Enter the new Data safety and App Privacy answers in the consoles.
+4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
+5. The $0.99 price: the stores charge $0.99, the repo docs still say $2.99.
+6. The More Spearo apps entry.
+7. The rest of `docs/HANDOFF-from-website-2026-10-23.md`: age 18+ (item 2), the safety disclaimer (item 3), the legal links (item 5). Item 4, the privacy disclosures, is done.
+
+---
+
+## Earlier state — as of 2026-09-07 (older; kept as the change log)
 
 ### What this app is
 

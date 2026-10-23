@@ -1,7 +1,7 @@
 # Spearo Go — working notes
 
 Standalone dive-conditions app for Apple Watch (SwiftUI) and Wear OS (Kotlin /
-Compose). No account, no subscription.
+Compose). No subscription. Account optional, for spot sync.
 
 ## The rule that matters most: never fabricate a reading
 

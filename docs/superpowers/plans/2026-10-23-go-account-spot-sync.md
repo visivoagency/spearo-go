@@ -220,7 +220,7 @@ object SpotCodec {
 - [ ] **Step 3:** Run `./gradlew :app:testDebugUnitTest --tests '*SpotCodecTest*'`. Expected: FAIL (undefined).
 - [ ] **Step 4:** Implement `SpotCodec.kt` with Gson `JsonObject`. Timestamps parse with `java.time.Instant.parse` and format with `DateTimeFormatter.ISO_INSTANT`.
 - [ ] **Step 5:** Run the tests. Expected: PASS.
-- [ ] **Step 6:** Implement `SpotCodec.swift` (`[String: Any]` from `JSONSerialization`, `ISO8601DateFormatter` with `.withFractionalSeconds` tolerated). Add harness `codec` mode, then run: `swiftc -o $T SpearoGo/Sync/*.swift tools/spot-sync-harness/main.swift && $T codec fixtures/spot-sync/codec-cases.json`. Expected: all PASS.
+- [ ] **Step 6:** Implement `SpotCodec.swift` (`[String: Any]` from `JSONSerialization`, `ISO8601DateFormatter` with `.withFractionalSeconds` tolerated). Add harness `codec` mode, then run: `swiftc -o $T <the explicit file list in the header comment of tools/spot-sync-harness/main.swift> && $T codec fixtures/spot-sync/codec-cases.json`. Expected: all PASS.
 - [ ] **Step 7:** Register the Swift file in `generate_xcodeproj.py`, regenerate, and commit: `"Read every spot convention, write only the website's"`.
 
 ---

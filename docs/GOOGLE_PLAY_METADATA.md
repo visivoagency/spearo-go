@@ -35,9 +35,9 @@ FEATURES
 • Background refresh every 30 minutes — always current
 • Real tide predictions from NOAA and WorldTides gauges
 • Haptic feedback when conditions change
-• No subscriptions, no ads, no account required
+• No subscriptions, no ads. Account optional, for spot sync
 
-Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your location is used only to fetch conditions; the tide service rounds it to about a kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. Nothing is linked to you, and there are no accounts, ads or analytics. Where a location has no marine or tide coverage, the app says so rather than estimating.
+Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your position is used only to fetch conditions. The tide service rounds it to about a kilometre and keeps that point for up to 24 hours so the same spot is not looked up repeatedly, and keeps a one-way hash of your IP address for a short time to limit abuse; neither is linked to you. There are no ads and no analytics. Signing in to a Spearo account is optional; if you do, your email and saved spots are kept in it, private and never shared, so you can see them at spearo.pro. Where a location has no marine or tide coverage, the app says so rather than estimating.
 
 Standalone Wear OS app — no phone companion required. Works on Galaxy Watch 4, 5, 6, 7 and all Wear OS 3+ watches.
 
@@ -67,32 +67,54 @@ https://spearotracker.com/privacy-policy
 
 ## Data Safety Form Responses
 
-### Data collected
+Both stores must list the same data types. Last aligned 2026-10-23 with the website
+Privacy Policy. If you change one, change the App Store section in
+`docs/APP_STORE_METADATA.md` and `SpearoGo/PrivacyInfo.xcprivacy` too.
 
-| Data Type | Collected? | Shared? | Purpose |
-|-----------|-----------|---------|---------|
-| Approximate location | Yes | No | App functionality (fetch local conditions) |
-| Precise location | Yes | No | App functionality (fetch local conditions) |
+| Data type | Where it goes | Linked to the user | Shared | Purpose |
+|-----------|---------------|--------------------|--------|---------|
+| Location (device position) | Open-Meteo and the tide service (NOAA or WorldTides) | No | Yes, with those services, only to look up conditions | App functionality |
+| Location (saved spot coordinates) | Open-Meteo and the tide service. If signed in, also your Spearo account | Yes, once signed in | No (the account copy is private) | App functionality |
+| Email address (signed in only) | Your Spearo account | Yes | No | App functionality |
+| Saved spot names (signed in only) | Your Spearo account | Yes | No | App functionality |
+
+None of it is used for tracking, advertising or analytics.
+
+What the server keeps:
+- The tide service keeps the coordinate, rounded to about 1 km, for up to 24 hours so it can answer repeat requests.
+- It also keeps a one-way hash of the IP address for a short time to limit abuse.
+- Neither is linked to you.
+
+### Play Console answers
+
+**Location → Approximate location** (the manifest asks for `ACCESS_COARSE_LOCATION` only)
+- Collected: Yes. Shared: Yes (Open-Meteo, NOAA, WorldTides, to look up conditions).
+- Processed ephemerally: No (the tide service caches the rounded point for 24 hours).
+- Required or optional: Required (no position, no verdict).
+- Purpose: App functionality. Linked to the user: No. Tracking: No.
+
+**Location → Precise location** (saved spot coordinates)
+- Collected: Yes. Shared: No for the account copy; the coordinates are also sent to Open-Meteo and the tide service to look up conditions.
+- Required or optional: Required to get a verdict; the account copy is optional (sign-in).
+- Purpose: App functionality. Linked to the user: Yes once signed in. Tracking: No.
+
+**Personal info → Email address**
+- Collected: Yes, only if the diver signs in. Shared: No. Optional.
+- Purpose: App functionality (account). Linked: Yes. Tracking: No.
+
+**App activity → Other user-generated content** (saved spot names)
+- Collected: Yes, only if the diver signs in. Shared: No. Optional.
+- Purpose: App functionality. Linked: Yes. Tracking: No.
 
 ### Data NOT collected
-- Personal info (name, email, etc.)
-- Financial info
-- Health & fitness data
-- Messages
-- Photos/videos
-- Audio
-- Files & docs
-- Calendar
-- Contacts
-- App activity
-- Web browsing
-- Device identifiers
+- Name, financial info, health & fitness, messages, photos/videos, audio, files, calendar, contacts
+- App interactions, web browsing, diagnostics, device identifiers, advertising IDs
 
 ### Security practices
 - Data encrypted in transit (HTTPS)
-- No data shared with third parties
-- No data sold
-- Data deletion: Location is transient (not stored remotely); saved dive spots stored locally on device only
+- No data sold, none used for advertising
+- Signed-in data: the diver can delete a spot on the watch and it is removed from the account. A full account deletion request goes through the Spearo website; the exact page is set in the later legal-links stage (see `docs/HANDOFF-from-website-2026-10-23.md`, item 5).
+- Signed out: nothing is stored on a Spearo server except the cache and hash above, which expire.
 
 ### Targeting
 - App does NOT target children
@@ -158,7 +180,7 @@ redesigned verdict screen that names any reading it could not include.
 - [ ] Upload AAB to Internal Testing track first
 - [ ] Set Wear OS device type distribution
 - [ ] Complete store listing (title, descriptions, screenshots)
-- [ ] Complete Data Safety form (see responses above)
+- [ ] Complete Data Safety form (see Data Safety Form Responses above)
 - [ ] Complete IARC content rating questionnaire
 - [ ] Set pricing ($2.99)
 - [ ] Add privacy policy URL
@@ -170,28 +192,10 @@ redesigned verdict screen that names any reading it could not include.
 
 ## Data safety declaration
 
-What to select in the Play Console. This changed when tides moved to a backend:
-before that nothing was sent to a Spearo server, and the listing said so.
+The answers are in "Data Safety Form Responses" above. That is the single source;
+this section used to repeat it and had drifted (it said "Shared: Yes" while the
+form above said "Not shared", and precise location where the manifest asks for
+coarse). Do not copy the answers back here.
 
-**Data collected: Location → Approximate location**
-
-- Collected: **Yes**
-- Shared with third parties: **Yes** — the coordinate is passed to Open-Meteo,
-  and to NOAA or WorldTides via Spearo's tide service, purely to look up
-  conditions for that place.
-- Processed ephemerally: **No** — the tide service keeps the rounded coordinate
-  for 24 hours as a cache.
-- Required or optional: **Required** (the app cannot produce a verdict without a
-  position)
-- Purpose: **App functionality**
-- Linked to the user: **No** — there are no accounts and no identifiers are sent
-- Used for tracking: **No**
-
-Nothing else is collected. No personal info, no device or app IDs, no
-diagnostics, no advertising, no analytics. Saved dive spots stay on the watch.
-
-**Data security**
-
-- Encrypted in transit: **Yes** (HTTPS throughout)
-- Users can request deletion: no user data is retained to delete — the cache
-  holds a rounded coordinate with no identifier and expires after 24 hours.
+Play Console path: Policy and programs, App content, Data safety. Enter the four
+rows from the table, then the security practices.
