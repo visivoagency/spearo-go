@@ -10,12 +10,12 @@ class SpotMappingTest {
         val row = SavedLocation(
             id = "a", name = "Lagos", latitude = 37.1, longitude = -8.67, createdAt = 10,
             isActive = true, cloudId = "doc", lastModifiedAt = 20, isDeleted = true,
-            pendingSync = true, origin = "ACCOUNT"
+            pendingSync = true, origin = "ACCOUNT", ownerUid = "U1"
         )
         val spot = row.toLocalSpot()
         assertEquals(SpotOrigin.ACCOUNT, spot.origin)
         assertEquals(20L, spot.lastModifiedAt)
-        assertEquals(row, spot.toSavedLocation(isActive = true))
+        assertEquals(row, spot.toSavedLocation(isActive = true, ownerUid = "U1"))
     }
 
     @Test

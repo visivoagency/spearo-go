@@ -6,6 +6,7 @@ import androidx.room.withTransaction
 import com.spearotracker.spearogo.services.AppDatabase
 import com.spearotracker.spearogo.services.LocationDao
 import com.spearotracker.spearogo.services.MIGRATION_1_2
+import com.spearotracker.spearogo.services.MIGRATION_2_3
 import com.spearotracker.spearogo.sync.AppIdentityHeaders
 import com.spearotracker.spearogo.sync.AuthClient
 import com.spearotracker.spearogo.sync.FirestoreClient
@@ -35,7 +36,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "spearogo.db"
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
     }
 
     @Provides

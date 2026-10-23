@@ -26,27 +26,24 @@ interface LocationDao : SpotStore {
     suspend fun delete(location: SavedLocation)
 
     /** Soft delete: hides the row and queues the delete for the next sync. */
-    @Query("UPDATE saved_locations SET isDeleted = 1, pendingSync = 1, lastModifiedAt = :now, isActive = 0 WHERE id = :id")
-    override suspend fun markDeleted(id: String, now: Long)
+    @Query(
+        "UPDATE saved_locations SET isDeleted = 1, pendingSync = 1, lastModifiedAt = :now, isActive = 0, " +
+            "ownerUid = COALESCE(:ownerUid, ownerUid) WHERE id = :id"
+    )
+    override suspend fun markDeleted(id: String, now: Long, ownerUid: String?)
 
     @Query("DELETE FROM saved_locations WHERE id IN (:ids)")
     override suspend fun hardDelete(ids: List<String>)
 
-    @Query("UPDATE saved_locations SET cloudId = :cloudId WHERE id = :id AND cloudId IS NULL")
-    override suspend fun linkCloudId(id: String, cloudId: String)
+    @Query("UPDATE saved_locations SET cloudId = :cloudId, ownerUid = :ownerUid WHERE id = :id AND cloudId IS NULL")
+    override suspend fun linkCloudId(id: String, cloudId: String, ownerUid: String)
 
-    @Query("DELETE FROM saved_locations WHERE isDeleted = 1")
-    suspend fun deleteSoftDeleted()
-
-    @Query("UPDATE saved_locations SET cloudId = NULL, pendingSync = 0")
-    suspend fun clearCloudLinks()
-
-    /** A different account signed in: every live spot stays, unlinked; the old account's pending deletes go. */
-    @Transaction
-    override suspend fun detachAll() {
-        deleteSoftDeleted()
-        clearCloudLinks()
-    }
+    /** The account changed to [newUid]: every other account's spots leave the watch (see [SpotStore]). */
+    @Query(
+        "DELETE FROM saved_locations WHERE (:includeLinked AND cloudId IS NOT NULL) " +
+            "OR (ownerUid IS NOT NULL AND ownerUid != :newUid)"
+    )
+    override suspend fun removeAccountSpots(newUid: String, includeLinked: Boolean)
 
     @Query("UPDATE saved_locations SET isActive = 0")
     suspend fun deactivateAll()

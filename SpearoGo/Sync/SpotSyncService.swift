@@ -31,10 +31,13 @@ import SwiftData
 //
 // Links are scoped to an account (UserDefaults "sync.linkedUid"). Sign-out (planned, or a
 // session a refresh 400 cleared) keeps every row and cloudId, so the same account signing back
-// in finds its spots linked and nothing is duplicated. When a DIFFERENT account syncs,
-// detachAll runs first: every live spot is kept and unlinked, so it is copied into the new
-// account; the old account's pending deletes are purged. Nothing is ever deleted from the
-// watch by an account change.
+// in finds its spots linked and nothing is duplicated. Spots stay with the account they were
+// saved to (owner ruling, 23 Oct): when a DIFFERENT account syncs, removeAccountSpots runs
+// first and every row with a cloudId, or with an ownerUid other than the new account's, leaves
+// the watch (soft-deleted ones included). They are safe in that account (or were never pushed
+// to it) and come back if it signs in again. Rows saved while signed out (no cloudId, no
+// ownerUid) stay and upload to the new one. An active spot removed this way takes its isActive
+// with it, so the app falls back to "Use my location".
 //
 // Local reads and writes go through the app's ModelContainer's mainContext on the main
 // actor: the same context the UI's @Query reads, so it never sees a stale row and the
@@ -94,10 +97,10 @@ actor SpotSyncService {
         await enqueue { await $0.runSync() }
     }
 
-    /// Right after a successful sign-in: detach if the spots are linked to another account, the
-    /// marker (always), then a first sync. The state is .syncing from the start, so the sign-in
-    /// row can't be tapped again meanwhile. If the detach fails the sign-in is undone (.failed):
-    /// syncing on with the old account's links would delete or misfile spots.
+    /// Right after a successful sign-in: remove the old account's spots if they are linked to
+    /// another account, the marker (always), then a first sync. The state is .syncing from the
+    /// start, so the sign-in row can't be tapped again meanwhile. If the removal fails the sign-in
+    /// is undone (.failed): syncing on with the old account's links would misfile spots.
     func onSignedIn(session: Session) async {
         // In the queue, so it can't race a sign-out; skipped if one already happened.
         let proceed = await enqueue { service -> Bool in
@@ -129,19 +132,22 @@ actor SpotSyncService {
         await setState(.signedOut)
     }
 
-    /// Makes the local links belong to `uid`: if they belong to another account, detachAll
-    /// first. Runs in the queue. False if the detach failed: the caller must not sync.
+    /// Makes the local links belong to `uid`: any other account's spots are removed first
+    /// (removeAccountSpots): rows owned by another uid, and, if the links belonged to another
+    /// account, every linked row. Runs in the queue. False if the removal failed: the caller must
+    /// not sync.
     private func link(to uid: String) async -> Bool {
         let linked = defaults.string(forKey: Self.linkedUidKey)
         if linked == uid { return true }
-        if linked != nil {
-            let container = self.container
-            do {
-                try await MainActor.run { try detachAll(context: container.mainContext) }
-            } catch {
-                print("[SpotSyncService] detach failed; not syncing")
-                return false
+        let container = self.container
+        let includeLinked = linked != nil
+        do {
+            try await MainActor.run {
+                try removeAccountSpots(newUid: uid, includeLinked: includeLinked, context: container.mainContext)
             }
+        } catch {
+            print("[SpotSyncService] account switch: removing old spots failed; not syncing")
+            return false
         }
         defaults.set(uid, forKey: Self.linkedUidKey)
         return true
@@ -183,7 +189,7 @@ actor SpotSyncService {
         }
         await setState(.syncing)
         // The session's account may differ from the links' (e.g. the app died between sign-in
-        // and onSignedIn): detach first, or fail without touching anything.
+        // and onSignedIn): remove the old account's spots first, or fail without touching anything.
         guard await link(to: uid) else {
             await setState(.failed(Self.storeFailed))
             return
@@ -275,7 +281,7 @@ actor SpotSyncService {
         do {
             skipped = try await MainActor.run { () throws -> Int in
                 try Self.apply(upserts: toUpsert, deletes: toDelete, links: links, snapshot: snapshot,
-                               context: container.mainContext)
+                               uid: uid, context: container.mainContext)
             }
         } catch {
             print("[SpotSyncService] local write failed; rolled back")
@@ -298,10 +304,11 @@ actor SpotSyncService {
 
     /// Writes the plan into the store. Returns how many rows it left alone because the
     /// user changed, added or removed them since `snapshot` was taken.
-    /// `links`: local id -> cloudId of each successful pushUpsert.
+    /// `links`: local id -> cloudId of each successful pushUpsert. Every row written or linked
+    /// here is stamped with `uid` (ownerUid).
     @MainActor
     private static func apply(upserts: [LocalSpot], deletes: [String], links: [String: String],
-                              snapshot: [LocalSpot], context: ModelContext) throws -> Int {
+                              snapshot: [LocalSpot], uid: String, context: ModelContext) throws -> Int {
         let rows = try context.fetch(FetchDescriptor<SavedLocation>())
         var byId: [String: SavedLocation] = [:]
         for row in rows { byId[row.id.uuidString] = row }
@@ -326,8 +333,9 @@ actor SpotSyncService {
                 row.isDeleted = spot.isDeleted
                 row.pendingSync = spot.pendingSync
                 row.origin = spot.origin.rawValue
+                row.ownerUid = uid
             } else {
-                context.insert(spot.toSavedLocation(isActive: false))
+                context.insert(spot.toSavedLocation(isActive: false, ownerUid: uid))
             }
         }
         var seen = Set<String>()
@@ -337,7 +345,10 @@ actor SpotSyncService {
         }
         // Pushed, then edited meanwhile: still record which doc it created (only if unlinked).
         for (id, cloudId) in links where !untouched(id) {
-            if let row = byId[id], row.cloudId == nil { row.cloudId = cloudId }
+            if let row = byId[id], row.cloudId == nil {
+                row.cloudId = cloudId
+                row.ownerUid = uid
+            }
         }
         do {
             try context.save()

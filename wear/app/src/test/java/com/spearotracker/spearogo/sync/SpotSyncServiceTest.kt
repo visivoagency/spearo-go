@@ -28,11 +28,11 @@ class FakeSpotStore(vararg initial: SavedLocation) : SpotStore, SpotTransactor {
     var onWrite: () -> Unit = {}
     var inTransaction = false
     var transactions = 0
-    /** Sync-path writes that happened outside a transaction (detachAll runs before sync, so excluded). */
+    /** Sync-path writes that happened outside a transaction (removeLinked runs before sync, so excluded). */
     var writesOutsideTransaction = 0
-    var detachCalls = 0
-    /** When set, detachAll throws it (a failing Room write). */
-    var detachFailure: Exception? = null
+    var removeCalls = 0
+    /** When set, removeLinked throws it (a failing Room write). */
+    var removeFailure: Exception? = null
 
     override suspend fun run(block: suspend () -> Unit) {
         transactions++; inTransaction = true
@@ -47,19 +47,23 @@ class FakeSpotStore(vararg initial: SavedLocation) : SpotStore, SpotTransactor {
     override suspend fun hardDelete(ids: List<String>) {
         syncWrite(); ids.forEach { rows.remove(it) }
     }
-    override suspend fun linkCloudId(id: String, cloudId: String) {
-        syncWrite(); rows[id]?.takeIf { it.cloudId == null }?.let { rows[id] = it.copy(cloudId = cloudId) }
+    override suspend fun linkCloudId(id: String, cloudId: String, ownerUid: String) {
+        syncWrite(); rows[id]?.takeIf { it.cloudId == null }?.let { rows[id] = it.copy(cloudId = cloudId, ownerUid = ownerUid) }
     }
-    override suspend fun markDeleted(id: String, now: Long) {
+    override suspend fun markDeleted(id: String, now: Long, ownerUid: String?) {
         writes++; onWrite()
-        rows[id]?.let { rows[id] = it.copy(isDeleted = true, pendingSync = true, lastModifiedAt = now, isActive = false) }
+        rows[id]?.let {
+            rows[id] = it.copy(isDeleted = true, pendingSync = true, lastModifiedAt = now, isActive = false,
+                ownerUid = ownerUid ?: it.ownerUid)
+        }
     }
-    override suspend fun detachAll() {
-        detachCalls++
-        detachFailure?.let { throw it }
+    override suspend fun removeAccountSpots(newUid: String, includeLinked: Boolean) {
+        removeCalls++
+        removeFailure?.let { throw it }
+        val gone = rows.values.filter { (includeLinked && it.cloudId != null) || (it.ownerUid != null && it.ownerUid != newUid) }
+        if (gone.isEmpty()) return            // a DELETE that matches nothing changes nothing
         writes++; onWrite()
-        rows.values.filter { it.isDeleted }.toList().forEach { rows.remove(it.id) }
-        rows.replaceAll { _, r -> r.copy(cloudId = null, pendingSync = false) }
+        gone.forEach { rows.remove(it.id) }
     }
 }
 
@@ -392,9 +396,16 @@ class SpotSyncServiceTest {
         assertEquals(0, server.requestCount)
     }
 
-    /** C1: a 400 refresh clears the session; a different account then signs in. Nothing is lost. */
+    private fun spotPath(r: RecordedRequest) = r.requestUrl!!.encodedPath.substringAfter("/documents")
+    private fun patchBody(r: RecordedRequest) = r.body.clone().readUtf8()
+
+    /**
+     * Owner ruling (23 Oct): spots stay with the account they were saved to. A 400 refresh clears
+     * U1's session; U2 then signs in. U1's spots leave the watch and never reach U2; a spot that
+     * was never synced to any account uploads to U2.
+     */
     @Test
-    fun refresh400ThenOtherAccountKeepsSpots() = runBlocking {
+    fun otherAccountDoesNotReceiveFirstAccountSpots() = runBlocking {
         marker.linked = "U1"
         tokens.stored = Session("U1", "old", "dead", now - 1, null)   // expired: the next sync refreshes
         refreshCode = 400
@@ -403,12 +414,13 @@ class SpotSyncServiceTest {
             SavedLocation(id = "B", name = "Wreck", latitude = 3.0, longitude = 4.0, createdAt = 2, cloudId = "B", pendingSync = true),
             SavedLocation(id = "C", name = "Gone", latitude = 5.0, longitude = 6.0, createdAt = 3, cloudId = "W3",
                 isDeleted = true, pendingSync = true, origin = "ACCOUNT"),
+            SavedLocation(id = "D", name = "Fresh", latitude = 7.0, longitude = 8.0, createdAt = 4, pendingSync = true),
         )
         val svc = service(dao)
         svc.sync()
         assertNull(tokens.stored)
         assertEquals(SyncState.SignedOut, svc.state.value)
-        assertEquals(3, dao.rows.size)                 // the 400 changed nothing locally
+        assertEquals(4, dao.rows.size)                 // the 400 changed nothing locally
 
         val u2 = session("U2")
         tokens.stored = u2
@@ -416,14 +428,57 @@ class SpotSyncServiceTest {
 
         assertTrue(requests.none { it.requestUrl!!.encodedPath.contains("/users/U1") })  // nothing sent to U1
         val patches = spotPatches()
-        assertTrue(patches.none(::isDeletePatch))     // C's pending delete was U1's: dropped, not pushed
-        assertEquals(setOf("/users/U2/spots/A", "/users/U2/spots/B"),
-            patches.map { it.requestUrl!!.encodedPath.substringAfter("/documents") }.toSet())
-        assertEquals(setOf("A", "B"), dao.rows.keys)  // A and B kept, C purged with its stale link
-        assertEquals("A", dao.rows["A"]!!.cloudId)    // re-linked to the new U2 docs
-        assertEquals("B", dao.rows["B"]!!.cloudId)
-        assertTrue(dao.rows.values.none { it.pendingSync })
+        assertTrue(patches.none(::isDeletePatch))     // no U1 tombstones pushed
+        assertEquals(listOf("/users/U2/spots/D"), patches.map(::spotPath))
+        for (p in patches) {
+            val body = patchBody(p)
+            listOf("W1", "W3", "Reef", "Wreck", "Gone").forEach { assertFalse(it, body.contains(it)) }
+        }
+        assertEquals(setOf("D"), dao.rows.keys)       // U1's rows removed, the never-linked one kept
+        assertEquals("D", dao.rows["D"]!!.cloudId)    // and linked to its new U2 doc
+        assertFalse(dao.rows["D"]!!.pendingSync)
+        assertEquals(1, dao.removeCalls)
         assertEquals("U2", marker.linked)
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    /** linkedUid null (first ever sign-in): nothing is removed, every spot uploads. */
+    @Test
+    fun firstSignInUploadsEverything() = runBlocking {
+        val dao = FakeSpotStore(
+            SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, pendingSync = true),
+            SavedLocation(id = "B", name = "Wreck", latitude = 3.0, longitude = 4.0, createdAt = 2, isActive = true),
+        )
+        val u1 = session("U1")
+        tokens.stored = u1
+        val svc = service(dao)
+        svc.onSignedIn(u1)
+
+        assertEquals(setOf("/users/U1/spots/A", "/users/U1/spots/B"), spotPatches().map(::spotPath).toSet())
+        assertEquals(setOf("A", "B"), dao.rows.keys)
+        assertEquals("A", dao.rows["A"]!!.cloudId)
+        assertEquals("B", dao.rows["B"]!!.cloudId)
+        assertTrue(dao.rows["B"]!!.isActive)
+        assertEquals("U1", marker.linked)
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    /** The active spot was U1's: it leaves with its row, and nothing else becomes active ("Use my location"). */
+    @Test
+    fun activeSpotRemovedFallsBackToLocation() = runBlocking {
+        marker.linked = "U1"
+        val dao = FakeSpotStore(
+            SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1",
+                isActive = true, origin = "ACCOUNT"),
+            SavedLocation(id = "D", name = "Fresh", latitude = 7.0, longitude = 8.0, createdAt = 4, pendingSync = true),
+        )
+        val u2 = session("U2")
+        tokens.stored = u2
+        val svc = service(dao)
+        svc.onSignedIn(u2)
+
+        assertNull(dao.rows["A"])
+        assertTrue(dao.rows.values.none { it.isActive })   // getActiveLocation() is null: GPS
         assertEquals(SyncState.Synced(now), svc.state.value)
     }
 
@@ -438,13 +493,14 @@ class SpotSyncServiceTest {
         svc.sync()
         assertEquals("L1", dao.rows["L1"]!!.cloudId)
         val pushedBefore = spotPatches().size
+        val removesBefore = dao.removeCalls
 
         svc.signOut()
         val u1 = session("U1")
         tokens.stored = u1
         svc.onSignedIn(u1)
 
-        assertEquals(0, dao.detachCalls)
+        assertEquals(removesBefore, dao.removeCalls)   // same account: nothing to remove
         assertEquals(pushedBefore, spotPatches().size) // nothing new pushed
         assertEquals(1, accountDocs.size)
         assertEquals(listOf("L1"), dao.rows.keys.toList())
@@ -502,26 +558,28 @@ class SpotSyncServiceTest {
         assertEquals(v, dao.rows["V"])
     }
 
-    /** The session changed without onSignedIn (e.g. the app died right after sign-in): sync still detaches first. */
+    /** The session changed without onSignedIn (e.g. the app died right after sign-in): sync still removes U1's spots first. */
     @Test
-    fun syncUnderNewAccountDetachesFirst() = runBlocking {
+    fun syncUnderNewAccountRemovesOldAccountSpots() = runBlocking {
         marker.linked = "U1"
         tokens.stored = session("U2")
         val dao = FakeSpotStore(
-            SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1", origin = "ACCOUNT")
+            SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1", origin = "ACCOUNT"),
+            SavedLocation(id = "D", name = "Fresh", latitude = 7.0, longitude = 8.0, createdAt = 4, pendingSync = true),
         )
         service(dao).sync()
-        assertEquals(1, dao.detachCalls)
-        assertTrue(spotPatches().single().requestUrl!!.encodedPath.endsWith("/users/U2/spots/A"))
+        assertEquals(1, dao.removeCalls)
+        assertEquals(listOf("/users/U2/spots/D"), spotPatches().map(::spotPath))
+        assertEquals(setOf("D"), dao.rows.keys)
         assertEquals("U2", marker.linked)
     }
 
     @Test
-    fun detachFailureFailsSignIn() = runBlocking {
+    fun removeFailureFailsSignIn() = runBlocking {
         marker.linked = "U1"
         val a = SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1", origin = "ACCOUNT")
         val dao = FakeSpotStore(a)
-        dao.detachFailure = IllegalStateException("disk full")
+        dao.removeFailure = IllegalStateException("disk full")
         val u2 = session("U2")
         tokens.stored = u2
         val svc = service(dao)
@@ -655,5 +713,120 @@ class SpotSyncServiceTest {
         assertEquals(1, dao.transactions)
         assertTrue(dao.writes > 0)
         assertEquals(0, dao.writesOutsideTransaction)
+    }
+
+    // ── ownerUid: spots saved to an account stay with that account (review fix, 23 Oct) ──
+
+    /** Saved while signed into U1 but never pushed (offline): removed on a switch to U2, never uploaded. */
+    @Test
+    fun unpushedSpotSavedUnderFirstAccountIsRemovedOnSwitch() = runBlocking {
+        marker.linked = "U1"
+        tokens.stored = session("U1")
+        listCode = 503                                 // offline: the save can't reach U1
+        val dao = FakeSpotStore()
+        val svc = service(dao)
+        svc.addSpot(SavedLocation(id = "X", name = "Offline reef", latitude = 1.0, longitude = 2.0, createdAt = 1, pendingSync = true))
+        svc.sync()
+        assertTrue(spotPatches().isEmpty())
+        assertEquals("U1", dao.rows["X"]!!.ownerUid)
+        svc.signOut()
+        listCode = 200
+
+        val u2 = session("U2")
+        tokens.stored = u2
+        svc.onSignedIn(u2)
+
+        assertNull(dao.rows["X"])
+        assertTrue(spotPatches().none { patchBody(it).contains("Offline reef") })
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    /** The PATCH to U1 succeeded but the link was never recorded (here: signed out mid-sync). Not uploaded to U2. */
+    @Test
+    fun pushedButUnlinkedSpotIsRemovedOnSwitch() = runBlocking {
+        marker.linked = "U1"
+        tokens.stored = session("U1")
+        val dao = FakeSpotStore()
+        lateinit var svc: SpotSyncService
+        var signOutJob: kotlinx.coroutines.Job? = null
+        onSpotPatch = {
+            onSpotPatch = {}
+            signOutJob = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch { svc.signOut() }
+            val deadline = System.currentTimeMillis() + 2000
+            while (tokens.stored != null && System.currentTimeMillis() < deadline) Thread.sleep(5)
+        }
+        svc = service(dao)
+        svc.addSpot(SavedLocation(id = "X", name = "Half done", latitude = 1.0, longitude = 2.0, createdAt = 1, pendingSync = true))
+        svc.sync()
+        signOutJob!!.join()
+        assertEquals("/users/U1/spots/X", spotPath(spotPatches().single()))   // reached U1
+        assertNull(dao.rows["X"]!!.cloudId)                                    // but never linked
+
+        val u2 = session("U2")
+        tokens.stored = u2
+        svc.onSignedIn(u2)
+
+        assertNull(dao.rows["X"])
+        assertTrue(spotPatches().none { it.requestUrl!!.encodedPath.contains("/users/U2/") })
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    /** Saved while signed out (ownerUid null): it belongs to no account, so it uploads to U2. */
+    @Test
+    fun signedOutSpotUploadsToNewAccount() = runBlocking {
+        marker.linked = "U1"
+        val dao = FakeSpotStore()
+        val svc = service(dao)
+        svc.addSpot(SavedLocation(id = "S", name = "Shore", latitude = 1.0, longitude = 2.0, createdAt = 1, pendingSync = true))
+        assertNull(dao.rows["S"]!!.ownerUid)
+
+        val u2 = session("U2")
+        tokens.stored = u2
+        svc.onSignedIn(u2)
+
+        assertEquals(listOf("/users/U2/spots/S"), spotPatches().map(::spotPath))
+        assertEquals("S", dao.rows["S"]!!.cloudId)
+        assertEquals("U2", dao.rows["S"]!!.ownerUid)
+    }
+
+    /** linkedUid never recorded (the app died between saving the session and onSignedIn), yet a spot was saved under U1. */
+    @Test
+    fun ownedSpotIsRemovedEvenBeforeAnyLink() = runBlocking {
+        tokens.stored = session("U1")
+        val dao = FakeSpotStore(SavedLocation(id = "S", name = "Shore", latitude = 3.0, longitude = 4.0, createdAt = 2, pendingSync = true))
+        val svc = service(dao)
+        svc.addSpot(SavedLocation(id = "X", name = "Owned", latitude = 1.0, longitude = 2.0, createdAt = 1, pendingSync = true))
+        svc.signOut()
+        assertNull(marker.linked)
+
+        val u2 = session("U2")
+        tokens.stored = u2
+        svc.onSignedIn(u2)
+
+        assertNull(dao.rows["X"])
+        assertEquals(listOf("/users/U2/spots/S"), spotPatches().map(::spotPath))
+    }
+
+    /** A sync stamps the account on every row it links or pushes. */
+    @Test
+    fun syncStampsOwnerOnLinkedAndPushedRows() = runBlocking {
+        signedIn()
+        val dao = FakeSpotStore(
+            SavedLocation(id = "L1", name = "Home reef", latitude = 10.0, longitude = 10.0, createdAt = 1000, pendingSync = true)
+        )
+        accountDocs = listOf(doc("users/U1/spots/W1", "Wreck", 20.0, 20.0, "2026-10-01T00:00:00Z"))
+        service(dao).sync()
+        assertTrue(dao.rows.values.all { it.ownerUid == "U1" })
+        assertEquals(2, dao.rows.size)
+    }
+
+    /** Deleting while signed in is an edit under that account: the row is stamped. Signed out it is not. */
+    @Test
+    fun signedInDeleteStampsOwner() = runBlocking {
+        signedIn()
+        val dao = FakeSpotStore(SavedLocation(id = "L1", name = "x", latitude = 1.0, longitude = 2.0, pendingSync = true))
+        service(dao).deleteSpot("L1")
+        assertEquals("U1", dao.rows["L1"]!!.ownerUid)
+        assertTrue(dao.rows["L1"]!!.isDeleted)
     }
 }

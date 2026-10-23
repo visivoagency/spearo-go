@@ -41,6 +41,7 @@
 
 1. **Signing out and then into a *different* account** must not delete anything from the watch. Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it; nothing is deleted from the watch.
    - Superseded at the final review (23 Oct): sign-out used to detach. Now `linkedUid` is persisted, sign-out keeps links, and an account change runs `detachAll` before the first sync (the old account's pending deletes are purged, never pushed).
+   - **Superseded 23 Oct: see the spec amendment** (spots stay with the account they were saved to; `removeAccountSpots` replaces `detachAll`).
    - Pinned by `SpotSyncServiceTest` `refresh400ThenOtherAccountKeepsSpots`, `sameAccountReSignInNoDuplicates`, `signOutKeepsSpotsAndLinks`, `syncUnderNewAccountDetachesFirst` and `detachFailureFailsSignIn`; the DAO by `accountChangeDetachesEverySpot` (Task 4).
 2. **A Tracker or Vision camelCase doc in `users/{uid}/spots`** (`isDeleted`, Timestamp `createdAt`, no `last_modified_at`) must parse.
    - Pinned by the fixtures `vision-copy-camel.json` and `tracker-camel-deleted.json` (Task 3).
@@ -81,7 +82,7 @@ Collect these into `docs/ACCOUNT-SYNC-SETUP.md` in Task 1. Wear sign-in won't wo
 - [ ] **Step 1: Amend the spec** with an "Amendments (plan, 23 Oct)" section:
   - REST on both platforms instead of the Firebase SDKs (why: lockstep, no SPM in the generator, and the Firestore SDK doesn't support watchOS anyway).
   - Snake_case writes and the forbidden keys (from Global Constraints).
-  - Links belong to an account: sign-out keeps them, an account change detaches (Review Focus 1).
+  - Links belong to an account: sign-out keeps them, an account change detaches (Review Focus 1). **Superseded 23 Oct: see the spec amendment** (spots stay with the account they were saved to; `removeAccountSpots` replaces `detachAll`).
   - Swift is verified by a harness against the shared fixtures, not an XCTest target.
   - A sign-in failure never falls back to a local Apple user ID. Apnea's `AuthManager` does that, and it would write under a uid that isn't a Firebase uid. Go stays signed out with an error instead.
 - [ ] **Step 2: Write `docs/ACCOUNT-SYNC-SETUP.md`** with P1–P5 verbatim, plus how to check each (e.g. P1: start a Wear sign-in, and `redirect_uri_mismatch` means it's missing).
@@ -249,13 +250,13 @@ Swift uses the same names, with `lastModifiedAt: Date`.
 - `suspend fun markDeleted(id: String, now: Long)`: sets `isDeleted = 1, pendingSync = 1, lastModifiedAt = now, isActive = 0`.
 - `suspend fun hardDelete(ids: List<String>)`
 - `suspend fun upsertAll(rows: List<SavedLocation>)`
-- `suspend fun detachAll()`: `DELETE WHERE isDeleted = 1`, then `UPDATE SET cloudId = NULL, pendingSync = 0`.
+- `suspend fun detachAll()`: `DELETE WHERE isDeleted = 1`, then `UPDATE SET cloudId = NULL, pendingSync = 0`. **Superseded 23 Oct: see the spec amendment** (spots stay with the account they were saved to; `removeAccountSpots` replaces `detachAll`).
 
 **Interfaces — Produces (mapping):**
 - `fun SavedLocation.toLocalSpot(): LocalSpot`
 - `fun LocalSpot.toSavedLocation(isActive: Boolean): SavedLocation`
 
-- [ ] **Step 1:** Write `MigrationTest.migrate1To2KeepsSpots`: create a v1 DB with the row `("a", "Lagos", 37.10, -8.67, 1000, isActive=1)`, migrate, and assert the row is intact with `lastModifiedAt == 1000`, `cloudId == null`, `isDeleted == false`, `isActive == true`. Also write `signOutDetachesEverySpot`: two rows, one with a cloudId and pending, one deleted; `detachAll()` → one row left, `cloudId == null`, `pendingSync == false`. (Final review: renamed `accountChangeDetachesEverySpot`; detachAll now runs on an account change, not on sign-out. See Review Focus 1.)
+- [ ] **Step 1:** Write `MigrationTest.migrate1To2KeepsSpots`: create a v1 DB with the row `("a", "Lagos", 37.10, -8.67, 1000, isActive=1)`, migrate, and assert the row is intact with `lastModifiedAt == 1000`, `cloudId == null`, `isDeleted == false`, `isActive == true`. Also write `signOutDetachesEverySpot`: two rows, one with a cloudId and pending, one deleted; `detachAll()` → one row left, `cloudId == null`, `pendingSync == false`. (Final review: renamed `accountChangeDetachesEverySpot`; detachAll now runs on an account change, not on sign-out. See Review Focus 1.) **Superseded 23 Oct: see the spec amendment** (spots stay with the account they were saved to; `removeAccountSpots` replaces `detachAll`). The test is now `accountChangeRemovesOldAccountSpots`.
 - [ ] **Step 2:** Run `./gradlew :app:connectedDebugAndroidTest` on the emulator, with `targetSdk = 34` set locally and never committed (HANDOFF "things that will bite you"). Expected: FAIL.
 - [ ] **Step 3:** Implement the entity, migration, DAO and mapping. `AppViewModel.deleteLocation` now calls `markDeleted` instead of `delete`.
 - [ ] **Step 4:** Run the tests. Expected: PASS. Revert the local targetSdk.
@@ -263,7 +264,7 @@ Swift uses the same names, with `lastModifiedAt: Date`.
   - Add the properties with default values (SwiftData lightweight migration handles added defaulted properties automatically).
   - `LocationsView.delete(at:)` becomes a soft delete (`isDeleted = true, pendingSync = true, lastModifiedAt = .now, isActive = false`).
   - Every `@Query`/`FetchDescriptor` that lists spots filters `!isDeleted`.
-  - Add `func detachAll(context: ModelContext)` in `SpotMapping.swift`.
+  - Add `func detachAll(context: ModelContext)` in `SpotMapping.swift`. **Superseded 23 Oct: see the spec amendment** (spots stay with the account they were saved to; `removeAccountSpots` replaces `detachAll`).
 - [ ] **Step 6:** Verify on the watchOS simulator: install the **current main build**, save "Lagos", install this build over it, and confirm "Lagos" is still listed and still active. Build commands are in `CLAUDE.md`.
 - [ ] **Step 7:** Wear: also run `./gradlew :app:testDebugUnitTest` (all suites green). Register the Swift files, regenerate, and commit: `"Spots remember their account twin; deletes wait for sync"`.
 

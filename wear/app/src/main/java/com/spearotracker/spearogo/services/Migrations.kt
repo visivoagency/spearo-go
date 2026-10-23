@@ -14,3 +14,10 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("UPDATE saved_locations SET lastModifiedAt = createdAt")
     }
 }
+
+/** v2 -> v3: spots learn which account they were saved to. Nullable, default NULL: no row is touched. */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE saved_locations ADD COLUMN ownerUid TEXT DEFAULT NULL")
+    }
+}

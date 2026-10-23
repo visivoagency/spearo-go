@@ -277,7 +277,7 @@ class AppViewModel @Inject constructor(
                 lastModifiedAt = now,
                 pendingSync = true
             )
-            locationDao.insert(location)
+            syncService.addSpot(location)   // stamps the signed-in account, if any
             clearSearch()
             setActiveLocation(location)
             syncSpots()
@@ -286,7 +286,7 @@ class AppViewModel @Inject constructor(
 
     fun addLocation(name: String, latitude: Double, longitude: Double) {
         viewModelScope.launch {
-            locationDao.insert(
+            syncService.addSpot(
                 SavedLocation(
                     name = name,
                     latitude = latitude,
@@ -300,10 +300,13 @@ class AppViewModel @Inject constructor(
     }
 
     /** Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs. */
+    /** Deleting the active spot falls back to "Use my location", as on watchOS. */
     fun deleteLocation(location: SavedLocation) {
         viewModelScope.launch {
-            syncService.deleteSpot(location.id)
-            syncSpots()
+            refreshIfActiveSpotGone {
+                syncService.deleteSpot(location.id)
+                syncService.sync()
+            }
         }
     }
 
@@ -318,7 +321,18 @@ class AppViewModel @Inject constructor(
 
     /** App foreground and every spot edit. A no-op while signed out. */
     fun syncSpots() {
-        viewModelScope.launch { syncService.sync() }
+        viewModelScope.launch { refreshIfActiveSpotGone { syncService.sync() } }
+    }
+
+    /**
+     * Runs [block] (a sync or sign-in). If it removed the active spot (another account's spots
+     * leave on a sign-in, or the spot was deleted elsewhere), redraw: refresh() finds no active
+     * row and falls back to "Use my location". Nothing keeps the old spot's id.
+     */
+    private suspend fun refreshIfActiveSpotGone(block: suspend () -> Unit) {
+        val before = locationDao.getActiveLocation()?.id
+        block()
+        if (before != null && locationDao.getActiveLocation()?.id != before) refresh()
     }
 
     private var signInJob: Job? = null
@@ -347,11 +361,13 @@ class AppViewModel @Inject constructor(
             when (result) {
                 is SignInResult.Success -> {
                     // Still InProgress until onSignedIn has handed off to sync (state Syncing), so
-                    // a second tap can't start another sign-in during the detach, marker or first
-                    // sync. Not cancellable: the session is already saved.
+                    // a second tap can't start another sign-in during the account-switch removal,
+                    // marker or first sync. Not cancellable: the session is already saved.
                     signInHandedOff = true
                     try {
-                        withContext(NonCancellable) { syncService.onSignedIn(result.session) }
+                        withContext(NonCancellable) {
+                            refreshIfActiveSpotGone { syncService.onSignedIn(result.session) }
+                        }
                     } finally {
                         signInHandedOff = false
                         _signIn.value = SignInUiState.Idle

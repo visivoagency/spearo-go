@@ -10,15 +10,17 @@ interface SpotStore {
     suspend fun getAllIncludingDeleted(): List<SavedLocation>
     suspend fun upsertAll(rows: List<SavedLocation>)
     suspend fun hardDelete(ids: List<String>)
-    /** Sets cloudId on one row only if it has none yet; touches nothing else. */
-    suspend fun linkCloudId(id: String, cloudId: String)
-    /** Soft delete: hides the row and queues the delete for the next sync. */
-    suspend fun markDeleted(id: String, now: Long)
+    /** Sets cloudId (and ownerUid) on one row only if it has no cloudId yet; touches nothing else. */
+    suspend fun linkCloudId(id: String, cloudId: String, ownerUid: String)
+    /** Soft delete: hides the row and queues the delete for the next sync. A non-null [ownerUid] is stamped on it. */
+    suspend fun markDeleted(id: String, now: Long, ownerUid: String?)
     /**
-     * A different account signed in: forget the old one's links. Every live spot stays (unlinked,
-     * not pending); soft-deleted rows, whose deletes belonged to the old account, are purged.
+     * The account changed to [newUid]: remove every spot that belongs to another account. That is
+     * each row whose ownerUid is set and is not [newUid], plus, when [includeLinked] (the links
+     * belonged to another account), every row with a cloudId. Soft-deleted rows included.
+     * Rows with no cloudId and no ownerUid (saved while signed out) stay.
      */
-    suspend fun detachAll()
+    suspend fun removeAccountSpots(newUid: String, includeLinked: Boolean)
 }
 
 /**

@@ -13,10 +13,14 @@ fun SavedLocation.toLocalSpot(): LocalSpot = LocalSpot(
     isDeleted = isDeleted, pendingSync = pendingSync, origin = originOf(origin)
 )
 
-/** isActive is local-only state, so the caller says what it should be. */
-fun LocalSpot.toSavedLocation(isActive: Boolean): SavedLocation = SavedLocation(
+/**
+ * isActive is local-only state, and ownerUid is the account the row belongs to (the merge does
+ * not carry it), so the caller says what each should be.
+ */
+fun LocalSpot.toSavedLocation(isActive: Boolean, ownerUid: String?): SavedLocation = SavedLocation(
     id = id, name = name, latitude = latitude, longitude = longitude,
     createdAt = createdAt, isActive = isActive,
     cloudId = cloudId, lastModifiedAt = lastModifiedAt,
-    isDeleted = isDeleted, pendingSync = pendingSync, origin = origin.name
+    isDeleted = isDeleted, pendingSync = pendingSync, origin = origin.name,
+    ownerUid = ownerUid
 )

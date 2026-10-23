@@ -63,8 +63,12 @@ struct ContentView: View {
                 appState.activeOverrideCoordinate = active.coordinate
                 appState.activeOverrideName = active.name
             } else {
+                // The active spot is gone (e.g. it belonged to another account and left on a
+                // sign-in): fall back to "Use my location" and redraw from GPS.
+                let hadOverride = appState.activeOverrideCoordinate != nil
                 appState.activeOverrideCoordinate = nil
                 appState.activeOverrideName = nil
+                if hadOverride { Task { await appState.refresh() } }
             }
         }
     }
