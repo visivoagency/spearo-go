@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.spearotracker.spearogo.services.AppDatabase
 import com.spearotracker.spearogo.services.LocationDao
+import com.spearotracker.spearogo.services.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,7 +23,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "spearogo.db"
-        ).build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 
     @Provides

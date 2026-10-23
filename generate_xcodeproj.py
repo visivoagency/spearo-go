@@ -68,6 +68,7 @@ SOURCES = [
     # Sync
     ("SpotMerge.swift",        "Sync/SpotMerge.swift",            False),
     ("SpotCodec.swift",        "Sync/SpotCodec.swift",            False),
+    ("SpotMapping.swift",      "Sync/SpotMapping.swift",          False),
     # Utils
     ("Constants.swift",        "Utils/Constants.swift",           False),
     ("Brand.swift",            "Utils/Brand.swift",               False),

@@ -23,6 +23,7 @@ android {
         // Google Play requires Wear OS apps to target API 35+ from 2026-08-31.
         // (Handheld apps need 36; Wear OS and Automotive are carved out at 35.)
         targetSdk = 35
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appLabel"] = "@string/app_name"
         versionCode = 16
         versionName = "2.1.1"
@@ -32,6 +33,10 @@ android {
     sourceSets {
         getByName("test") {
             resources.srcDir("../../fixtures")
+        }
+        // Room's exported schemas, so MigrationTestHelper can open the old versions.
+        getByName("androidTest") {
+            assets.srcDir("$projectDir/schemas")
         }
     }
 
@@ -87,6 +92,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -161,5 +170,10 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     testImplementation("junit:junit:4.13.2")
+
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 
 }

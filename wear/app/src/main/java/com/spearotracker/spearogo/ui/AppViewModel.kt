@@ -285,7 +285,7 @@ class AppViewModel @Inject constructor(
 
     fun deleteLocation(location: SavedLocation) {
         viewModelScope.launch {
-            locationDao.delete(location)
+            locationDao.markDeleted(location.id, System.currentTimeMillis())
         }
     }
 

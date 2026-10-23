@@ -9,7 +9,8 @@ struct LocationsView: View {
     @Environment(AppState.self)  private var appState
     @Environment(\.dismiss)      private var dismiss
 
-    @Query(sort: \SavedLocation.createdAt, order: .reverse)
+    @Query(filter: #Predicate<SavedLocation> { !$0.isDeleted },
+           sort: \SavedLocation.createdAt, order: .reverse)
     private var locations: [SavedLocation]
 
     @State private var showingAddSheet = false
@@ -139,7 +140,14 @@ struct LocationsView: View {
     }
 
     private func delete(at offsets: IndexSet) {
-        for i in offsets { modelContext.delete(locations[i]) }
+        // Soft delete: the row waits for the account to hear about it.
+        for i in offsets {
+            let loc = locations[i]
+            loc.isDeleted = true
+            loc.pendingSync = true
+            loc.lastModifiedAt = .now
+            loc.isActive = false
+        }
         try? modelContext.save()
     }
 }

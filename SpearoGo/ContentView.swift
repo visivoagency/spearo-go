@@ -3,19 +3,24 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \SavedLocation.createdAt, order: .reverse)
+    @Query(filter: #Predicate<SavedLocation> { !$0.isDeleted },
+           sort: \SavedLocation.createdAt, order: .reverse)
     private var savedLocations: [SavedLocation]
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var appState = AppState()
 
     var body: some View {
-        if hasCompletedOnboarding {
-            mainContent
-        } else {
-            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-                .environment(appState)
+        Group {
+            if hasCompletedOnboarding {
+                mainContent
+            } else {
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                    .environment(appState)
+            }
         }
+        // Spots saved before the account-sync model get their creation time as last-modified.
+        .task { backfillLastModified(context: modelContext) }
     }
 
     private var mainContent: some View {
