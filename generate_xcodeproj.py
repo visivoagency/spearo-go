@@ -65,6 +65,8 @@ SOURCES = [
     ("LocationService.swift",  "Services/LocationService.swift",  False),
     ("ScoreService.swift",     "Services/ScoreService.swift",     False),
     ("CacheService.swift",     "Services/CacheService.swift",     False),
+    # Sync
+    ("SpotMerge.swift",        "Sync/SpotMerge.swift",            False),
     # Utils
     ("Constants.swift",        "Utils/Constants.swift",           False),
     ("Brand.swift",            "Utils/Brand.swift",               False),
@@ -140,6 +142,7 @@ VIEWS_GRP    = uid()
 MODELS_GRP   = uid()
 SERVICES_GRP = uid()
 UTILS_GRP    = uid()
+SYNC_GRP     = uid()
 WIDGET_GRP   = uid()
 IOS_STUB_GRP = uid()
 
@@ -247,6 +250,7 @@ def pbxproj():
     models_files = [f for f in files if f["path"].startswith("Models/")]
     svc_files    = [f for f in files if f["path"].startswith("Services/")]
     util_files   = [f for f in files if f["path"].startswith("Utils/")]
+    sync_files   = [f for f in files if f["path"].startswith("Sync/")]
     widget_files = [f for f in files if f["path"].startswith("Widget/")]
 
     a("/* Begin PBXGroup section */")
@@ -272,6 +276,7 @@ def pbxproj():
     a(f"            {MODELS_GRP} /* Models */,")
     a(f"            {SERVICES_GRP} /* Services */,")
     a(f"            {UTILS_GRP} /* Utils */,")
+    a(f"            {SYNC_GRP} /* Sync */,")
     a(f"            {WIDGET_GRP} /* Widget */,")
     a("        );")
     a("        path = SpearoGo;")
@@ -307,6 +312,7 @@ def pbxproj():
         (MODELS_GRP,   "Models",   models_files),
         (SERVICES_GRP, "Services", svc_files),
         (UTILS_GRP,    "Utils",    util_files),
+        (SYNC_GRP,     "Sync",     sync_files),
         (WIDGET_GRP,   "Widget",   widget_files),
     ]:
         a(f"    {grp_uuid} /* {grp_name} */ = {{")

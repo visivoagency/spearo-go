@@ -28,6 +28,13 @@ android {
         versionName = "2.1.1"
     }
 
+    // Shared spot-sync fixtures live at the repo root so Swift and Kotlin read the same file.
+    sourceSets {
+        getByName("test") {
+            resources.srcDir("../../fixtures")
+        }
+    }
+
     signingConfigs {
         create("release") {
             storeFile = file(localProps.getProperty("RELEASE_STORE_FILE", "release.keystore"))
