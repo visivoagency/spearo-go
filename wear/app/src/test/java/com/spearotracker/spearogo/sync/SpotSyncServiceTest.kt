@@ -110,7 +110,7 @@ class SpotSyncServiceTest {
         )
         val firestore = FirestoreClient(http, base, mapOf("X-Android-Package" to "com.example.go"))
         var n = 0
-        return SpotSyncService(auth, firestore, dao, marker, transactor = dao, clock = { now }, newId = { "new-${n++}" }, log = {})
+        return SpotSyncService(auth, firestore, dao, marker, transactor = dao, clock = { now }, newId = { "new-${n++}" }, log = {}, debugLog = {})
     }
 
     private fun doc(path: String, name: String, lat: Double, lon: Double, modified: String) = JsonObject().apply {
@@ -308,6 +308,29 @@ class SpotSyncServiceTest {
         now += 24 * 60 * 60_000L
         svc.sync()
         assertEquals(2, markerPatches().size)
+    }
+
+    /** I2: users/{uid} doesn't exist yet (404 / FAILED_PRECONDITION): skip quietly, retry next sync. */
+    @Test
+    fun markerOnMissingProfileIsSkippedAndRetried() = runBlocking {
+        signedIn()
+        markerCode = 404
+        val svc = service(FakeSpotStore())
+        svc.sync()
+        assertEquals(SyncState.Synced(now), svc.state.value)
+        assertNull(marker.at)
+        assertEquals(listOf("true"), markerPatches().single().requestUrl!!.queryParameterValues("currentDocument.exists"))
+
+        markerCode = 400   // FAILED_PRECONDITION over REST
+        now += 60_000L
+        svc.sync()
+        assertEquals(SyncState.Synced(now), svc.state.value)
+        assertNull(marker.at)
+        assertEquals(2, markerPatches().size)       // retried, not written off for 24 h
+
+        markerCode = 200
+        svc.sync()
+        assertEquals(now, marker.at)
     }
 
     @Test

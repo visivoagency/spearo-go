@@ -79,20 +79,30 @@ func runFirestore() -> Never {
         return sent.isEqual(to: fields) ? nil : "fields \(sent)"
     }))
 
-    cases.append(("markerPatchShape", {
+    // Mirrors markerPatchOnlyUpdatesAnExistingDoc: the marker must never create users/{uid}.
+    cases.append(("markerPatchOnlyUpdatesAnExistingDoc", {
         StubProtocol.reset { _, _ in .http(200, "{}") }
         do {
-            try await client.patch(path: "users/U1", fields: FirestoreClient.markerFields(nowIso: "2026-10-23T12:00:00Z"),
-                                   mask: [FirestoreClient.markerPath], token: "T")
+            try await client.patchMarker(uid: "U1", nowIso: "2026-10-23T12:00:00Z", token: "T")
         } catch { return "threw \(error)" }
         guard let (req, body) = StubProtocol.lock.withLock({ StubProtocol.requests.first }) else { return "no request" }
+        if req.httpMethod != "PATCH" { return "method" }
         if !req.url!.path.hasSuffix("/documents/users/U1") { return "path \(req.url!.path)" }
         if query(req, "updateMask.fieldPaths") != ["apps.go.last_seen_at"] { return "mask" }
+        if query(req, "currentDocument.exists") != ["true"] { return "precondition \(query(req, "currentDocument.exists"))" }
         let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any]
         let apps = (json?["fields"] as? [String: Any])?["apps"] as? [String: Any]
         let go = ((apps?["mapValue"] as? [String: Any])?["fields"] as? [String: Any])?["go"] as? [String: Any]
         let seen = ((go?["mapValue"] as? [String: Any])?["fields"] as? [String: Any])?["last_seen_at"] as? [String: Any]
         return seen?["timestampValue"] as? String == "2026-10-23T12:00:00Z" ? nil : "body \(String(describing: json))"
+    }))
+
+    cases.append(("spotPatchHasNoExistsPrecondition", {
+        StubProtocol.reset { _, _ in .http(200, "{}") }
+        do { try await client.patch(path: "users/U1/spots/D1", fields: [:], mask: ["name"], token: "T") }
+        catch { return "threw \(error)" }
+        guard let (req, _) = StubProtocol.lock.withLock({ StubProtocol.requests.first }) else { return "no request" }
+        return query(req, "currentDocument.exists").isEmpty ? nil : "precondition sent"
     }))
 
     cases.append(("httpErrorThrows", {

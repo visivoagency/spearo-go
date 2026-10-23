@@ -74,7 +74,8 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  *     without a cloudId is linked to the doc it created (else the doc would be orphaned and
  *     come back as a new spot).
  *  6. Failed pushes stay pending; state Failed("Couldn't upload N spots").
- * The account marker is written on sign-in and at most once per 24 h after that.
+ * The account marker is written on sign-in and at most once per 24 h after that, only ever onto an
+ * existing `users/{uid}` (never creating it); if there is none yet it is retried on the next sync.
  *
  * Links are scoped to an account ([SyncMarkerStore.linkedUid]). Sign-out (planned, or a session a
  * refresh 400 cleared) keeps every row and cloudId, so the same account signing back in finds its
@@ -93,6 +94,7 @@ class SpotSyncService(
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val log: (String) -> Unit = { Log.w(TAG, it) },
+    private val debugLog: (String) -> Unit = { Log.d(TAG, it) },
 ) {
     private val mutex = Mutex()
     private val _state = MutableStateFlow<SyncState>(
@@ -329,11 +331,13 @@ class SpotSyncService(
     private suspend fun writeMarker(uid: String, token: String) {
         val at = clock()
         try {
-            val iso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(at))
-            firestore.patch("users/$uid", FirestoreClient.markerFields(iso), listOf(FirestoreClient.MARKER_PATH), token)
+            firestore.patchMarker(uid, DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(at)), token)
             markers.setLastWrittenAt(at)
         } catch (e: FirestoreException) {
-            log("marker failed (${e.message})")
+            // 404 / 400 (FAILED_PRECONDITION): no users/{uid} yet; the website creates it. Not an
+            // error. Either way the time isn't recorded, so the next sync tries again.
+            if (e.code == 404 || e.code == 400) debugLog("marker skipped (HTTP ${e.code})")
+            else log("marker failed (${e.message})")
         }
     }
 

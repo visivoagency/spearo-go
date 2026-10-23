@@ -71,11 +71,21 @@ final class FirestoreClient: @unchecked Sendable {
     }
 
     /// PATCH `{base}/{path}` with `fields`; with a `mask`, only those field paths are written.
-    func patch(path: String, fields: [String: Any], mask: [String]?, token: String) async throws {
-        let items = (mask ?? []).map { URLQueryItem(name: "updateMask.fieldPaths", value: $0) }
+    /// `mustExist` adds `currentDocument.exists=true`: the write fails (404 / FAILED_PRECONDITION)
+    /// instead of creating the doc.
+    func patch(path: String, fields: [String: Any], mask: [String]?, token: String, mustExist: Bool = false) async throws {
+        var items = (mask ?? []).map { URLQueryItem(name: "updateMask.fieldPaths", value: $0) }
+        if mustExist { items.append(URLQueryItem(name: "currentDocument.exists", value: "true")) }
         var request = makeRequest(url: docURL(path, query: items), method: "PATCH", token: token)
         request.httpBody = try? JSONSerialization.data(withJSONObject: ["fields": fields])
         _ = try await send(request, parse: false)
+    }
+
+    /// The "Go connected" marker. Only ever UPDATES `users/{uid}`: the website creates that doc with
+    /// the profile fields its rules require, and a marker-only doc would block that creation.
+    func patchMarker(uid: String, nowIso: String, token: String) async throws {
+        try await patch(path: "users/\(uid)", fields: Self.markerFields(nowIso: nowIso), mask: [Self.markerPath],
+                        token: token, mustExist: true)
     }
 
     /// `fields` for PATCH users/{uid}?updateMask.fieldPaths=`markerPath`.

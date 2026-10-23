@@ -98,6 +98,27 @@ class FirestoreClientTest {
         assertEquals("2026-10-23T12:00:00Z", ts)
     }
 
+    /** The marker must never create users/{uid}: the website owns that doc's creation. */
+    @Test
+    fun markerPatchOnlyUpdatesAnExistingDoc() = runBlocking {
+        server.enqueue(json(200, "{}"))
+        client().patchMarker("U1", "2026-10-23T12:00:00Z", "T")
+        val req = server.takeRequest()
+        assertEquals("PATCH", req.method)
+        assertTrue(req.requestUrl!!.encodedPath.endsWith("/documents/users/U1"))
+        assertEquals(listOf("apps.go.last_seen_at"), req.requestUrl!!.queryParameterValues("updateMask.fieldPaths"))
+        assertEquals(listOf("true"), req.requestUrl!!.queryParameterValues("currentDocument.exists"))
+        val sent = JsonParser.parseString(req.body.readUtf8()).asJsonObject.getAsJsonObject("fields")
+        assertEquals(FirestoreClient.markerFields("2026-10-23T12:00:00Z"), sent)
+    }
+
+    @Test
+    fun spotPatchHasNoExistsPrecondition() = runBlocking {
+        server.enqueue(json(200, "{}"))
+        client().patch("users/U1/spots/D1", JsonObject(), listOf("name"), "T")
+        assertTrue(server.takeRequest().requestUrl!!.queryParameterValues("currentDocument.exists").isEmpty())
+    }
+
     @Test
     fun httpErrorThrows() = runBlocking {
         server.enqueue(json(403, """{"error":{"code":403}}"""))

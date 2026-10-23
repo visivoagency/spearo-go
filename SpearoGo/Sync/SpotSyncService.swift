@@ -26,7 +26,8 @@ import SwiftData
 //     A local store error (fetch or save) is .failed("Sync failed. Try again."), never an
 //     empty snapshot.
 //  6. Failed pushes stay pending; state .failed("Couldn't upload N spots").
-// The account marker is written on sign-in and at most once per 24 h after that.
+// The account marker is written on sign-in and at most once per 24 h after that, only ever onto
+// an existing `users/{uid}` (never creating it); if there is none yet it is retried next sync.
 //
 // Links are scoped to an account (UserDefaults "sync.linkedUid"). Sign-out (planned, or a
 // session a refresh 400 cleared) keeps every row and cloudId, so the same account signing back
@@ -380,9 +381,14 @@ actor SpotSyncService {
     private func writeMarker(uid: String, token: String) async {
         let at = clock()
         do {
-            try await firestore.patch(path: "users/\(uid)", fields: FirestoreClient.markerFields(nowIso: SpotCodec.iso(at)),
-                                      mask: [FirestoreClient.markerPath], token: token)
+            try await firestore.patchMarker(uid: uid, nowIso: SpotCodec.iso(at), token: token)
             defaults.set(at.timeIntervalSince1970, forKey: Self.markerKey)
+        } catch let e as FirestoreError where e.code == 404 || e.code == 400 {
+            // No users/{uid} yet (FAILED_PRECONDITION); the website creates it. Not an error, and
+            // the time isn't recorded, so the next sync tries again.
+            #if DEBUG
+            print("[SpotSyncService] marker skipped (HTTP \(e.code ?? 0))")
+            #endif
         } catch {
             print("[SpotSyncService] marker failed (\(error))")
         }

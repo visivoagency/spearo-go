@@ -70,14 +70,26 @@ class FirestoreClient(
         }
     }
 
-    /** PATCH `{base}/{path}` with `fields`; with a [mask], only those field paths are written. */
-    suspend fun patch(path: String, fields: JsonObject, mask: List<String>?, token: String) {
+    /**
+     * PATCH `{base}/{path}` with `fields`; with a [mask], only those field paths are written.
+     * [mustExist] adds `currentDocument.exists=true`: the write fails (404 / FAILED_PRECONDITION)
+     * instead of creating the doc.
+     */
+    suspend fun patch(path: String, fields: JsonObject, mask: List<String>?, token: String, mustExist: Boolean = false) {
         val url = docUrl(path).newBuilder()
             .apply { mask?.forEach { addQueryParameter("updateMask.fieldPaths", it) } }
+            .apply { if (mustExist) addQueryParameter("currentDocument.exists", "true") }
             .build()
         val body = JsonObject().apply { add("fields", fields) }
         send(request(url, token).patch(body.toString().toRequestBody(JSON)).build())
     }
+
+    /**
+     * The "Go connected" marker. Only ever UPDATES `users/{uid}`: the website creates that doc with
+     * the profile fields its rules require, and a marker-only doc would block that creation.
+     */
+    suspend fun patchMarker(uid: String, nowIso: String, token: String) =
+        patch("users/$uid", markerFields(nowIso), listOf(MARKER_PATH), token, mustExist = true)
 
     private fun docUrl(path: String): HttpUrl = baseUrl.toHttpUrl().newBuilder()
         .apply { path.split('/').filter { it.isNotEmpty() }.forEach { addPathSegment(it) } }
