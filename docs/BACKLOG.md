@@ -9,6 +9,36 @@ answers, then take signed-in screenshots. Also open: the $0.99 price, the More S
 apps entry, and items 1, 2, 3 and 5 of `docs/HANDOFF-from-website-2026-10-23.md`.
 Confirm with the owner whether the hashed IP needs its own privacy-label type.
 
+Device checks before release. Each one is something the tests could not reach:
+1. A release AAB with `WEB_CLIENT_SECRET` set. The first REST call is not a 403 `*_APP_BLOCKED`, so the API keys allow the Play signing SHA-1.
+2. Wear sign-in through the phone, for both the Play id and `.sideload`. The Firebase Auth record has no name or photo.
+3. Sign in with Apple: a new account, an existing Apnea account (same uid), a hidden-email account, and a Google-created email signing in with Apple (the account-exists message).
+4. First sign-in with spots already on the watch. "Lagos" against an account "lagos " about 60 m away links instead of duplicating. Spots show at spearo.pro within seconds.
+5. Pulls from the website, from Tracker (camelCase) and from Vision. Vision rows say "Saved in Vision" and can't be deleted while signed in.
+6. Deletes both ways. A Tracker spot deleted on the watch disappears in Tracker, and a Tracker restore still returns everything.
+7. Airplane mode: save and delete, reconnect, both sync.
+8. A token older than an hour refreshes silently. A revoked token returns to signed out with the spots still on the watch.
+9. Sign out and back into the same account: no duplicates. Sign into a second account: spots are copied and none are lost.
+10. A brand-new diver: `users/{uid}` and the website profile come out right. Go never creates that doc.
+11. Upgrade installs over real data: Wear from 2.1.1 and watchOS from 1.1.0. The order and the active spot survive, with no 1970 timestamps. Also a Wear backup restored onto a second watch.
+12. Signed out, a network capture shows only Open-Meteo, geocoding and `tidesGo`.
+13. Every sync-row state at Wear Text size Largest and at the largest watchOS Dynamic Type.
+14. In the Firestore console, a Go doc has exactly the 12 snake_case keys, `is_private: true`, and no `isDeleted` or `lastModifiedAt`.
+
+### Account sync: small follow-ups from review (added 2026-10-23)
+None of these blocks the release.
+- The shared merge fixtures check ids, not field contents. Add per-row field checks so the Swift field mapping is covered too.
+- The website fixture should use `timestampValue` with microseconds, which is what the website actually writes.
+- The Swift harness checks encoding less strictly than the Kotlin test: it doesn't check value types on soft deletes.
+- Kotlin `Instant.parse` rejects `+00:00` offsets on Android. Firestore and the website always write `Z`.
+- Swift has no test for the mapping, the soft delete or `detachAll`. Only the harness and the device checks cover them.
+- On Kotlin, a cancelled caller can clear the in-flight refresh, which costs one extra request. Clear it with `invokeOnCompletion` instead.
+- If detaching fails at sign-in, the row shows "Sync failed" while actually signed out, until the next tap.
+- On Swift, Vision rows can stay undeletable for a moment after a session expires, because the swipe follows the sync state.
+- The marker treats any HTTP 400 as "no profile yet", which would also hide a bad API key. The spot calls would still show it.
+- The unused androidTest dependency `kotlinx-coroutines-test`.
+- `generate_xcodeproj.py` makes new random UUIDs on every run, so each regeneration rewrites the whole pbxproj.
+
 ### Wear crashes at launch on the API 34 emulator image with targetSdk 35
 `androidx.wear.compose:compose-foundation:1.4.1` reads `Settings.Global`
 `reduce_motion`, which the API 34 settings provider refuses to apps targeting

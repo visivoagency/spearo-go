@@ -24,16 +24,21 @@ Optional sign-in and spot sync, on both platforms, in lockstep.
 
 ### Verified
 
-- Kotlin unit tests and the Wear build.
-- The Swift harness, all modes, on the shared fixtures. The watch target builds.
+- 90 Kotlin unit tests and the Wear debug build.
+- The Room v1→v2 migration on the Wear emulator (4/4 instrumented tests). An existing spot survives and stays active.
+- The watchOS upgrade on the simulator. A spot from 1.1.0 survives and stays active.
+- The Swift harness on the shared fixtures, every mode: merge 39, codec 9, auth 15, firestore 8. The watch target builds.
+- The signed-out sync rows on the Wear emulator at font scale 1.0 and 1.24 ("Largest"). Nothing clips.
+- Each piece had its own review, then the whole branch had a final review. One Critical and four Important findings came out of the final review; all are fixed.
 
 ### NOT RUN
 
 - Live sign-in, either platform. It needs the console work below.
 - The live end-to-end: sign in, save a spot, see it at spearo.pro, and back.
 - Signed-in screenshots.
-- Swift at the largest Dynamic Type.
-- The Wear emulator at Text size, Largest, with the new sign-in rows.
+- Swift at the largest Dynamic Type (`simctl` can't set it on a watch simulator).
+
+The full device checklist is in `docs/BACKLOG.md` under "Account sync".
 
 ### Console prerequisites
 

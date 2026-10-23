@@ -42,3 +42,16 @@ local.properties
 
 # Editor settings
 .vscode/
+.env
+.env.*
+key.properties
+
+# Keys, certificates and service accounts
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+*.cer
+id_rsa
+*-adminsdk-*.json
+service-account*.json
