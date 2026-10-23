@@ -511,6 +511,31 @@ class SpotSyncServiceTest {
         assertEquals(0, server.requestCount)
     }
 
+    /** A linked doc that exists but can't be decoded (no latitude) is not "gone": the row is left alone. */
+    @Test
+    fun undecodableLinkedDocLeavesRowUntouched() = runBlocking {
+        signedIn()
+        marker.linked = "U1"
+        val clean = SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1,
+            cloudId = "W1", origin = "ACCOUNT")
+        val pending = SavedLocation(id = "B", name = "Wreck", latitude = 3.0, longitude = 4.0, createdAt = 2,
+            cloudId = "W2", pendingSync = true, lastModifiedAt = now, origin = "ACCOUNT")
+        val dao = FakeSpotStore(clean, pending)
+        fun broken(id: String) = JsonObject().apply {
+            addProperty("name", "projects/p/databases/(default)/documents/users/U1/spots/$id")
+            add("fields", JsonParser.parseString("""{"name":{"stringValue":"x"},"longitude":{"doubleValue":2.0}}""").asJsonObject)
+        }
+        accountDocs = listOf(broken("W1"), broken("W2"))
+
+        val svc = service(dao)
+        svc.sync()
+
+        assertEquals(clean, dao.rows["A"])            // not deleted by rule 2
+        assertEquals(pending, dao.rows["B"])          // not pushed over the doc either
+        assertTrue(spotPatches().isEmpty())
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
     @Test
     fun deleteDuringPushIsNotUndone() = runBlocking {
         signedIn()

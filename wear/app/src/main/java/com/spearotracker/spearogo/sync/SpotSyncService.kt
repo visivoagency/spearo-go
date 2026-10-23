@@ -63,7 +63,8 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  *  2. Fetch Vision's top-level `spots` FIRST, then `users/{uid}/spots` (first docId wins in
  *     the merge, so a Vision-owned doc stays read-only). Either fetch fails -> Failed, and
  *     NOTHING is applied: a partial remote list would make merge rule 2 delete spots.
- *  3. [planSync]. A pushUpsert aimed at an existing camelCase ACCOUNT doc is not pushed
+ *  3. [planSync], minus rows linked to a fetched doc that doesn't decode (left untouched).
+ *     A pushUpsert aimed at an existing camelCase ACCOUNT doc is not pushed
  *     (see [withoutCamelCasePushes]); the row follows the remote instead.
  *  4. Push upserts, then soft deletes.
  *  5. Apply locally: upsertLocal (keeping each row's isActive), deleteLocal, then the
@@ -202,19 +203,27 @@ class SpotSyncService(
         }
 
         // 2. Both collections, complete, or nothing.
+        val fetchedIds = HashSet<String>()
         val remote = try {
-            val vision = firestore.queryVisionSpots(uid, token).mapNotNull { SpotCodec.decode(it, SpotOrigin.VISION) }
-            val account = firestore.listUserSpots(uid, token).mapNotNull { SpotCodec.decode(it, SpotOrigin.ACCOUNT) }
-            vision + account
+            val visionDocs = firestore.queryVisionSpots(uid, token)
+            val accountDocs = firestore.listUserSpots(uid, token)
+            (visionDocs + accountDocs).forEach { d -> SpotCodec.docId(d)?.let(fetchedIds::add) }
+            visionDocs.mapNotNull { SpotCodec.decode(it, SpotOrigin.VISION) } +
+                accountDocs.mapNotNull { SpotCodec.decode(it, SpotOrigin.ACCOUNT) }
         } catch (e: FirestoreException) {
             log("fetch failed (${e.message}); applied nothing")
             _state.value = SyncState.Failed(UNREACHABLE)
             return
         }
 
-        // 3.
+        // 3. A row linked to a doc that exists but doesn't decode (no name/latitude/longitude) is
+        // left out of the merge entirely: it isn't gone (rule 2 would delete it), and we must not
+        // push over a doc we can't read.
+        val undecodable = fetchedIds - remote.map { it.docId }.toSet()
+        if (undecodable.isNotEmpty()) log("${undecodable.size} spot docs unreadable; their spots left as they are")
         val snapshot = store.getAllIncludingDeleted()
-        val plan = withoutCamelCasePushes(planSync(snapshot.map { it.toLocalSpot() }, remote, newId), remote)
+        val mergeable = snapshot.filter { it.cloudId == null || it.cloudId !in undecodable }
+        val plan = withoutCamelCasePushes(planSync(mergeable.map { it.toLocalSpot() }, remote, newId), remote)
         val nowIso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(clock()))
 
         // 4. Pushes: upserts, then soft deletes.

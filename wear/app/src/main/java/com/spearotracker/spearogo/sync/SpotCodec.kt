@@ -35,10 +35,14 @@ object SpotCodec {
         return try { Instant.parse(raw).toEpochMilli() } catch (e: Exception) { null }
     }
 
+    /** The document's id (last segment of its resource name), whether or not it decodes. */
+    fun docId(document: JsonObject): String? =
+        document.get("name")?.takeIf { it.isJsonPrimitive }?.asString
+            ?.substringAfterLast('/')?.takeIf { it.isNotEmpty() }
+
     /** null when name, latitude or longitude is absent — never defaulted. */
     fun decode(document: JsonObject, origin: SpotOrigin): RemoteSpot? {
-        val docId = document.get("name")?.takeIf { it.isJsonPrimitive }?.asString
-            ?.substringAfterLast('/')?.takeIf { it.isNotEmpty() } ?: return null
+        val docId = docId(document) ?: return null
         val name = document.string("name") ?: return null
         val lat = document.number("latitude") ?: return null
         val lon = document.number("longitude") ?: return null

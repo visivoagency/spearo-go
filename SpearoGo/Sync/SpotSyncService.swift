@@ -13,7 +13,8 @@ import SwiftData
 //  2. Fetch Vision's top-level `spots` FIRST, then `users/{uid}/spots` (first docId
 //     wins in the merge, so a Vision-owned doc stays read-only). Either fetch fails ->
 //     .failed and NOTHING is applied: a partial remote list would make rule 2 delete spots.
-//  3. planSync. A pushUpsert aimed at an existing camelCase ACCOUNT doc is not pushed
+//  3. planSync, minus rows linked to a fetched doc that doesn't decode (left untouched).
+//     A pushUpsert aimed at an existing camelCase ACCOUNT doc is not pushed
 //     (see withoutCamelCasePushes); the row follows the remote instead.
 //  4. Push upserts, then soft deletes.
 //  5. Apply locally: upsertLocal (keeping each row's isActive), deleteLocal, then the
@@ -189,12 +190,13 @@ actor SpotSyncService {
 
         // 2. Both collections, complete, or nothing. Vision first.
         let remote: [RemoteSpot]
+        var fetchedIds = Set<String>()
         do {
-            let vision = try await firestore.queryVisionSpots(uid: uid, token: token)
-                .compactMap { SpotCodec.decode($0, origin: .vision) }
-            let account = try await firestore.listUserSpots(uid: uid, token: token)
-                .compactMap { SpotCodec.decode($0, origin: .account) }
-            remote = vision + account
+            let visionDocs = try await firestore.queryVisionSpots(uid: uid, token: token)
+            let accountDocs = try await firestore.listUserSpots(uid: uid, token: token)
+            for d in visionDocs + accountDocs { if let id = SpotCodec.docId(d) { fetchedIds.insert(id) } }
+            remote = visionDocs.compactMap { SpotCodec.decode($0, origin: .vision) }
+                + accountDocs.compactMap { SpotCodec.decode($0, origin: .account) }
         } catch {
             print("[SpotSyncService] fetch failed (\(error)); applied nothing")
             await setState(.failed(Self.unreachable))
@@ -212,7 +214,13 @@ actor SpotSyncService {
             await setState(.failed(Self.storeFailed))
             return
         }
-        let plan = Self.withoutCamelCasePushes(planSync(local: snapshot, remote: remote, newId: newId), remote: remote)
+        // A row linked to a doc that exists but doesn't decode (no name/latitude/longitude) is
+        // left out of the merge entirely: it isn't gone (rule 2 would delete it), and we must not
+        // push over a doc we can't read.
+        let undecodable = fetchedIds.subtracting(remote.map(\.docId))
+        if !undecodable.isEmpty { print("[SpotSyncService] \(undecodable.count) spot docs unreadable; their spots left as they are") }
+        let mergeable = snapshot.filter { $0.cloudId.map { !undecodable.contains($0) } ?? true }
+        let plan = Self.withoutCamelCasePushes(planSync(local: mergeable, remote: remote, newId: newId), remote: remote)
         let nowIso = SpotCodec.iso(clock())
 
         // 4. Pushes: upserts, then soft deletes.

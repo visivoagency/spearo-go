@@ -42,11 +42,17 @@ enum SpotCodec {
         return parseInstant(raw)
     }
 
+    /// The document's id (last segment of its resource name), whether or not it decodes.
+    static func docId(_ document: [String: Any]) -> String? {
+        guard let path = document["name"] as? String,
+              let id = path.split(separator: "/", omittingEmptySubsequences: false).last.map(String.init),
+              !id.isEmpty else { return nil }
+        return id
+    }
+
     /// nil when name, latitude or longitude is absent — never defaulted.
     static func decode(_ document: [String: Any], origin: SpotOrigin) -> RemoteSpot? {
-        guard let path = document["name"] as? String,
-              let docId = path.split(separator: "/", omittingEmptySubsequences: false).last.map(String.init),
-              !docId.isEmpty,
+        guard let docId = docId(document),
               let fields = document["fields"] as? [String: Any],
               let name = string(fields, ["name"]),
               let lat = number(fields, ["latitude"]),
