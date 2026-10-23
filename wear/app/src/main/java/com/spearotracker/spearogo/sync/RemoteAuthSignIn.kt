@@ -27,8 +27,8 @@ import kotlin.coroutines.resume
  * 12501 on Wear.
  *
  * Ported from Spearo Apnea's FirestoreSyncClient.signInWithRemoteAuth/exchangeCodeForTokens,
- * minus `prompt=consent` and `access_type=offline` (Firebase issues its own refresh token)
- * and minus all identity logging.
+ * minus `prompt=consent` and `access_type=offline` (Firebase issues its own refresh token),
+ * minus the `profile` scope (Go collects no name or photo) and minus all identity logging.
  */
 class RemoteAuthSignIn(
     private val context: Context,
@@ -149,7 +149,8 @@ class RemoteAuthSignIn(
         const val TAG = "RemoteAuthSignIn"
         const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
         const val GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-        const val SCOPES = "openid email profile"
+        /** No `profile`: Go collects no name or photo (store privacy answers depend on it). */
+        const val SCOPES = "openid email"
         const val PHONE_TIMEOUT_MS = 5 * 60_000L
     }
 }

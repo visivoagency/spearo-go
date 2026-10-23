@@ -121,14 +121,14 @@ What the server keeps:
 Place-name search text is sent to Open-Meteo geocoding to find the place. It is not stored by Go. Covered by "Shared" for location above; no separate Play type.
 
 ### Data NOT collected
-- Name: not collected by Go. **Owner check:** after the first live sign-in, open the Firebase Auth record. If a display name or photo from Google or Apple is stored, Name (and photo) must be declared and this line changed.
+- Name: not collected by Go. Google sign-in asks for `openid email` only (no `profile` scope), and Apple sign-in requests the email scope only, so no name or photo reaches Go.
 - Financial info, health & fitness, messages, photos/videos, audio, files, calendar, contacts
 - App interactions, web browsing, diagnostics, advertising IDs
 
 ### Security practices
 - Data encrypted in transit (HTTPS)
 - No data sold, none used for advertising
-- Signed-in data: the diver can delete a spot on the watch and it is removed from the account. A full account deletion request goes through the Spearo website; the exact page is set in the later legal-links stage (see `docs/HANDOFF-from-website-2026-10-23.md`, item 5).
+- Signed-in data: a spot the diver deletes on the watch is marked deleted in the account and hidden everywhere. Full removal of the data happens through account deletion, which goes through the Spearo website; the exact page is set in the later legal-links stage (see `docs/HANDOFF-from-website-2026-10-23.md`, item 5).
 - Signed out: nothing is stored on a Spearo server except the cache and hash above, which expire.
 
 ### Targeting

@@ -73,8 +73,9 @@ is no longer true.
   linked to the account when signed in.
 - **App Store Connect → App Privacy.** The answers are in
   `docs/APP_STORE_METADATA.md` under "App Privacy". They match
-  `SpearoGo/PrivacyInfo.xcprivacy` (Coarse Location, Precise Location, Email
-  Address, Other User Content). Same data types as Play.
+  `SpearoGo/PrivacyInfo.xcprivacy`, which declares six types: Coarse Location,
+  Precise Location, Email Address, Other User Content, User ID and Device ID
+  (the one-way IP hash). Same data types as Play.
 
 ### ~~3. Set the WorldTides ceiling deliberately~~ — done 2026-09-01
 
