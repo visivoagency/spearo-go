@@ -98,8 +98,9 @@ func planSync(local: [LocalSpot], remote remoteAll: [RemoteSpot], newId: () -> S
     for l in local {
         if let cloudId = l.cloudId {
             guard let r = remoteById[cloudId] else {
-                // Rule 2. VISION is never pushed: it follows the remote.
-                if l.origin == .vision { deleteLocal.append(l.id) }
+                // Rule 2. VISION is never pushed: it follows the remote. A pending delete
+                // whose doc is already gone is done: drop the row, never re-create the doc.
+                if l.origin == .vision || l.isDeleted { deleteLocal.append(l.id) }
                 else if l.pendingSync { pushUpsert.append(l) } else { deleteLocal.append(l.id) }
                 continue
             }

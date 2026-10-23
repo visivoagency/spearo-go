@@ -77,8 +77,9 @@ fun planSync(local: List<LocalSpot>, remoteAll: List<RemoteSpot>, newId: () -> S
         if (cloudId != null) {
             val r = remoteById[cloudId]
             if (r == null) {
-                // Rule 2. VISION is never pushed: it follows the remote.
-                if (l.origin == SpotOrigin.VISION) deleteLocal.add(l.id)
+                // Rule 2. VISION is never pushed: it follows the remote. A pending delete
+                // whose doc is already gone is done: drop the row, never re-create the doc.
+                if (l.origin == SpotOrigin.VISION || l.isDeleted) deleteLocal.add(l.id)
                 else if (l.pendingSync) pushUpsert.add(l) else deleteLocal.add(l.id)
             } else if (l.origin == SpotOrigin.VISION) {
                 // VISION local: never pushed, follows the remote.

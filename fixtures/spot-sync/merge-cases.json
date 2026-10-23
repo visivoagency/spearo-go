@@ -1393,5 +1393,31 @@
    "pushUpsert": [],
    "pushDelete": []
   }
+ },
+ {
+  "name": "pending-delete-remote-gone-dropped",
+  "local": [
+   {
+    "id": "a",
+    "cloudId": "gone",
+    "name": "Spot",
+    "latitude": 37.102,
+    "longitude": -8.673,
+    "createdAt": 1699999999000,
+    "lastModifiedAt": 1700000000000,
+    "isDeleted": true,
+    "pendingSync": true,
+    "origin": "GO"
+   }
+  ],
+  "remote": [],
+  "expect": {
+   "upsertLocal": [],
+   "deleteLocal": [
+    "a"
+   ],
+   "pushUpsert": [],
+   "pushDelete": []
+  }
  }
 ]
