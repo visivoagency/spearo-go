@@ -15,8 +15,9 @@ Optional sign-in and spot sync, on both platforms, in lockstep.
 - Signed out, Go behaves exactly as before.
 - Wear signs in over RemoteAuth (Google, via the phone). Apple Watch signs in with Apple.
 - Sign-in uses REST, not the Firebase SDKs. Spots sync with `users/{uid}/spots`.
-- Go writes snake_case spot docs with `source: "go"`, and `apps.go.last_seen_at`. It reads every convention.
-- Sign-out detaches spots. Deleting on the watch soft-deletes in the account.
+- Go writes snake_case spot docs with `source: "go"`, and `apps.go.last_seen_at` (only onto an existing `users/{uid}`; it never creates that doc). It reads every convention.
+- Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it; nothing is deleted from the watch. Deleting on the watch soft-deletes in the account (signed out, a never-linked spot is simply removed).
+- Google sign-in on Wear asks for `openid email` only, so Go collects no name or photo.
 - Privacy text is fixed in the apps, the Apple privacy manifest and both store docs. It now says what sign-in stores.
 - Versions: Wear 2.2.0 (17), watchOS 1.2.0 (4).
 - Spec and amendments: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`. Plan: `docs/superpowers/plans/2026-10-23-go-account-spot-sync.md`.
@@ -43,9 +44,10 @@ Apple Watch needs P3, P4 and P5.
 
 1. Console setup (`docs/ACCOUNT-SYNC-SETUP.md`).
 2. Live E2E, both platforms. Then signed-in screenshots.
-3. Enter the new Data safety and App Privacy answers in the consoles. Two things for the owner:
+3. Enter the new Data safety and App Privacy answers in the consoles. For the owner:
    - Controller call to confirm: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).
-   - After the first live sign-in, check the Firebase Auth record. If a display name or photo from Google or Apple is stored, declare Name (and photo) on both stores and change the Play "Name not collected" line.
+   - **Controller call to confirm (final review, 23 Oct): links belong to an account.** Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it (as `source: "go"` docs); nothing is deleted from the watch. The alternative, deleting or withholding them, risks losing a diver's spots after an account is recreated or a backup is restored. If you would rather account B not receive A's spots, say so; the switch is `SpotSyncService.linkTo` (Kotlin) and `link(to:)` (Swift).
+   - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (spots copied, none lost).
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
 5. The $0.99 price: the stores charge $0.99, the repo docs still say $2.99.
 6. The More Spearo apps entry.

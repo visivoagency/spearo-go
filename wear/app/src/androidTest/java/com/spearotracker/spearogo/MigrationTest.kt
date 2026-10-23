@@ -83,8 +83,9 @@ class MigrationTest {
         }
     }
 
+    /** detachAll runs when a DIFFERENT account signs in (sign-out keeps links): every live spot stays, unlinked. */
     @Test
-    fun signOutDetachesEverySpot() = runBlocking {
+    fun accountChangeDetachesEverySpot() = runBlocking {
         val room = Room.inMemoryDatabaseBuilder(
             ApplicationProvider.getApplicationContext(), AppDatabase::class.java
         ).build()

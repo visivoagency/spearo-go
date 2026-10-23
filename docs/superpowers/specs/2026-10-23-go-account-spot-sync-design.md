@@ -123,7 +123,16 @@ These change the design above. Where they disagree, this section wins.
   - Go writes `user_id, name, latitude, longitude, is_private, is_deleted, created_at, last_modified_at, last_synced_at, cloud_id, source, sync_status`.
   - A Go doc never contains `isDeleted` or `lastModifiedAt`. Tracker's restore queries on those and hard-casts the results.
   - Reads accept every convention (camelCase, snake_case, Vision's `updatedAt`).
-- **Sign-out detaches spots.** It clears `cloudId` and `pendingSync` on every local spot and purges pending deletes. Signing into a different account later never deletes or uploads the first account's spots.
+- **Links belong to an account** (final-review ruling, 23 Oct; supersedes "sign-out detaches spots"). Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it; nothing is deleted from the watch.
+  - Go persists `linkedUid`, the uid the local cloudIds belong to (Wear: SharedPreferences "sync", backed up with the spots database; Apple Watch: UserDefaults).
+  - Sign-out, planned or a session cleared by a refresh 400, clears the auth store only. Every row and cloudId stays, so signing back into the same account duplicates nothing.
+  - On sign-in, and at the start of every sync, a uid different from `linkedUid` runs `detachAll` first: every live spot is kept and unlinked (then uploaded to the new account as new docs), and the old account's pending deletes are purged. Vision rows then fall away through the merge rules.
+  - If the detach fails, the sign-in fails ("Sync failed. Try again."). Go never syncs with another account's links.
+  - Signed out, deleting a never-linked spot removes it. A linked spot stays soft-deleted and pending until its own account signs in again (pushed), or is purged if a different account signs in. Signed out, Vision spots can be deleted from the watch; Vision still owns them, so they return when that account syncs.
+  - Why: losing a diver's spots (an account deleted and recreated, a backup restore) is worse than copying their own spots into their other account. Controller call; owner to confirm.
+- **The account marker never creates `users/{uid}`.** The PATCH carries `currentDocument.exists=true`; a 404 or FAILED_PRECONDITION is skipped quietly and retried on the next sync.
+- **Google sign-in asks for `openid email` only.** No `profile` scope, so no name or photo is collected.
+- **Merge rule 2:** a pending local delete whose remote doc is gone is dropped locally, never pushed. A local linked to a doc that exists but cannot be decoded is left out of the merge (untouched).
 - **Swift is verified by a harness, not an XCTest target.** The harness runs against the same shared fixtures as the Kotlin tests. Go still has no Swift test target.
 - **A sign-in failure never falls back to a local Apple user ID.**
   - Apnea's `AuthManager` does this. It would write under a uid that is not a Firebase uid.

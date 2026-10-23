@@ -39,8 +39,9 @@
 
 ## Review Focus
 
-1. **Signing out and then into a *different* account** must not delete or upload the first account's spots.
-   - Sign-out clears `cloudId`/`pendingSync` and purges pending deletes. Pinned by `signOutDetachesEverySpot` (Task 4).
+1. **Signing out and then into a *different* account** must not delete anything from the watch. Sign-out keeps spots and their links. Signing into a different account copies the watch's spots into it; nothing is deleted from the watch.
+   - Superseded at the final review (23 Oct): sign-out used to detach. Now `linkedUid` is persisted, sign-out keeps links, and an account change runs `detachAll` before the first sync (the old account's pending deletes are purged, never pushed).
+   - Pinned by `SpotSyncServiceTest` `refresh400ThenOtherAccountKeepsSpots`, `sameAccountReSignInNoDuplicates`, `signOutKeepsSpotsAndLinks`, `syncUnderNewAccountDetachesFirst` and `detachFailureFailsSignIn`; the DAO by `accountChangeDetachesEverySpot` (Task 4).
 2. **A Tracker or Vision camelCase doc in `users/{uid}/spots`** (`isDeleted`, Timestamp `createdAt`, no `last_modified_at`) must parse.
    - Pinned by the fixtures `vision-copy-camel.json` and `tracker-camel-deleted.json` (Task 3).
 3. **First sign-in with a watch spot already in the account** (same name, ≤100 m) must link it, not duplicate it.
@@ -80,7 +81,7 @@ Collect these into `docs/ACCOUNT-SYNC-SETUP.md` in Task 1. Wear sign-in won't wo
 - [ ] **Step 1: Amend the spec** with an "Amendments (plan, 23 Oct)" section:
   - REST on both platforms instead of the Firebase SDKs (why: lockstep, no SPM in the generator, and the Firestore SDK doesn't support watchOS anyway).
   - Snake_case writes and the forbidden keys (from Global Constraints).
-  - Sign-out detaches spots (Review Focus 1).
+  - Links belong to an account: sign-out keeps them, an account change detaches (Review Focus 1).
   - Swift is verified by a harness against the shared fixtures, not an XCTest target.
   - A sign-in failure never falls back to a local Apple user ID. Apnea's `AuthManager` does that, and it would write under a uid that isn't a Firebase uid. Go stays signed out with an error instead.
 - [ ] **Step 2: Write `docs/ACCOUNT-SYNC-SETUP.md`** with P1–P5 verbatim, plus how to check each (e.g. P1: start a Wear sign-in, and `redirect_uri_mismatch` means it's missing).
@@ -254,7 +255,7 @@ Swift uses the same names, with `lastModifiedAt: Date`.
 - `fun SavedLocation.toLocalSpot(): LocalSpot`
 - `fun LocalSpot.toSavedLocation(isActive: Boolean): SavedLocation`
 
-- [ ] **Step 1:** Write `MigrationTest.migrate1To2KeepsSpots`: create a v1 DB with the row `("a", "Lagos", 37.10, -8.67, 1000, isActive=1)`, migrate, and assert the row is intact with `lastModifiedAt == 1000`, `cloudId == null`, `isDeleted == false`, `isActive == true`. Also write `signOutDetachesEverySpot`: two rows, one with a cloudId and pending, one deleted; `detachAll()` → one row left, `cloudId == null`, `pendingSync == false`.
+- [ ] **Step 1:** Write `MigrationTest.migrate1To2KeepsSpots`: create a v1 DB with the row `("a", "Lagos", 37.10, -8.67, 1000, isActive=1)`, migrate, and assert the row is intact with `lastModifiedAt == 1000`, `cloudId == null`, `isDeleted == false`, `isActive == true`. Also write `signOutDetachesEverySpot`: two rows, one with a cloudId and pending, one deleted; `detachAll()` → one row left, `cloudId == null`, `pendingSync == false`. (Final review: renamed `accountChangeDetachesEverySpot`; detachAll now runs on an account change, not on sign-out. See Review Focus 1.)
 - [ ] **Step 2:** Run `./gradlew :app:connectedDebugAndroidTest` on the emulator, with `targetSdk = 34` set locally and never committed (HANDOFF "things that will bite you"). Expected: FAIL.
 - [ ] **Step 3:** Implement the entity, migration, DAO and mapping. `AppViewModel.deleteLocation` now calls `markDeleted` instead of `delete`.
 - [ ] **Step 4:** Run the tests. Expected: PASS. Revert the local targetSdk.
@@ -353,7 +354,7 @@ class SpotSyncService(...) {
     val state: StateFlow<SyncState>
     suspend fun sync()                      // no-op when signed out; one at a time (Mutex); never throws
     suspend fun onSignedIn(session: Session) // writes marker, then sync()
-    suspend fun signOut()                   // AuthClient.signOut() + dao.detachAll(); state = SignedOut
+    suspend fun signOut()                   // AuthClient.signOut(); links kept (final review); state = SignedOut
 }
 class FirestoreClient(http: OkHttpClient, baseUrl: String, projectId: String) {
     suspend fun listUserSpots(uid: String, token: String): List<JsonObject>   // follows nextPageToken, pageSize=300
@@ -372,7 +373,7 @@ class FirestoreClient(http: OkHttpClient, baseUrl: String, projectId: String) {
      - `deleteLocal`;
      - successful pushes: set `pendingSync = false`, and hard-delete rows whose soft delete pushed.
   6. A push that fails leaves its row pending, and the state becomes `Failed("Couldn't upload N spots")`.
-- **Marker:** `PATCH users/{uid}?updateMask.fieldPaths=apps.go.last_seen_at`, at most once per 24 h (last-written time kept in prefs/UserDefaults).
+- **Marker:** `PATCH users/{uid}?updateMask.fieldPaths=apps.go.last_seen_at&currentDocument.exists=true`, at most once per 24 h (last-written time kept in prefs/UserDefaults). Final review: it never creates `users/{uid}`; a 404 / FAILED_PRECONDITION is skipped and retried next sync.
 
 - [ ] **Step 1:** Write `SpotSyncServiceTest` with MockWebServer and an in-memory DAO fake:
   - `fetchFailureAppliesNothing`: the list call returns 500 → the DAO is untouched and the state is `Failed`.
@@ -440,7 +441,7 @@ class FirestoreClient(http: OkHttpClient, baseUrl: String, projectId: String) {
   - Go spots have no `difficulty`/`access_type`/`description`, so the Spots page must render them without those.
   - Free limit: show every synced spot; block only adding past 3 on the web (owner, 23 Oct).
   - Add one rules test for an owner `users/{uid}/spots` write with `source: "go"` and a denied cross-user write.
-  - A Go sign-in may create `users/{uid}` containing only `apps` if the diver is new.
+  - ~~A Go sign-in may create `users/{uid}` containing only `apps` if the diver is new.~~ No longer true (final review): the marker only updates an existing doc.
 - Modify versions: Wear `versionCode 17`, `versionName "2.2.0"`; watchOS `1.2.0 (4)` in `generate_xcodeproj.py` and `Constants.App.version`, then regenerate.
 
 - [ ] **Step 1:** Make the text and doc edits above. The Play Data safety and App Store label must list the same data types.
