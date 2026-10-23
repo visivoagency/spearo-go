@@ -150,6 +150,7 @@ fun SpotsPage(
             syncState = syncState,
             signIn = signIn,
             onSignIn = { viewModel.signInWithGoogle() },
+            onCancelSignIn = { viewModel.cancelSignIn() },
             onSync = { viewModel.syncSpots() },
             onSignOut = { viewModel.signOut() }
         )
@@ -272,13 +273,20 @@ private fun androidx.compose.foundation.lazy.LazyListScope.syncRows(
     syncState: SyncState,
     signIn: SignInUiState,
     onSignIn: () -> Unit,
+    onCancelSignIn: () -> Unit,
     onSync: () -> Unit,
     onSignOut: () -> Unit
 ) {
     if (syncState is SyncState.SignedOut) {
         item {
             if (signIn is SignInUiState.InProgress) {
-                TwoLineRow("Sync with spearo.pro", "Check your phone to sign in", onClick = null)
+                TwoLineRow(
+                    title = "Sync with spearo.pro",
+                    subtitle = "Check your phone to sign in",
+                    action = "Tap to cancel",
+                    actionColor = Brand.Colors.textSecondary,
+                    onClick = onCancelSignIn
+                )
             } else {
                 TwoLineRow(
                     title = "Sync with spearo.pro",
@@ -337,6 +345,7 @@ private fun TwoLineRow(
     title: String,
     subtitle: String,
     action: String? = null,
+    actionColor: androidx.compose.ui.graphics.Color = Brand.Colors.secondary,
     onClick: (() -> Unit)?
 ) {
     Column(
@@ -364,7 +373,7 @@ private fun TwoLineRow(
             Text(
                 text = action,
                 style = Brand.Typography.personalityCopy,
-                color = Brand.Colors.secondary,
+                color = actionColor,
                 modifier = Modifier.padding(top = Brand.Spacing.micro)
             )
         }

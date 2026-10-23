@@ -27,6 +27,7 @@ struct LocationsView: View {
                 ForEach(locations) { location in
                     LocationRow(location: location, isActive: location.isActive)
                         .onTapGesture { activate(location) }
+                        .accessibilityAddTraits(.isButton)
                         // A Vision-owned spot is read-only here: no swipe-to-delete.
                         .deleteDisabled(location.origin == "VISION")
                 }
@@ -118,6 +119,7 @@ struct LocationsView: View {
         .contentShape(Rectangle())
         .onTapGesture { deactivateAll() }
         .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Current GPS location")
         .accessibilityHint("Double tap to use current location")
     }
@@ -238,6 +240,7 @@ struct SyncRows: View {
         .contentShape(Rectangle())
         .onTapGesture { syncSpotsInBackground() }
         .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
         .accessibilityHint("Double tap to sync now")
 
         VStack(alignment: .leading, spacing: 1) {

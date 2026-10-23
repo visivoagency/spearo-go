@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -317,10 +318,20 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch { syncService.sync() }
     }
 
+    private var signInJob: Job? = null
+
+    /** The user gave up waiting for the phone: stop the sign-in and return the row to its start. */
+    fun cancelSignIn() {
+        if (_signIn.value !is SignInUiState.InProgress) return
+        signInJob?.cancel()
+        signInJob = null
+        _signIn.value = SignInUiState.Idle
+    }
+
     fun signInWithGoogle() {
         if (_signIn.value is SignInUiState.InProgress) return
         _signIn.value = SignInUiState.InProgress
-        viewModelScope.launch {
+        signInJob = viewModelScope.launch {
             val result = try {
                 remoteAuth.signIn()
             } catch (e: kotlinx.coroutines.CancellationException) {
