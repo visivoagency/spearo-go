@@ -27,6 +27,8 @@ Device checks before release. Each one is something the tests could not reach:
 
 ### Account sync: small follow-ups from review (added 2026-10-23)
 None of these blocks the release.
+- Account switch, narrow windows. If a session expires offline before it links, a spot saved under U2 can upload to U1 on a later same-account sign-in. Fix: run the removal even when `linked == uid`, with `includeLinked = false`. Also, a signed-out spot that was pushed to U1 but never linked (the app died mid-sync) can also reach U2. Fix: stamp ownerUid before the PATCH, not only in apply.
+- The two stacked KDoc blocks on `AppViewModel.deleteLocation` should be merged.
 - The shared merge fixtures check ids, not field contents. Add per-row field checks so the Swift field mapping is covered too.
 - The website fixture should use `timestampValue` with microseconds, which is what the website actually writes.
 - The Swift harness checks encoding less strictly than the Kotlin test: it doesn't check value types on soft deletes.
