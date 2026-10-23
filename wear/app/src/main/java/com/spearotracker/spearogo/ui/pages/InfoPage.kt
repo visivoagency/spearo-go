@@ -26,7 +26,7 @@ fun InfoPage(onDismiss: () -> Unit) {
 
         PolicySection(
             title = "Location Data",
-            body = "Your spot's coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's tide service, which passes them to NOAA or WorldTides. The tide service rounds the position to about 1km and keeps that point 24 hours so the same spot is not looked up twice. It also keeps a one-way hash of your IP address for a short time to limit abuse. Neither is linked to you."
+            body = "Your spot's coordinates are sent over HTTPS to Open-Meteo for weather and sea state (and, if you search for a place by name, the text you type goes to Open-Meteo's geocoding service), and to Spearo's tide service, which passes them to NOAA or WorldTides. The tide service rounds the position to about 1km and keeps that point 24 hours so the same spot is not looked up twice. It also keeps a one-way hash of your IP address for up to about two hours to limit abuse. Neither is linked to you."
         )
 
         PolicySection(

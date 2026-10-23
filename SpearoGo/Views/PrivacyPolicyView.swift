@@ -9,7 +9,7 @@ struct PrivacyPolicyView: View {
 
                 policySection(
                     title: "Location Data",
-                    body: "Spearo Go uses your location solely to fetch weather, marine, and tide conditions for your current position. Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state, and to Spearo's own tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about one kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. The tide service also keeps a one-way hash of your IP address for a short time to limit abuse. Neither is linked to you."
+                    body: "Spearo Go uses your location solely to fetch weather, marine, and tide conditions for your current position. Your coordinates are sent over HTTPS to Open-Meteo for weather and sea state (and, if you search for a place by name, the text you type goes to Open-Meteo's geocoding service), and to Spearo's own tide service, which passes them to NOAA or WorldTides. The tide service rounds your position to about one kilometre and keeps that rounded point for 24 hours so the same spot is not looked up repeatedly. The tide service also keeps a one-way hash of your IP address for up to about two hours to limit abuse. Neither is linked to you."
                 )
 
                 policySection(

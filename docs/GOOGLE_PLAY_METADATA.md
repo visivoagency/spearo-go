@@ -37,7 +37,7 @@ FEATURES
 • Haptic feedback when conditions change
 • No subscriptions, no ads. Account optional, for spot sync
 
-Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your position is used only to fetch conditions. The tide service rounds it to about a kilometre and keeps that point for up to 24 hours so the same spot is not looked up repeatedly, and keeps a one-way hash of your IP address for a short time to limit abuse; neither is linked to you. There are no ads and no analytics. Signing in to a Spearo account is optional; if you do, your email and saved spots are kept in it, private and never shared, so you can see them at spearo.pro. Where a location has no marine or tide coverage, the app says so rather than estimating.
+Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your position is used only to fetch conditions. The tide service rounds it to about a kilometre and keeps that point for up to 24 hours so the same spot is not looked up repeatedly, and keeps a one-way hash of your IP address for up to about two hours to limit abuse; neither is linked to you. There are no ads and no analytics. Signing in to a Spearo account is optional; if you do, your email and saved spots are kept in it, private and never shared, so you can see them at spearo.pro. If you search for a place by name, the text you type goes to Open-Meteo's geocoding service. Where a location has no marine or tide coverage, the app says so rather than estimating.
 
 Standalone Wear OS app — no phone companion required. Works on Galaxy Watch 4, 5, 6, 7 and all Wear OS 3+ watches.
 
@@ -77,12 +77,15 @@ Privacy Policy. If you change one, change the App Store section in
 | Location (saved spot coordinates) | Open-Meteo and the tide service. If signed in, also your Spearo account | Yes, once signed in | No (the account copy is private) | App functionality |
 | Email address (signed in only) | Your Spearo account | Yes | No | App functionality |
 | Saved spot names (signed in only) | Your Spearo account | Yes | No | App functionality |
+| User ID (signed in only): the Firebase uid, written as `user_id` | Your Spearo account | Yes | No | App functionality |
+| Device or other IDs: one-way hash of the IP address, up to about two hours | Spearo tide service | No | No | Fraud prevention and security (Apple: Other) |
+| Place-name search text | Open-Meteo geocoding | No | Yes, with Open-Meteo, only to find the place | App functionality (not stored by Go) |
 
 None of it is used for tracking, advertising or analytics.
 
 What the server keeps:
 - The tide service keeps the coordinate, rounded to about 1 km, for up to 24 hours so it can answer repeat requests.
-- It also keeps a one-way hash of the IP address for a short time to limit abuse.
+- It also keeps a one-way hash of the IP address for up to about two hours to limit abuse (`functions/index.js`).
 - Neither is linked to you.
 
 ### Play Console answers
@@ -106,9 +109,21 @@ What the server keeps:
 - Collected: Yes, only if the diver signs in. Shared: No. Optional.
 - Purpose: App functionality. Linked: Yes. Tracking: No.
 
+**Personal info → User IDs** (the Firebase uid, `user_id`)
+- Collected: Yes, only if the diver signs in. Shared: No. Optional.
+- Purpose: App functionality. Linked: Yes. Tracking: No.
+
+**App info and performance / Device or other IDs** (one-way IP hash)
+- Collected: Yes. Shared: No. Required. Kept up to about two hours.
+- Purpose: Fraud prevention, security and compliance. Linked: No. Tracking: No.
+- Controller call (23 Oct): declared as its own type. Owner to confirm.
+
+Place-name search text is sent to Open-Meteo geocoding to find the place. It is not stored by Go. Covered by "Shared" for location above; no separate Play type.
+
 ### Data NOT collected
-- Name, financial info, health & fitness, messages, photos/videos, audio, files, calendar, contacts
-- App interactions, web browsing, diagnostics, device identifiers, advertising IDs
+- Name: not collected by Go. **Owner check:** after the first live sign-in, open the Firebase Auth record. If a display name or photo from Google or Apple is stored, Name (and photo) must be declared and this line changed.
+- Financial info, health & fitness, messages, photos/videos, audio, files, calendar, contacts
+- App interactions, web browsing, diagnostics, advertising IDs
 
 ### Security practices
 - Data encrypted in transit (HTTPS)

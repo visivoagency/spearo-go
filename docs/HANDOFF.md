@@ -43,7 +43,9 @@ Apple Watch needs P3, P4 and P5.
 
 1. Console setup (`docs/ACCOUNT-SYNC-SETUP.md`).
 2. Live E2E, both platforms. Then signed-in screenshots.
-3. Enter the new Data safety and App Privacy answers in the consoles.
+3. Enter the new Data safety and App Privacy answers in the consoles. Two things for the owner:
+   - Controller call to confirm: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).
+   - After the first live sign-in, check the Firebase Auth record. If a display name or photo from Google or Apple is stored, declare Name (and photo) on both stores and change the Play "Name not collected" line.
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
 5. The $0.99 price: the stores charge $0.99, the repo docs still say $2.99.
 6. The More Spearo apps entry.
@@ -57,7 +59,7 @@ Apple Watch needs P3, P4 and P5.
 
 A standalone dive-conditions app for **Apple Watch** (`SpearoGo/`, SwiftUI) and
 **Wear OS** (`wear/`, Kotlin/Compose), plus **its own Cloud Functions**
-(`functions/`). No accounts, no subscriptions. It gives one verdict — GO /
+(`functions/`). No accounts, no subscriptions (at the time). It gives one verdict — GO /
 MAYBE / SKETCHY / NO GO — from weather, sea state, tides and solunar.
 
 ### How it got here
