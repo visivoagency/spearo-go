@@ -72,6 +72,8 @@ SOURCES = [
     ("AuthClient.swift",       "Sync/AuthClient.swift",           False),
     ("TokenStore.swift",       "Sync/TokenStore.swift",           False),
     ("AppleSignIn.swift",      "Sync/AppleSignIn.swift",          False),
+    ("FirestoreClient.swift",  "Sync/FirestoreClient.swift",      False),
+    ("SpotSyncService.swift",  "Sync/SpotSyncService.swift",      False),
     # Utils
     ("Constants.swift",        "Utils/Constants.swift",           False),
     ("Brand.swift",            "Utils/Brand.swift",               False),

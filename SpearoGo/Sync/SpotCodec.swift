@@ -64,7 +64,7 @@ enum SpotCodec {
     private static func bool(_ v: Bool) -> [String: Any] { ["booleanValue": v] }
 
     /// Same output as Java's ISO_INSTANT: fractional seconds only when non-zero, in groups of three.
-    private static func iso(_ d: Date) -> String {
+    static func iso(_ d: Date) -> String {
         let ms = Int((d.timeIntervalSince1970 * 1000).rounded())
         let f = ISO8601DateFormatter()
         f.formatOptions = ms % 1000 == 0

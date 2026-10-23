@@ -34,6 +34,8 @@ object Constants {
         const val WEB_CLIENT_ID = "420670186721-fgqn7l067ppl3mk9mm2cq1lt5ke5i0kk.apps.googleusercontent.com"
         const val IDENTITY_BASE = "https://identitytoolkit.googleapis.com"
         const val SECURE_TOKEN_BASE = "https://securetoken.googleapis.com"
+        const val FIRESTORE_BASE =
+            "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents"
     }
 
     object App {

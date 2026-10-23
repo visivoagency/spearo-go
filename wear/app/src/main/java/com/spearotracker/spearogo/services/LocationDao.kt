@@ -2,15 +2,16 @@ package com.spearotracker.spearogo.services
 
 import androidx.room.*
 import com.spearotracker.spearogo.models.SavedLocation
+import com.spearotracker.spearogo.sync.SpotStore
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface LocationDao {
+interface LocationDao : SpotStore {
     @Query("SELECT * FROM saved_locations WHERE isDeleted = 0 ORDER BY createdAt DESC")
     fun getAllLocations(): Flow<List<SavedLocation>>
 
     @Query("SELECT * FROM saved_locations")
-    suspend fun getAllIncludingDeleted(): List<SavedLocation>
+    override suspend fun getAllIncludingDeleted(): List<SavedLocation>
 
     @Query("SELECT * FROM saved_locations WHERE isActive = 1 AND isDeleted = 0 LIMIT 1")
     suspend fun getActiveLocation(): SavedLocation?
@@ -19,7 +20,7 @@ interface LocationDao {
     suspend fun insert(location: SavedLocation)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(rows: List<SavedLocation>)
+    override suspend fun upsertAll(rows: List<SavedLocation>)
 
     @Delete
     suspend fun delete(location: SavedLocation)
@@ -29,7 +30,7 @@ interface LocationDao {
     suspend fun markDeleted(id: String, now: Long)
 
     @Query("DELETE FROM saved_locations WHERE id IN (:ids)")
-    suspend fun hardDelete(ids: List<String>)
+    override suspend fun hardDelete(ids: List<String>)
 
     @Query("DELETE FROM saved_locations WHERE isDeleted = 1")
     suspend fun deleteSoftDeleted()
@@ -39,7 +40,7 @@ interface LocationDao {
 
     /** Sign-out: forget the account. Spots stay on the watch; pending deletes are dropped. */
     @Transaction
-    suspend fun detachAll() {
+    override suspend fun detachAll() {
         deleteSoftDeleted()
         clearCloudLinks()
     }

@@ -3,9 +3,11 @@ import Foundation
 // Runs the Swift planSync against fixtures/spot-sync/merge-cases.json (path in argv[1]).
 // Build (explicit list; every SpearoGo file here must stay Foundation-only):
 //   swiftc -o <out> SpearoGo/Sync/SpotMerge.swift SpearoGo/Sync/SpotCodec.swift SpearoGo/Sync/AuthClient.swift \
-//     tools/spot-sync-harness/AuthHarness.swift tools/spot-sync-harness/main.swift
+//     SpearoGo/Sync/FirestoreClient.swift tools/spot-sync-harness/AuthHarness.swift \
+//     tools/spot-sync-harness/FirestoreHarness.swift tools/spot-sync-harness/main.swift
 // Modes: `<out> <merge-cases.json>` (or `merge <file>`), `<out> codec <codec-cases.json>`,
-// and `<out> auth` (AuthClient against a URLProtocol stub; mirrors AuthClientTest.kt).
+// `<out> auth` (AuthClient against a URLProtocol stub; mirrors AuthClientTest.kt)
+// and `<out> firestore` (FirestoreClient against the same stub; mirrors FirestoreClientTest.kt).
 // Same newId rule as the Kotlin test: returns "NEW", compared as "new:<cloudId>".
 
 struct Expect: Decodable {
@@ -19,10 +21,11 @@ struct Case: Decodable {
 }
 
 guard CommandLine.arguments.count > 1 else {
-    FileHandle.standardError.write(Data("usage: spot-harness [merge] <merge-cases.json> | codec <codec-cases.json> | auth\n".utf8))
+    FileHandle.standardError.write(Data("usage: spot-harness [merge] <merge-cases.json> | codec <codec-cases.json> | auth | firestore\n".utf8))
     exit(2)
 }
 if CommandLine.arguments[1] == "auth" { runAuth() }
+if CommandLine.arguments[1] == "firestore" { runFirestore() }
 
 // MARK: codec mode. Docs live in <cases dir>/docs/<file>.json; dates compare at millisecond precision.
 struct CodecExpect: Decodable {

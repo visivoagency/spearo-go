@@ -39,6 +39,7 @@ enum Constants {
         static let webClientId     = "420670186721-fgqn7l067ppl3mk9mm2cq1lt5ke5i0kk.apps.googleusercontent.com"
         static let identityBase    = URL(string: "https://identitytoolkit.googleapis.com")!
         static let secureTokenBase = URL(string: "https://securetoken.googleapis.com")!
+        static let firestoreBase   = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents")!
     }
 
     // MARK: - App info

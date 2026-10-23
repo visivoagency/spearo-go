@@ -10,6 +10,16 @@ struct SpearoGoApp: App {
     @WKApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     #endif
 
+    /// The one store, shared by the UI and SpotSyncService (SyncServices.sync), so a
+    /// sync lands in the same context the views read.
+    static let modelContainer: ModelContainer = {
+        do {
+            return try ModelContainer(for: SavedLocation.self)
+        } catch {
+            fatalError("SwiftData store failed to open: \(error)")
+        }
+    }()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -21,7 +31,7 @@ struct SpearoGoApp: App {
                 // this ceiling is honoured.
                 .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         }
-        .modelContainer(for: SavedLocation.self)
+        .modelContainer(Self.modelContainer)
     }
 }
 
