@@ -12,7 +12,12 @@ interface SpotStore {
     suspend fun hardDelete(ids: List<String>)
     /** Sets cloudId on one row only if it has none yet; touches nothing else. */
     suspend fun linkCloudId(id: String, cloudId: String)
-    /** Sign-out: forget the account. Spots stay on the watch; pending deletes are dropped. */
+    /** Soft delete: hides the row and queues the delete for the next sync. */
+    suspend fun markDeleted(id: String, now: Long)
+    /**
+     * A different account signed in: forget the old one's links. Every live spot stays (unlinked,
+     * not pending); soft-deleted rows, whose deletes belonged to the old account, are purged.
+     */
     suspend fun detachAll()
 }
 

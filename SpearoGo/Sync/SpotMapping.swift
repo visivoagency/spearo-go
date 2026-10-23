@@ -31,9 +31,12 @@ extension LocalSpot {
     }
 }
 
-/// Sign-out: forget the account. Spots stay on the watch; pending deletes are dropped.
-func detachAll(context: ModelContext) {
-    let rows = (try? context.fetch(FetchDescriptor<SavedLocation>())) ?? []
+/// A different account signed in: forget the old one's links. Every live spot stays (unlinked,
+/// not pending); soft-deleted rows, whose deletes belonged to the old account, are purged.
+/// Throws if the store can't be read or saved (rolled back): the caller must not sync on.
+@MainActor
+func detachAll(context: ModelContext) throws {
+    let rows = try context.fetch(FetchDescriptor<SavedLocation>())
     for row in rows {
         if row.isDeleted {
             context.delete(row)
@@ -42,16 +45,47 @@ func detachAll(context: ModelContext) {
             row.pendingSync = false
         }
     }
-    try? context.save()
+    try saveOrRollback(context)
 }
 
 /// Spots saved before v2 come out of the store with `lastModifiedAt` at its epoch default.
 /// Give them their creation time, as the Wear migration does (lastModifiedAt = createdAt).
-func backfillLastModified(context: ModelContext) {
+/// Throws if the store can't be read or saved: never left at 1970 silently.
+@MainActor
+func backfillLastModified(context: ModelContext) throws {
     let epoch = Date(timeIntervalSince1970: 0)
-    let rows = (try? context.fetch(FetchDescriptor<SavedLocation>(
-        predicate: #Predicate { $0.lastModifiedAt == epoch }))) ?? []
+    let rows = try context.fetch(FetchDescriptor<SavedLocation>(
+        predicate: #Predicate { $0.lastModifiedAt == epoch }))
     guard !rows.isEmpty else { return }
     for row in rows { row.lastModifiedAt = row.createdAt }
-    try? context.save()
+    try saveOrRollback(context)
+}
+
+/// The user removed a spot. Twin of SpotSyncService.deleteSpot in Kotlin.
+/// Signed out and never linked: it is simply gone. Otherwise it is soft-deleted and waits for its
+/// account (pushed when that account syncs, purged by a detach if another one signs in).
+/// Signed in, a Vision-owned spot is read-only, so nothing happens.
+@MainActor
+func deleteSpot(_ row: SavedLocation, signedIn: Bool, context: ModelContext) {
+    if signedIn && row.origin == SpotOrigin.vision.rawValue { return }
+    if signedIn || row.cloudId != nil {
+        row.isDeleted = true
+        row.pendingSync = true
+        row.lastModifiedAt = .now
+        row.isActive = false
+    } else {
+        context.delete(row)
+    }
+}
+
+/// `rollback()` discards EVERY unsaved change in the context, not just ours. The sync layer uses
+/// the app's mainContext, which is safe only because UI edits save immediately.
+@MainActor
+private func saveOrRollback(_ context: ModelContext) throws {
+    do {
+        try context.save()
+    } catch {
+        context.rollback()
+        throw error
+    }
 }

@@ -27,7 +27,7 @@ interface LocationDao : SpotStore {
 
     /** Soft delete: hides the row and queues the delete for the next sync. */
     @Query("UPDATE saved_locations SET isDeleted = 1, pendingSync = 1, lastModifiedAt = :now, isActive = 0 WHERE id = :id")
-    suspend fun markDeleted(id: String, now: Long)
+    override suspend fun markDeleted(id: String, now: Long)
 
     @Query("DELETE FROM saved_locations WHERE id IN (:ids)")
     override suspend fun hardDelete(ids: List<String>)
@@ -41,7 +41,7 @@ interface LocationDao : SpotStore {
     @Query("UPDATE saved_locations SET cloudId = NULL, pendingSync = 0")
     suspend fun clearCloudLinks()
 
-    /** Sign-out: forget the account. Spots stay on the watch; pending deletes are dropped. */
+    /** A different account signed in: every live spot stays, unlinked; the old account's pending deletes go. */
     @Transaction
     override suspend fun detachAll() {
         deleteSoftDeleted()

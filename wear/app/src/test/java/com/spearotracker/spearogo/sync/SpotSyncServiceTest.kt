@@ -28,8 +28,11 @@ class FakeSpotStore(vararg initial: SavedLocation) : SpotStore, SpotTransactor {
     var onWrite: () -> Unit = {}
     var inTransaction = false
     var transactions = 0
-    /** Sync-path writes that happened outside a transaction (detachAll is sign-out's, so excluded). */
+    /** Sync-path writes that happened outside a transaction (detachAll runs before sync, so excluded). */
     var writesOutsideTransaction = 0
+    var detachCalls = 0
+    /** When set, detachAll throws it (a failing Room write). */
+    var detachFailure: Exception? = null
 
     override suspend fun run(block: suspend () -> Unit) {
         transactions++; inTransaction = true
@@ -47,17 +50,25 @@ class FakeSpotStore(vararg initial: SavedLocation) : SpotStore, SpotTransactor {
     override suspend fun linkCloudId(id: String, cloudId: String) {
         syncWrite(); rows[id]?.takeIf { it.cloudId == null }?.let { rows[id] = it.copy(cloudId = cloudId) }
     }
+    override suspend fun markDeleted(id: String, now: Long) {
+        writes++; onWrite()
+        rows[id]?.let { rows[id] = it.copy(isDeleted = true, pendingSync = true, lastModifiedAt = now, isActive = false) }
+    }
     override suspend fun detachAll() {
+        detachCalls++
+        detachFailure?.let { throw it }
         writes++; onWrite()
         rows.values.filter { it.isDeleted }.toList().forEach { rows.remove(it.id) }
         rows.replaceAll { _, r -> r.copy(cloudId = null, pendingSync = false) }
     }
 }
 
-class InMemoryMarkerStore(var at: Long? = null) : SyncMarkerStore {
+class InMemoryMarkerStore(var at: Long? = null, var linked: String? = null) : SyncMarkerStore {
     override fun lastWrittenAt(): Long? = at
     override fun setLastWrittenAt(ms: Long) { at = ms }
     override fun clear() { at = null }
+    override fun linkedUid(): String? = linked
+    override fun setLinkedUid(uid: String) { linked = uid }
 }
 
 class SpotSyncServiceTest {
@@ -77,6 +88,12 @@ class SpotSyncServiceTest {
     private var onSpotPatch: (RecordedRequest) -> Unit = {}
     /** When true, spot PATCHes are written into [accountDocs], so a later sync reads them back. */
     private var persistPatches = false
+    /** `users/U2/spots`: a second account's collection. */
+    private var u2Docs = listOf<JsonObject>()
+    /** What the Secure Token refresh answers. */
+    private var refreshCode = 503
+    /** What the account marker PATCH answers. */
+    private var markerCode = 200
 
     private val http = OkHttpClient.Builder().readTimeout(2, TimeUnit.SECONDS).retryOnConnectionFailure(false).build()
     private val base get() = server.url("/v1/projects/p/databases/(default)/documents").toString()
@@ -114,10 +131,12 @@ class SpotSyncServiceTest {
                 requests.add(request)
                 val path = request.requestUrl!!.encodedPath
                 return when {
-                    request.method == "GET" && path.endsWith("/users/U1/spots") -> {
+                    path.endsWith("/v1/token") -> json(refreshCode, "{}")
+                    request.method == "GET" && (path.endsWith("/users/U1/spots") || path.endsWith("/users/U2/spots")) -> {
+                        val docs = if (path.endsWith("/users/U1/spots")) accountDocs else u2Docs
                         if (listCode != 200) json(listCode, "{}")
                         else json(200, JsonObject().apply {
-                            add("documents", com.google.gson.JsonArray().apply { accountDocs.forEach { add(it) } })
+                            add("documents", com.google.gson.JsonArray().apply { docs.forEach { add(it) } })
                         }.toString())
                     }
                     request.method == "POST" && path.endsWith(":runQuery") -> {
@@ -127,12 +146,13 @@ class SpotSyncServiceTest {
                             add(JsonObject().apply { addProperty("readTime", "2026-10-23T12:00:00Z") })
                         }.toString())
                     }
-                    request.method == "PATCH" && path.contains("/users/U1/spots/") -> {
+                    request.method == "PATCH" && path.contains("/spots/") -> {
                         onSpotPatch(request)
-                        if (spotPatchCode == 200 && persistPatches) persist(request)
+                        if (spotPatchCode == 200 && persistPatches && path.contains("/users/U1/")) persist(request)
                         json(spotPatchCode, "{}")
                     }
-                    request.method == "PATCH" && path.endsWith("/users/U1") -> json(200, "{}")
+                    request.method == "PATCH" && (path.endsWith("/users/U1") || path.endsWith("/users/U2")) ->
+                        json(markerCode, "{}")
                     else -> json(404, "{}")
                 }
             }
@@ -156,7 +176,12 @@ class SpotSyncServiceTest {
     }
 
     private fun spotPatches() = requests.filter { it.method == "PATCH" && it.requestUrl!!.encodedPath.contains("/spots/") }
-    private fun markerPatches() = requests.filter { it.method == "PATCH" && it.requestUrl!!.encodedPath.endsWith("/users/U1") }
+    private fun markerPatches() = requests.filter {
+        it.method == "PATCH" && it.requestUrl!!.encodedPath.let { p -> p.endsWith("/users/U1") || p.endsWith("/users/U2") }
+    }
+    private fun session(uid: String) = Session(uid, "id-token", "refresh-$uid", now + 30L * 24 * 3_600_000L, null)
+    private fun isDeletePatch(r: RecordedRequest) =
+        r.requestUrl!!.queryParameterValues("updateMask.fieldPaths").let { it.size == 2 && "is_deleted" in it }
 
     @Test
     fun fetchFailureAppliesNothing() = runBlocking {
@@ -323,23 +348,166 @@ class SpotSyncServiceTest {
         assertEquals(SyncState.SignedOut, svc.state.value)
     }
 
+    /** Task 4's signOutDetachesEverySpot, under the account-scoped design: sign-out keeps every link. */
     @Test
-    fun signOutDetachesAndClears() = runBlocking {
+    fun signOutKeepsSpotsAndLinks() = runBlocking {
         signedIn()
         marker.at = now
-        val dao = FakeSpotStore(
-            SavedLocation(id = "A", name = "a", latitude = 1.0, longitude = 2.0, cloudId = "W1", pendingSync = true, origin = "ACCOUNT"),
-            SavedLocation(id = "B", name = "b", latitude = 1.0, longitude = 2.0, cloudId = "W2", isDeleted = true, pendingSync = true),
-        )
+        marker.linked = "U1"
+        val a = SavedLocation(id = "A", name = "a", latitude = 1.0, longitude = 2.0, cloudId = "W1", pendingSync = true, origin = "ACCOUNT")
+        val b = SavedLocation(id = "B", name = "b", latitude = 1.0, longitude = 2.0, cloudId = "W2", isDeleted = true, pendingSync = true)
+        val dao = FakeSpotStore(a, b)
         val svc = service(dao)
         svc.signOut()
 
         assertNull(tokens.stored)
         assertNull(marker.at)
-        assertEquals(listOf("A"), dao.rows.keys.toList())
-        assertNull(dao.rows["A"]!!.cloudId)
-        assertFalse(dao.rows["A"]!!.pendingSync)
+        assertEquals("U1", marker.linked)          // the links still belong to U1
+        assertEquals(mapOf("A" to a, "B" to b), dao.rows.toMap())
+        assertEquals(0, dao.writes)
         assertEquals(SyncState.SignedOut, svc.state.value)
+        assertEquals(0, server.requestCount)
+    }
+
+    /** C1: a 400 refresh clears the session; a different account then signs in. Nothing is lost. */
+    @Test
+    fun refresh400ThenOtherAccountKeepsSpots() = runBlocking {
+        marker.linked = "U1"
+        tokens.stored = Session("U1", "old", "dead", now - 1, null)   // expired: the next sync refreshes
+        refreshCode = 400
+        val dao = FakeSpotStore(
+            SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1", origin = "ACCOUNT"),
+            SavedLocation(id = "B", name = "Wreck", latitude = 3.0, longitude = 4.0, createdAt = 2, cloudId = "B", pendingSync = true),
+            SavedLocation(id = "C", name = "Gone", latitude = 5.0, longitude = 6.0, createdAt = 3, cloudId = "W3",
+                isDeleted = true, pendingSync = true, origin = "ACCOUNT"),
+        )
+        val svc = service(dao)
+        svc.sync()
+        assertNull(tokens.stored)
+        assertEquals(SyncState.SignedOut, svc.state.value)
+        assertEquals(3, dao.rows.size)                 // the 400 changed nothing locally
+
+        val u2 = session("U2")
+        tokens.stored = u2
+        svc.onSignedIn(u2)
+
+        assertTrue(requests.none { it.requestUrl!!.encodedPath.contains("/users/U1") })  // nothing sent to U1
+        val patches = spotPatches()
+        assertTrue(patches.none(::isDeletePatch))     // C's pending delete was U1's: dropped, not pushed
+        assertEquals(setOf("/users/U2/spots/A", "/users/U2/spots/B"),
+            patches.map { it.requestUrl!!.encodedPath.substringAfter("/documents") }.toSet())
+        assertEquals(setOf("A", "B"), dao.rows.keys)  // A and B kept, C purged with its stale link
+        assertEquals("A", dao.rows["A"]!!.cloudId)    // re-linked to the new U2 docs
+        assertEquals("B", dao.rows["B"]!!.cloudId)
+        assertTrue(dao.rows.values.none { it.pendingSync })
+        assertEquals("U2", marker.linked)
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    @Test
+    fun sameAccountReSignInNoDuplicates() = runBlocking {
+        signedIn()
+        persistPatches = true
+        val dao = FakeSpotStore(
+            SavedLocation(id = "L1", name = "Home reef", latitude = 10.0, longitude = 10.0, createdAt = 1000, pendingSync = true)
+        )
+        val svc = service(dao)
+        svc.sync()
+        assertEquals("L1", dao.rows["L1"]!!.cloudId)
+        val pushedBefore = spotPatches().size
+
+        svc.signOut()
+        val u1 = session("U1")
+        tokens.stored = u1
+        svc.onSignedIn(u1)
+
+        assertEquals(0, dao.detachCalls)
+        assertEquals(pushedBefore, spotPatches().size) // nothing new pushed
+        assertEquals(1, accountDocs.size)
+        assertEquals(listOf("L1"), dao.rows.keys.toList())
+        assertEquals("L1", dao.rows["L1"]!!.cloudId)
+        assertEquals(SyncState.Synced(now), svc.state.value)
+    }
+
+    @Test
+    fun signedOutDeleteOfUnlinkedRowIsHard() = runBlocking {
+        val dao = FakeSpotStore(SavedLocation(id = "L1", name = "x", latitude = 1.0, longitude = 2.0, pendingSync = true))
+        service(dao).deleteSpot("L1")
+        assertTrue(dao.rows.isEmpty())
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun signedOutDeleteOfLinkedRowWaitsForSameAccount() = runBlocking {
+        marker.linked = "U1"
+        val dao = FakeSpotStore(
+            SavedLocation(id = "A", name = "Wreck", latitude = 20.0, longitude = 20.0, createdAt = 1000,
+                cloudId = "W1", lastModifiedAt = 1000, origin = "ACCOUNT")
+        )
+        accountDocs = listOf(doc("users/U1/spots/W1", "Wreck", 20.0, 20.0, "2026-10-01T00:00:00Z"))
+        val svc = service(dao)
+        svc.deleteSpot("A")
+
+        val row = dao.rows["A"]!!
+        assertTrue(row.isDeleted && row.pendingSync)  // kept, hidden, waiting for U1
+        assertEquals("W1", row.cloudId)
+        assertEquals(0, server.requestCount)
+
+        val u1 = session("U1")
+        tokens.stored = u1
+        svc.onSignedIn(u1)
+
+        val delete = spotPatches().single()
+        assertTrue(isDeletePatch(delete))
+        assertTrue(delete.requestUrl!!.encodedPath.endsWith("/users/U1/spots/W1"))
+        assertTrue(dao.rows.isEmpty())
+    }
+
+    @Test
+    fun signedOutVisionDeleteIsLocal() = runBlocking {
+        val dao = FakeSpotStore(SavedLocation(id = "V", name = "v", latitude = 1.0, longitude = 2.0, origin = "VISION"))
+        service(dao).deleteSpot("V")
+        assertTrue(dao.rows.isEmpty())
+    }
+
+    @Test
+    fun signedInVisionDeleteIsIgnored() = runBlocking {
+        signedIn()
+        val v = SavedLocation(id = "V", name = "v", latitude = 1.0, longitude = 2.0, cloudId = "D1", origin = "VISION")
+        val dao = FakeSpotStore(v)
+        service(dao).deleteSpot("V")
+        assertEquals(v, dao.rows["V"])
+    }
+
+    /** The session changed without onSignedIn (e.g. the app died right after sign-in): sync still detaches first. */
+    @Test
+    fun syncUnderNewAccountDetachesFirst() = runBlocking {
+        marker.linked = "U1"
+        tokens.stored = session("U2")
+        val dao = FakeSpotStore(
+            SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1", origin = "ACCOUNT")
+        )
+        service(dao).sync()
+        assertEquals(1, dao.detachCalls)
+        assertTrue(spotPatches().single().requestUrl!!.encodedPath.endsWith("/users/U2/spots/A"))
+        assertEquals("U2", marker.linked)
+    }
+
+    @Test
+    fun detachFailureFailsSignIn() = runBlocking {
+        marker.linked = "U1"
+        val a = SavedLocation(id = "A", name = "Reef", latitude = 1.0, longitude = 2.0, createdAt = 1, cloudId = "W1", origin = "ACCOUNT")
+        val dao = FakeSpotStore(a)
+        dao.detachFailure = IllegalStateException("disk full")
+        val u2 = session("U2")
+        tokens.stored = u2
+        val svc = service(dao)
+        svc.onSignedIn(u2)
+
+        assertEquals(SyncState.Failed("Sync failed. Try again."), svc.state.value)
+        assertNull(tokens.stored)                     // the sign-in did not stick
+        assertEquals("U1", marker.linked)
+        assertEquals(a, dao.rows["A"])
         assertEquals(0, server.requestCount)
     }
 
@@ -396,8 +564,8 @@ class SpotSyncServiceTest {
         assertEquals(SyncState.SignedOut, svc.state.value)
         val row = dao.rows.values.single()
         assertNull(row.cloudId)
-        assertFalse(row.pendingSync)
-        assertEquals(1, dao.writes)              // only detachAll
+        assertTrue(row.pendingSync)              // sign-out keeps the row exactly as it was
+        assertEquals(0, dao.writes)
     }
 
     @Test

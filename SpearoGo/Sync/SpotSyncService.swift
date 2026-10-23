@@ -27,6 +27,13 @@ import SwiftData
 //  6. Failed pushes stay pending; state .failed("Couldn't upload N spots").
 // The account marker is written on sign-in and at most once per 24 h after that.
 //
+// Links are scoped to an account (UserDefaults "sync.linkedUid"). Sign-out (planned, or a
+// session a refresh 400 cleared) keeps every row and cloudId, so the same account signing back
+// in finds its spots linked and nothing is duplicated. When a DIFFERENT account syncs,
+// detachAll runs first: every live spot is kept and unlinked, so it is copied into the new
+// account; the old account's pending deletes are purged. Nothing is ever deleted from the
+// watch by an account change.
+//
 // Local reads and writes go through the app's ModelContainer's mainContext on the main
 // actor: the same context the UI's @Query reads, so it never sees a stale row and the
 // list updates the moment a sync lands. Network work stays off the main actor.
@@ -50,6 +57,8 @@ final class SyncStatus {
 
 actor SpotSyncService {
     private static let markerKey = "sync.markerWrittenAt"
+    /// The uid whose `users/{uid}/spots` docs the local cloudIds point at. Survives sign-out.
+    private static let linkedUidKey = "sync.linkedUid"
     private static let markerInterval: TimeInterval = 24 * 60 * 60
     private static let unreachable = "Couldn't reach your account"
     private static let storeFailed = "Sync failed. Try again."
@@ -83,40 +92,70 @@ actor SpotSyncService {
         await enqueue { await $0.runSync() }
     }
 
-    /// Right after a successful sign-in: the marker (always), then a first sync.
+    /// Right after a successful sign-in: detach if the spots are linked to another account, the
+    /// marker (always), then a first sync. The state is .syncing from the start, so the sign-in
+    /// row can't be tapped again meanwhile. If the detach fails the sign-in is undone (.failed):
+    /// syncing on with the old account's links would delete or misfile spots.
     func onSignedIn(session: Session) async {
         // In the queue, so it can't race a sign-out; skipped if one already happened.
-        await enqueue { service in
-            if service.auth.session()?.uid == session.uid {
-                await service.writeMarker(uid: session.uid, token: session.idToken)
+        let proceed = await enqueue { service -> Bool in
+            guard service.auth.session()?.uid == session.uid else {
+                if service.auth.session() == nil { await service.setState(.signedOut) }
+                return false
             }
+            await service.setState(.syncing)
+            guard await service.link(to: session.uid) else {
+                service.auth.signOut()
+                await service.setState(.failed(Self.storeFailed))
+                return false
+            }
+            await service.writeMarker(uid: session.uid, token: session.idToken)
+            return true
         }
-        await sync()
+        if proceed { await sync() }
     }
 
-    /// Forget the account. Spots stay on the watch; links and pending deletes go.
+    /// Forget the session. Every spot keeps its row and its link (see the header); only the
+    /// auth store and the marker time are cleared.
     func signOut() async {
         auth.signOut()
-        await enqueue { await $0.detach() }
+        await enqueue { await $0.signedOut() }
     }
 
-    private func detach() async {
-        let container = self.container
-        await MainActor.run { detachAll(context: container.mainContext) }
+    private func signedOut() async {
         defaults.removeObject(forKey: Self.markerKey)
         await setState(.signedOut)
     }
 
+    /// Makes the local links belong to `uid`: if they belong to another account, detachAll
+    /// first. Runs in the queue. False if the detach failed: the caller must not sync.
+    private func link(to uid: String) async -> Bool {
+        let linked = defaults.string(forKey: Self.linkedUidKey)
+        if linked == uid { return true }
+        if linked != nil {
+            let container = self.container
+            do {
+                try await MainActor.run { try detachAll(context: container.mainContext) }
+            } catch {
+                print("[SpotSyncService] detach failed; not syncing")
+                return false
+            }
+        }
+        defaults.set(uid, forKey: Self.linkedUidKey)
+        return true
+    }
+
     // MARK: - Sync
 
-    private func enqueue(_ work: @escaping @Sendable (SpotSyncService) async -> Void) async {
+    @discardableResult
+    private func enqueue<T: Sendable>(_ work: @escaping @Sendable (SpotSyncService) async -> T) async -> T {
         let previous = tail
         let task = Task { [self] in
             await previous?.value
-            await work(self)
+            return await work(self)
         }
-        tail = task
-        await task.value
+        tail = Task { _ = await task.value }
+        return await task.value
     }
 
     private func setState(_ state: SyncState) async {
@@ -127,7 +166,13 @@ actor SpotSyncService {
     private func runSync() async {
         let container = self.container
         // 0. Rows saved before v2 get their lastModifiedAt before anything reads them.
-        await MainActor.run { backfillLastModified(context: container.mainContext) }
+        do {
+            try await MainActor.run { try backfillLastModified(context: container.mainContext) }
+        } catch {
+            print("[SpotSyncService] backfill failed; applied nothing")
+            await setState(.failed(Self.storeFailed))
+            return
+        }
 
         // 1.
         guard let token = await auth.currentIdToken(), let uid = auth.session()?.uid else {
@@ -135,6 +180,12 @@ actor SpotSyncService {
             return
         }
         await setState(.syncing)
+        // The session's account may differ from the links' (e.g. the app died between sign-in
+        // and onSignedIn): detach first, or fail without touching anything.
+        guard await link(to: uid) else {
+            await setState(.failed(Self.storeFailed))
+            return
+        }
 
         // 2. Both collections, complete, or nothing. Vision first.
         let remote: [RemoteSpot]
@@ -282,6 +333,8 @@ actor SpotSyncService {
         do {
             try context.save()
         } catch {
+            // rollback() discards EVERY unsaved change in mainContext, not just this apply's.
+            // Safe only because UI edits save immediately (LocationsView calls save() on each).
             context.rollback()
             throw error
         }

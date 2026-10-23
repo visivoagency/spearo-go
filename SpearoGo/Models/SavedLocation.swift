@@ -18,6 +18,9 @@ final class SavedLocation {
     /// Epoch until set. Rows saved before v2 are backfilled to `createdAt` (see `backfillLastModified`).
     var lastModifiedAt: Date = Date(timeIntervalSince1970: 0)
     /// Soft delete: the row waits until the delete has reached the account.
+    /// Shadows `PersistentModel.isDeleted` (SwiftData's "deleted from its context") on purpose:
+    /// the name is frozen for parity with the Wear column and the sync code. Read it only as
+    /// the soft-delete flag; nothing in Go asks SwiftData's question.
     var isDeleted: Bool = false
     var pendingSync: Bool = false
     /// A `SpotOrigin` raw value: "GO", "ACCOUNT" or "VISION".

@@ -20,20 +20,39 @@ sealed interface SyncState {
     data class Failed(val message: String) : SyncState
 }
 
-/** When `users/{uid}.apps.go.last_seen_at` was last written. Kept apart from the auth store. */
+/**
+ * Sync bookkeeping kept apart from the auth store: when `users/{uid}.apps.go.last_seen_at` was
+ * last written, and which account the spots' cloudIds belong to.
+ */
 interface SyncMarkerStore {
     fun lastWrittenAt(): Long?
     fun setLastWrittenAt(ms: Long)
+    /** Forgets the marker time only. [linkedUid] survives sign-out, as the links do. */
     fun clear()
+    /** The uid whose `users/{uid}/spots` docs the local cloudIds point at; null before any sync. */
+    fun linkedUid(): String?
+    fun setLinkedUid(uid: String)
 }
 
-/** SharedPreferences "sync", MODE_PRIVATE. Holds a timestamp only. */
+/**
+ * SharedPreferences "sync", MODE_PRIVATE. Holds a timestamp and the linked uid. Backed up with
+ * the spots database (only "auth" is excluded), so a restore keeps the two consistent: restored
+ * cloudIds always come with the account they belong to.
+ */
 class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
     private val prefs = context.applicationContext.getSharedPreferences("sync", Context.MODE_PRIVATE)
     override fun lastWrittenAt(): Long? = if (prefs.contains(KEY)) prefs.getLong(KEY, 0L) else null
     override fun setLastWrittenAt(ms: Long) { prefs.edit().putLong(KEY, ms).apply() }
     override fun clear() { prefs.edit().remove(KEY).apply() }
-    private companion object { const val KEY = "marker_written_at" }
+    override fun linkedUid(): String? = prefs.getString(LINKED_UID, null)
+    override fun setLinkedUid(uid: String) {
+        // Synchronous: the links written next must never outlive a lost uid.
+        if (!prefs.edit().putString(LINKED_UID, uid).commit()) throw IllegalStateException("sync prefs write failed")
+    }
+    private companion object {
+        const val KEY = "marker_written_at"
+        const val LINKED_UID = "linked_uid"
+    }
 }
 
 /**
@@ -55,6 +74,12 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  *     come back as a new spot).
  *  6. Failed pushes stay pending; state Failed("Couldn't upload N spots").
  * The account marker is written on sign-in and at most once per 24 h after that.
+ *
+ * Links are scoped to an account ([SyncMarkerStore.linkedUid]). Sign-out (planned, or a session a
+ * refresh 400 cleared) keeps every row and cloudId, so the same account signing back in finds its
+ * spots linked and nothing is duplicated. When a DIFFERENT account syncs, [SpotStore.detachAll]
+ * runs first: every live spot is kept and unlinked, so it is copied into the new account; the old
+ * account's pending deletes are purged. Nothing is ever deleted from the watch by an account change.
  * Logs carry counts and status codes only: no uid, email, names, coordinates or tokens.
  */
 class SpotSyncService(
@@ -81,39 +106,83 @@ class SpotSyncService(
             throw e
         } catch (e: Exception) {
             log("sync failed (${e.javaClass.simpleName})")
-            _state.value = SyncState.Failed("Sync failed. Try again.")
+            _state.value = SyncState.Failed(STORE_FAILED)
         }
     }
 
-    /** Right after a successful sign-in: the marker (always), then a first sync. */
+    /**
+     * Right after a successful sign-in: detach if the spots are linked to another account, the
+     * marker (always), then a first sync. The state is [SyncState.Syncing] from the start, so the
+     * sign-in row can't be tapped again meanwhile. If the detach fails the sign-in is undone
+     * (state Failed): syncing on with the old account's links would delete or misfile spots.
+     */
     suspend fun onSignedIn(session: Session) {
-        try {
+        val proceed = try {
             // Under the lock, so it can't race a sign-out; skipped if one already happened.
             mutex.withLock {
-                if (auth.session()?.uid == session.uid) writeMarker(session.uid, session.idToken)
+                if (auth.session()?.uid != session.uid) {
+                    if (auth.session() == null) _state.value = SyncState.SignedOut
+                    return@withLock false
+                }
+                _state.value = SyncState.Syncing
+                if (!linkTo(session.uid)) {
+                    auth.signOut()
+                    _state.value = SyncState.Failed(STORE_FAILED)
+                    return@withLock false
+                }
+                writeMarker(session.uid, session.idToken)
+                true
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             log("marker failed (${e.javaClass.simpleName})")
+            true
         }
-        sync()
+        if (proceed) sync()
     }
 
-    /** Forget the account. Spots stay on the watch; links and pending deletes go. */
+    /**
+     * Forget the session. Every spot keeps its row and its link (see the class comment); only the
+     * auth store and the marker time are cleared.
+     */
     suspend fun signOut() {
         auth.signOut()
-        try {
-            mutex.withLock {
-                store.detachAll()
-                markers.clear()
-            }
+        mutex.withLock { markers.clear() }
+        _state.value = SyncState.SignedOut
+    }
+
+    /**
+     * The user removed a spot. Signed out and never linked: it is simply gone. Otherwise it is
+     * soft-deleted and waits for its account (pushed when that account syncs, purged by a detach
+     * if another one signs in). Signed in, a Vision-owned spot is read-only, so nothing happens.
+     */
+    suspend fun deleteSpot(id: String) {
+        val row = store.getAllIncludingDeleted().firstOrNull { it.id == id } ?: return
+        val signedIn = auth.session() != null
+        if (signedIn && row.origin == SpotOrigin.VISION.name) return
+        if (signedIn || row.cloudId != null) store.markDeleted(id, clock())
+        else store.hardDelete(listOf(id))
+    }
+
+    /**
+     * Makes the local links belong to [uid]: if they belong to another account, [SpotStore.detachAll]
+     * first. Call under [mutex]. False if the detach (or recording the uid) failed: the caller must
+     * not sync.
+     */
+    private suspend fun linkTo(uid: String): Boolean {
+        val linked = markers.linkedUid()
+        if (linked == uid) return true
+        return try {
+            if (linked != null) store.detachAll()
+            markers.setLinkedUid(uid)
+            true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             log("detach failed (${e.javaClass.simpleName})")
+            false
         }
-        _state.value = SyncState.SignedOut
     }
 
     private suspend fun runSync() {
@@ -125,6 +194,12 @@ class SpotSyncService(
             return
         }
         _state.value = SyncState.Syncing
+        // The session's account may differ from the links' (e.g. the app died between sign-in
+        // and onSignedIn): detach first, or fail without touching anything.
+        if (!linkTo(uid)) {
+            _state.value = SyncState.Failed(STORE_FAILED)
+            return
+        }
 
         // 2. Both collections, complete, or nothing.
         val remote = try {
@@ -256,6 +331,7 @@ class SpotSyncService(
     private companion object {
         const val TAG = "SpotSyncService"
         const val UNREACHABLE = "Couldn't reach your account"
+        const val STORE_FAILED = "Sync failed. Try again."
         const val MARKER_INTERVAL_MS = 24 * 60 * 60_000L
     }
 }

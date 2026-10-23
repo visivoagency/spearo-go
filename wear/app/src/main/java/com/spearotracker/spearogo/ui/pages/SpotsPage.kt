@@ -130,8 +130,9 @@ fun SpotsPage(
                 SavedRow(
                     location = location,
                     onSelect = { viewModel.setActiveLocation(location) },
-                    // A Vision-owned spot is read-only here: no long-press delete.
-                    onDelete = if (location.origin == "VISION") null
+                    // Signed in, a Vision-owned spot is read-only here: no long-press delete.
+                    // Signed out it can be removed from the watch (Vision still owns it).
+                    onDelete = if (location.origin == "VISION" && syncState !is SyncState.SignedOut) null
                     else ({ viewModel.deleteLocation(location) })
                 )
             }

@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -297,9 +299,10 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    /** Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs. */
     fun deleteLocation(location: SavedLocation) {
         viewModelScope.launch {
-            locationDao.markDeleted(location.id, System.currentTimeMillis())
+            syncService.deleteSpot(location.id)
             syncSpots()
         }
     }
@@ -319,10 +322,12 @@ class AppViewModel @Inject constructor(
     }
 
     private var signInJob: Job? = null
+    /** The session is saved and onSignedIn is running: too late to cancel. */
+    private var signInHandedOff = false
 
     /** The user gave up waiting for the phone: stop the sign-in and return the row to its start. */
     fun cancelSignIn() {
-        if (_signIn.value !is SignInUiState.InProgress) return
+        if (_signIn.value !is SignInUiState.InProgress || signInHandedOff) return
         signInJob?.cancel()
         signInJob = null
         _signIn.value = SignInUiState.Idle
@@ -341,8 +346,16 @@ class AppViewModel @Inject constructor(
             }
             when (result) {
                 is SignInResult.Success -> {
-                    _signIn.value = SignInUiState.Idle
-                    syncService.onSignedIn(result.session)
+                    // Still InProgress until onSignedIn has handed off to sync (state Syncing), so
+                    // a second tap can't start another sign-in during the detach, marker or first
+                    // sync. Not cancellable: the session is already saved.
+                    signInHandedOff = true
+                    try {
+                        withContext(NonCancellable) { syncService.onSignedIn(result.session) }
+                    } finally {
+                        signInHandedOff = false
+                        _signIn.value = SignInUiState.Idle
+                    }
                 }
                 SignInResult.AccountExistsWithDifferentMethod ->
                     _signIn.value = SignInUiState.AccountExists

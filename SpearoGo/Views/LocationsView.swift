@@ -28,8 +28,9 @@ struct LocationsView: View {
                     LocationRow(location: location, isActive: location.isActive)
                         .onTapGesture { activate(location) }
                         .accessibilityAddTraits(.isButton)
-                        // A Vision-owned spot is read-only here: no swipe-to-delete.
-                        .deleteDisabled(location.origin == "VISION")
+                        // Signed in, a Vision-owned spot is read-only here: no swipe-to-delete.
+                        // Signed out it can be removed from the watch (Vision still owns it).
+                        .deleteDisabled(location.origin == "VISION" && SyncServices.status.state != .signedOut)
                 }
                 .onDelete(perform: delete)
 
@@ -148,15 +149,10 @@ struct LocationsView: View {
     }
 
     private func delete(at offsets: IndexSet) {
-        // Soft delete: the row waits for the account to hear about it.
-        for i in offsets {
-            let loc = locations[i]
-            guard loc.origin != "VISION" else { continue }
-            loc.isDeleted = true
-            loc.pendingSync = true
-            loc.lastModifiedAt = .now
-            loc.isActive = false
-        }
+        // Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs.
+        let signedIn = SyncServices.auth.session() != nil
+        let rows = offsets.map { locations[$0] }
+        for row in rows { deleteSpot(row, signedIn: signedIn, context: modelContext) }
         try? modelContext.save()
         syncSpotsInBackground()
     }
@@ -213,8 +209,10 @@ struct SyncRows: View {
         switch result {
         case .success(let session):
             message = nil
-            signingIn = false
+            // Still "Signing in…" until onSignedIn has handed off to sync (.syncing), so the
+            // button can't start a second sign-in during the detach, marker or first sync.
             await SyncServices.sync.onSignedIn(session: session)
+            signingIn = false
         case .accountExistsWithDifferentMethod:
             message = "You already have a Spearo account with this email. Sign in the way you did before, or link methods at spearo.pro."
             signingIn = false
