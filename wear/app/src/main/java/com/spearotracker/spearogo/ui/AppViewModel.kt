@@ -24,6 +24,8 @@ import com.spearotracker.spearogo.models.GeocodedPlace
 import com.spearotracker.spearogo.services.GeocodingService
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flatMapLatest
+import com.spearotracker.spearogo.sync.AccountPromptGate
 import com.spearotracker.spearogo.sync.RemoteAuthSignIn
 import com.spearotracker.spearogo.sync.SignInResult
 import com.spearotracker.spearogo.sync.SpotSyncService
@@ -241,8 +243,10 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    /** Saved spots, for the locations screen. */
-    val savedLocations = locationDao.getAllLocations()
+    /** Saved spots, for the locations screen: the linked account's and those saved signed out. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val savedLocations = syncService.viewerUid
+        .flatMapLatest { locationDao.getVisibleLocations(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _search = MutableStateFlow(SpotSearchState())
@@ -280,6 +284,7 @@ class AppViewModel @Inject constructor(
             syncService.addSpot(location)   // stamps the signed-in account, if any
             clearSearch()
             setActiveLocation(location)
+            offerAccountOnce()
             syncSpots()
         }
     }
@@ -295,6 +300,7 @@ class AppViewModel @Inject constructor(
                     pendingSync = true
                 )
             )
+            offerAccountOnce()
             syncSpots()
         }
     }
@@ -381,6 +387,33 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    // One-time prompt after the first saved spot (see AccountPromptGate).
+    private val promptPrefs = context.getSharedPreferences("account_prompt", Context.MODE_PRIVATE)
+    private val promptGate = AccountPromptGate(
+        seen = { promptPrefs.getBoolean(PROMPT_SEEN, false) },
+        markSeen = { promptPrefs.edit().putBoolean(PROMPT_SEEN, true).apply() }
+    )
+    private val _accountPrompt = MutableStateFlow(false)
+    val accountPrompt: StateFlow<Boolean> = _accountPrompt.asStateFlow()
+
+    private fun offerAccountOnce() {
+        if (promptGate.onSpotSaved(signedOut = syncService.state.value is SyncState.SignedOut)) {
+            _accountPrompt.value = true
+        }
+    }
+
+    fun dismissAccountPrompt() {
+        promptGate.onAnswered()
+        _accountPrompt.value = false
+    }
+
+    /** "Sign in" on the prompt: back to the Spots list, where the sync row shows the sign-in. */
+    fun acceptAccountPrompt() {
+        promptGate.onAnswered()
+        _accountPrompt.value = false
+        signInWithGoogle()
+    }
+
     fun signOut() {
         viewModelScope.launch {
             syncService.signOut()
@@ -392,6 +425,10 @@ class AppViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             hasLocationPermission = locationService.hasPermission()
         )
+    }
+
+    private companion object {
+        const val PROMPT_SEEN = "seen"
     }
 }
 

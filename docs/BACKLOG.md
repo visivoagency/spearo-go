@@ -18,15 +18,20 @@ Device checks before release. Each one is something the tests could not reach:
 6. Deletes both ways. A Tracker spot deleted on the watch disappears in Tracker, and a Tracker restore still returns everything.
 7. Airplane mode: save and delete, reconnect, both sync.
 8. A token older than an hour refreshes silently. A revoked token returns to signed out with the spots still on the watch.
-9. Sign out and back into the same account: no duplicates. Sign into a second account: the first account's spots leave the watch and are not uploaded; spots saved while signed out upload; a spot saved under the first account while offline does not. Delete the active spot on each watch; both fall back to your location.
+9. Sign out and back into the same account: no duplicates. Sign into a second account: the first account's synced spots leave the watch and are not uploaded; spots saved while signed out upload; a spot saved under the first account while offline stays hidden (not listed, not uploaded) and uploads to the first account when it signs back in. Delete the active spot on each watch; both fall back to your location.
 10. A brand-new diver: `users/{uid}` and the website profile come out right. Go never creates that doc.
 11. Upgrade installs over real data: Wear from 2.1.1 and watchOS from 1.1.0. The order and the active spot survive, with no 1970 timestamps. Also a Wear backup restored onto a second watch.
 12. Signed out, a network capture shows only Open-Meteo, geocoding and `tidesGo`.
 13. Every sync-row state at Wear Text size Largest and at the largest watchOS Dynamic Type.
 14. In the Firestore console, a Go doc has exactly the 12 snake_case keys, `is_private: true`, and no `isDeleted` or `lastModifiedAt`.
+15. The account prompt (24 Oct). On a fresh install, signed out, save a first spot: the prompt appears once (Wear: in place of the Spots list; Apple Watch: after the save sheet closes). "Not now" and Back dismiss it; after that a second save does not bring it back. "Sign in" starts the sign-in, and on Apple Watch the prompt closes once signed in. Check it at Wear Text size Largest.
 
 ### Account sync: small follow-ups from review (added 2026-10-23)
 None of these blocks the release.
+- (24 Oct) A deleted account's hidden spots stay on the watch indefinitely. Go cannot tell that an account was deleted, and the account can't sign in again to collect them. Possible fix: show a "N spots saved for another account" row with a remove option.
+- (24 Oct) Swift `removeAccountSpots` and `isVisible(to:)` have no automated test (no Swift test target, and the harness is Foundation-only).
+- (24 Oct) Apple Watch: the Locations list follows `@AppStorage("sync.linkedUid")`, which SpotSyncService writes from its actor. The KVO update may arrive off the main thread. If it is ever missed, an open Locations sheet keeps the old filter until it reopens. Fix if seen: mirror linkedUid into `SyncStatus`.
+- (24 Oct) Device check: on Apple Watch, tapping a saved spot still updates the verdict now that `ContentView` keys on the active spot instead of the array.
 - Account switch, narrow windows. If a session expires offline before it links, a spot saved under U2 can upload to U1 on a later same-account sign-in. Fix: run the removal even when `linked == uid`, with `includeLinked = false`. Also, a signed-out spot that was pushed to U1 but never linked (the app died mid-sync) can also reach U2. Fix: stamp ownerUid before the PATCH, not only in apply.
 - The two stacked KDoc blocks on `AppViewModel.deleteLocation` should be merged.
 - The shared merge fixtures check ids, not field contents. Add per-row field checks so the Swift field mapping is covered too.

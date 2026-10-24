@@ -57,6 +57,12 @@ fun SpotsPage(
     onAbout: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val accountPrompt by viewModel.accountPrompt.collectAsState()
+    if (accountPrompt) {
+        AccountPrompt(onSignIn = { viewModel.acceptAccountPrompt() }, onNotNow = { viewModel.dismissAccountPrompt() })
+        return
+    }
+
     BackHandler { onDismiss() }
 
     val saved by viewModel.savedLocations.collectAsState()
@@ -265,6 +271,49 @@ private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: ((
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+/**
+ * Shown once, right after the first spot is saved while signed out (see AccountPromptGate).
+ * Back counts as "Not now". Either way the Sign in row stays on the Spots list.
+ */
+@Composable
+private fun AccountPrompt(onSignIn: () -> Unit, onNotNow: () -> Unit) {
+    BackHandler { onNotNow() }
+    ScrollingList {
+        item {
+            Text(
+                text = "Save your spots to your Spearo account?",
+                style = Brand.Typography.personalityCopy,
+                color = Brand.Colors.textPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = Brand.Spacing.item)
+            )
+        }
+        item {
+            Text(
+                text = "Sign in to keep them in your account and see them on spearo.pro.",
+                style = Brand.Typography.caption,
+                color = Brand.Colors.textSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = Brand.Spacing.item)
+            )
+        }
+        item {
+            TwoLineRow(
+                title = "Sign in with Google",
+                subtitle = "On your phone",
+                onClick = onSignIn
+            )
+        }
+        item {
+            TwoLineRow(
+                title = "Not now",
+                subtitle = "Sign in any time from Spots",
+                onClick = onNotNow
+            )
         }
     }
 }

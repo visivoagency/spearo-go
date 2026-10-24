@@ -5,9 +5,29 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-10-23
+## Start here — state as of 2026-10-24
 
 Read this block first. Everything below it is a change log.
+
+### 24 Oct: hidden spots and the account prompt (branch `feat/account-prompt-and-hidden-spots`)
+
+Kevin decided on 24 Oct that a spot stays with the first account it was attached to. Two changes follow, on both watches.
+
+- **Signing into a different account no longer loses unsynced spots.**
+  - The old account's synced spots still leave the watch, and they are safe in that account.
+  - Its not-yet-uploaded spots stay on the watch, hidden and inactive. They are never shown to the new account or pushed to it.
+  - When the old account signs back in, those spots show again and upload to it.
+- **A one-time prompt**, "Save your spots to your Spearo account?", appears right after the first spot is saved while signed out. It offers Sign in or Not now. Once answered, it never repeats.
+- Review fixes: on Apple Watch, the active spot now falls back to your location when it's hidden. A spot saved between a sign-in and its link stays visible. The two platforms now build the apply step from the same rows.
+- Details are in the spec's "Amendments (24 Oct)".
+- Verified:
+  - 103 Kotlin unit tests (three new tests in SpotSyncServiceTest, plus AccountPromptGateTest) and the Wear debug build.
+  - MigrationTest, 7/7, on an API 34 emulator.
+  - The watch target builds.
+- NOT RUN:
+  - The prompt on a screen, either platform. The Wear emulator needs the targetSdk 34 workaround.
+  - Swift `removeAccountSpots`. It has no test target.
+  - A live second-account switch.
 
 ### What was built (branch `feature/account-spot-sync`, not merged)
 
@@ -52,6 +72,7 @@ Apple Watch needs P3, P4 and P5.
 2. Live E2E, both platforms. Then signed-in screenshots.
 3. Enter the new Data safety and App Privacy answers in the consoles. For the owner:
    - CONFIRMED by Kevin on 23 Oct: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).
+   - **Revised 24 Oct:** a spot saved under the old account but not yet pushed is now kept, hidden, for that account (see the 24 Oct block above). The rest of this bullet is otherwise current.
    - **DECIDED by Kevin on 23 Oct: spots stay with the account they were saved to.** Sign-out keeps spots and their links. Signing into a different account removes every linked spot, and every spot saved under the old account but not yet pushed (`ownerUid`, Room v3), soft-deleted ones included, from the watch. They are not uploaded to the new account and no old-account delete is pushed. A spot saved under the old account while offline, never pushed, is therefore lost for good (the watch held its only copy); a later option is to hide such spots until that account signs in again. Spots saved while signed out upload to the new one. If the active spot leaves, or is deleted, the app falls back to "Use my location" on both watches. Merged from branch `feature/account-switch-keeps-spots` (`SpotSyncService.linkTo` / `link(to:)`, `removeAccountSpots` on both platforms).
    - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (the first account's spots leave the watch and are not uploaded; spots saved while signed out upload).
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.

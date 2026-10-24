@@ -99,7 +99,7 @@ class MigrationTest {
             ApplicationProvider.getApplicationContext(), AppDatabase::class.java, dbName
         ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
         try {
-            val all = room.locationDao().getAllLocations().first()
+            val all = room.locationDao().getVisibleLocations(null).first()
             assertEquals(1, all.size)
             assertEquals("Lagos", all[0].name)
             assertTrue(all[0].isActive)
@@ -112,8 +112,8 @@ class MigrationTest {
 
     /**
      * removeAccountSpots runs when a DIFFERENT account signs in (sign-out keeps links): the old
-     * account's spots (every row with a cloudId, or owned by another uid, soft-deleted included)
-     * leave; spots saved while signed out stay.
+     * account's synced spots and unowned linked rows leave; its unsynced ones stay, hidden from the
+     * new account's list and inactive; spots saved while signed out stay.
      */
     @Test
     fun accountChangeRemovesOldAccountSpots() = runBlocking {
@@ -132,7 +132,11 @@ class MigrationTest {
             )
             dao.insert(
                 SavedLocation(id = "unpushed", name = "Albufeira", latitude = 37.1, longitude = -8.2,
-                    createdAt = 3, pendingSync = true, ownerUid = "U1")
+                    createdAt = 3, isActive = true, pendingSync = true, ownerUid = "U1")
+            )
+            dao.insert(
+                SavedLocation(id = "synced", name = "Lagoa", latitude = 37.1, longitude = -8.4,
+                    createdAt = 6, cloudId = "doc6", ownerUid = "U1")
             )
             dao.insert(
                 SavedLocation(id = "mine", name = "Tavira", latitude = 37.1, longitude = -7.6,
@@ -146,9 +150,12 @@ class MigrationTest {
             dao.removeAccountSpots("U2", includeLinked = true)
 
             val rows = dao.getAllIncludingDeleted().associateBy { it.id }
-            assertEquals(setOf("mine", "local"), rows.keys)
+            assertEquals(setOf("mine", "local", "unpushed"), rows.keys)
             assertTrue(rows.getValue("local").pendingSync)   // still queued for the new account
-            assertNull(dao.getActiveLocation())              // the active spot left: "Use my location"
+            assertFalse(rows.getValue("unpushed").isActive)  // kept for U1, but not active
+            assertNull(dao.getActiveLocation())              // the active spots went: "Use my location"
+            assertEquals(setOf("mine", "local"), dao.getVisibleLocations("U2").first().map { it.id }.toSet())
+            assertEquals(setOf("unpushed", "local"), dao.getVisibleLocations("U1").first().map { it.id }.toSet())
         } finally {
             room.close()
         }
@@ -203,7 +210,7 @@ class MigrationTest {
                 createdAt = 1, isActive = true))
             dao.markDeleted("a", 5000, null)
 
-            assertTrue(dao.getAllLocations().first().isEmpty())
+            assertTrue(dao.getVisibleLocations(null).first().isEmpty())
             assertNull(dao.getActiveLocation())
             val row = dao.getAllIncludingDeleted().single()
             assertTrue(row.isDeleted); assertTrue(row.pendingSync)

@@ -33,6 +33,10 @@ struct ContentView: View {
         }
     }
 
+    private var activeSpotKey: String? {
+        savedLocations.first(where: { $0.isActive }).map { "\($0.id)|\($0.latitude)|\($0.longitude)|\($0.name)" }
+    }
+
     private var mainContent: some View {
         TabView {
             VerdictPage()
@@ -58,8 +62,11 @@ struct ContentView: View {
             }
             await appState.refresh()
         }
-        .onChange(of: savedLocations) { _, updated in
-            if let active = updated.first(where: { $0.isActive }) {
+        // Keyed on the active spot's identity and place, not the array: SavedLocation compares by
+        // identity, so an isActive flipped in place (a spot hidden on an account switch) would
+        // not register as a change of the array.
+        .onChange(of: activeSpotKey) { _, _ in
+            if let active = savedLocations.first(where: { $0.isActive }) {
                 appState.activeOverrideCoordinate = active.coordinate
                 appState.activeOverrideName = active.name
             } else {

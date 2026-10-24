@@ -81,12 +81,12 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
  * Links are scoped to an account ([SyncMarkerStore.linkedUid]). Sign-out (planned, or a session a
  * refresh 400 cleared) keeps every row and cloudId, so the same account signing back in finds its
  * spots linked and nothing is duplicated. Spots stay with the account they were saved to (owner
- * ruling, 23 Oct): when a DIFFERENT account syncs, [SpotStore.removeAccountSpots] runs first and
- * every row with a cloudId, or with an ownerUid other than the new account's, leaves the watch
- * (soft-deleted ones included). They are safe in that account (or were never pushed to it) and
- * come back if it signs in again. Rows saved while signed out (no cloudId, no ownerUid) stay and
- * upload to the new one. An active spot removed this way takes its isActive with it, so the
- * app falls back to "Use my location".
+ * ruling, 23 Oct): when a DIFFERENT account syncs, [SpotStore.removeAccountSpots] runs first. The
+ * other account's synced spots leave the watch (they are safe in it and come back when it signs
+ * in again); its not-yet-uploaded ones stay, hidden ([viewerUid]) and left out of every merge,
+ * until that account signs back in and they upload to it. Rows saved while signed out (no
+ * cloudId, no ownerUid) stay and upload to the new one. An active spot removed or hidden this way
+ * loses its isActive, so the app falls back to "Use my location".
  * Logs carry counts and status codes only: no uid, email, names, coordinates or tokens.
  */
 class SpotSyncService(
@@ -106,6 +106,13 @@ class SpotSyncService(
         if (auth.session() != null) SyncState.Idle else SyncState.SignedOut
     )
     val state: StateFlow<SyncState> = _state.asStateFlow()
+
+    private val _viewerUid = MutableStateFlow(markers.linkedUid())
+    /**
+     * The account whose spots the watch shows ([SyncMarkerStore.linkedUid]; it survives sign-out).
+     * Rows owned by any other account are hidden. Null until the first sign-in.
+     */
+    val viewerUid: StateFlow<String?> = _viewerUid.asStateFlow()
 
     suspend fun sync() {
         try {
@@ -166,13 +173,25 @@ class SpotSyncService(
      * in next.
      */
     suspend fun addSpot(row: SavedLocation) {
-        store.upsertAll(listOf(row.copy(ownerUid = auth.session()?.uid)))
+        store.upsertAll(listOf(row.copy(ownerUid = ownerForEdits())))
+    }
+
+    /**
+     * The account a spot made or deleted now belongs to: the session's, unless the links still
+     * belong to another account (signed in, but [linkTo] hasn't run yet). Then none: the row stays
+     * visible and goes to the session's account once it links, instead of being hidden as a
+     * stranger's.
+     */
+    private fun ownerForEdits(): String? {
+        val uid = auth.session()?.uid ?: return null
+        val linked = markers.linkedUid()
+        return if (linked == null || linked == uid) uid else null
     }
 
     /**
      * The user removed a spot. Signed out and never linked: it is simply gone. Otherwise it is
-     * soft-deleted and waits for its account (pushed when that account syncs, removed with the
-     * rest of that account's spots if another one signs in). Signed in, the row is stamped with
+     * soft-deleted and waits for its account (pushed when that account syncs, kept hidden for it
+     * if another one signs in first). Signed in, the row is stamped with
      * that account, and a Vision-owned spot is read-only, so nothing happens.
      */
     suspend fun deleteSpot(id: String) {
@@ -180,7 +199,7 @@ class SpotSyncService(
         val uid = auth.session()?.uid
         val signedIn = uid != null
         if (signedIn && row.origin == SpotOrigin.VISION.name) return
-        if (signedIn || row.cloudId != null) store.markDeleted(id, clock(), uid)
+        if (signedIn || row.cloudId != null) store.markDeleted(id, clock(), ownerForEdits())
         else store.hardDelete(listOf(id))
     }
 
@@ -196,6 +215,7 @@ class SpotSyncService(
         return try {
             store.removeAccountSpots(uid, includeLinked = linked != null)
             markers.setLinkedUid(uid)
+            _viewerUid.value = uid
             true
         } catch (e: CancellationException) {
             throw e
@@ -241,7 +261,10 @@ class SpotSyncService(
         val undecodable = fetchedIds - remote.map { it.docId }.toSet()
         if (undecodable.isNotEmpty()) log("${undecodable.size} spot docs unreadable; their spots left as they are")
         val snapshot = store.getAllIncludingDeleted()
-        val mergeable = snapshot.filter { it.cloudId == null || it.cloudId !in undecodable }
+        // Another account's hidden spots are never merged into, pushed to or deleted from this one.
+        val mergeable = snapshot.filter {
+            (it.ownerUid == null || it.ownerUid == uid) && (it.cloudId == null || it.cloudId !in undecodable)
+        }
         val plan = withoutCamelCasePushes(planSync(mergeable.map { it.toLocalSpot() }, remote, newId), remote)
         val nowIso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(clock()))
 
@@ -280,13 +303,13 @@ class SpotSyncService(
             _state.value = if (auth.session() == null) SyncState.SignedOut else SyncState.Idle
             return
         }
-        val before = snapshot.associateBy { it.id }
+        val before = mergeable.associateBy { it.id }
         val upserts = mutableListOf<LocalSpot>()
         val deletes = mutableListOf<String>()
         upserts += plan.upsertLocal
         deletes += plan.deleteLocal
         for (s in pushedUpserts) if (s.isDeleted) deletes += s.id else upserts += s
-        deletes += snapshot.filter { it.isDeleted && it.cloudId in pushedDeleteDocIds }.map { it.id }
+        deletes += mergeable.filter { it.isDeleted && it.cloudId in pushedDeleteDocIds }.map { it.id }
         val pushedIds = pushedUpserts.associate { it.id to it.cloudId!! }
 
         var skipped = 0

@@ -12,10 +12,15 @@ struct LocationsView: View {
 
     @Query(filter: #Predicate<SavedLocation> { !$0.isDeleted },
            sort: \SavedLocation.createdAt, order: .reverse)
-    private var locations: [SavedLocation]
+    private var allLocations: [SavedLocation]
+
+    /// The account the watch shows (SpotSyncService writes it); another account's hidden spots are left out.
+    @AppStorage("sync.linkedUid") private var linkedUid: String?
+    private var locations: [SavedLocation] { allLocations.filter { $0.isVisible(to: linkedUid) } }
 
     @State private var showingAddSheet = false
     @State private var showingSearchSheet = false
+    @State private var showingAccountPrompt = false
 
     var body: some View {
         NavigationStack {
@@ -85,12 +90,20 @@ struct LocationsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingAddSheet) {
+        .sheet(isPresented: $showingAddSheet, onDismiss: offerAccountIfDue) {
             AddLocationView()
         }
-        .sheet(isPresented: $showingSearchSheet) {
+        .sheet(isPresented: $showingSearchSheet, onDismiss: offerAccountIfDue) {
             SearchSpotView()
         }
+        .sheet(isPresented: $showingAccountPrompt, onDismiss: { AccountPrompt.answered() }) {
+            AccountPromptView()
+        }
+    }
+
+    /// After a save sheet closes: the one-time account prompt, if that save earned it.
+    private func offerAccountIfDue() {
+        if AccountPrompt.takePending() { showingAccountPrompt = true }
     }
 
     // MARK: - Current GPS row
@@ -151,8 +164,9 @@ struct LocationsView: View {
     private func delete(at offsets: IndexSet) {
         // Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs.
         let sessionUid = SyncServices.auth.session()?.uid
+        let ownerUid = SyncServices.ownerForEdits()
         let rows = offsets.map { locations[$0] }
-        for row in rows { deleteSpot(row, sessionUid: sessionUid, context: modelContext) }
+        for row in rows { deleteSpot(row, sessionUid: sessionUid, ownerUid: ownerUid, context: modelContext) }
         try? modelContext.save()
         syncSpotsInBackground()
     }
@@ -166,8 +180,73 @@ func syncSpotsInBackground() {
 
 // MARK: - Sync rows
 
+// MARK: - Account prompt
+
+/// The one-time "Save your spots to your Spearo account?" prompt (owner decision, 23 Oct):
+/// offered right after the first spot is saved while signed out, until it is answered, then never
+/// again. A first save while signed in uses it up. The Sign in row stays on the Locations list.
+/// Twin of AccountPromptGate in Kotlin.
+enum AccountPrompt {
+    private static let seenKey = "accountPrompt.seen"
+    private static let pendingKey = "accountPrompt.pending"
+
+    /// A spot was just saved. Marks the prompt due if it hasn't been answered and signed out.
+    @MainActor
+    static func noteSpotSaved(defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: seenKey) else { return }
+        if SyncServices.status.state == .signedOut { defaults.set(true, forKey: pendingKey) }
+        else { defaults.set(true, forKey: seenKey) }
+    }
+
+    /// The prompt was shown and closed (Sign in, Not now or swiped away): never again.
+    static func answered(defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: seenKey)
+    }
+
+    /// True once if the prompt is due; clears it.
+    static func takePending(defaults: UserDefaults = .standard) -> Bool {
+        guard defaults.bool(forKey: pendingKey) else { return false }
+        defaults.removeObject(forKey: pendingKey)
+        return true
+    }
+}
+
+struct AccountPromptView: View {
+    @Environment(\.dismiss) private var dismiss
+    private let status = SyncServices.status
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Brand.Spacing.item) {
+                Text("Save your spots to your Spearo account?")
+                    .brandFont(Brand.Typography.personalityCopy)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text("Sign in to keep them in your account and see them on spearo.pro.")
+                    .captionStyle()
+                    .multilineTextAlignment(.center)
+                SyncRows(showsHeading: false)
+                Button("Not now") { dismiss() }
+                    .brandFont(Brand.Typography.itemLabel)
+                    .foregroundStyle(Brand.Colors.textSecondary)
+                Text("Sign in any time from Locations.")
+                    .captionStyle()
+                    .multilineTextAlignment(.center)
+            }
+            .padding(Brand.Spacing.page)
+        }
+        .brandPage()
+        // Signed in (or syncing): the prompt has done its job.
+        .onChange(of: status.state) { _, state in
+            if state != .signedOut { dismiss() }
+        }
+    }
+}
+
 /// The account rows: "Sync with spearo.pro" when signed out, status + "Sign out" when signed in.
 struct SyncRows: View {
+    /// False on the account prompt, which has its own heading.
+    var showsHeading = true
     private let status = SyncServices.status
     @State private var apple = SyncServices.appleSignIn()
     @State private var signingIn = false
@@ -183,13 +262,17 @@ struct SyncRows: View {
 
     private var signedOutRows: some View {
         VStack(alignment: .leading, spacing: Brand.Spacing.micro) {
-            Text("Sync with spearo.pro")
-                .brandFont(Brand.Typography.personalityCopy)
-                .foregroundStyle(Brand.Colors.textPrimary)
+            if showsHeading {
+                Text("Sync with spearo.pro")
+                    .brandFont(Brand.Typography.personalityCopy)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+            }
             if signingIn {
                 Text("Signing in…").captionStyle()
             } else {
-                Text("Sign in to keep your spots in your Spearo account").captionStyle()
+                if showsHeading {
+                    Text("Sign in to keep your spots in your Spearo account").captionStyle()
+                }
                 SignInWithAppleButton(.signIn) { request in
                     apple.prepare(request)
                 } onCompletion: { result in
@@ -363,9 +446,10 @@ struct AddLocationView: View {
         guard !trimmed.isEmpty else { return }
         let location = SavedLocation(name: trimmed, coordinate: coord)
         location.pendingSync = true   // lastModifiedAt is already now (init)
-        location.ownerUid = SyncServices.auth.session()?.uid   // the signed-in account, if any
+        location.ownerUid = SyncServices.ownerForEdits()   // the signed-in account, if any
         modelContext.insert(location)
         try? modelContext.save()
+        AccountPrompt.noteSpotSaved()
         syncSpotsInBackground()
         dismiss()
     }
@@ -469,9 +553,10 @@ struct SearchSpotView: View {
         let location = SavedLocation(name: place.savedName, coordinate: place.coordinate)
         location.isActive = true
         location.pendingSync = true   // lastModifiedAt is already now (init)
-        location.ownerUid = SyncServices.auth.session()?.uid   // the signed-in account, if any
+        location.ownerUid = SyncServices.ownerForEdits()   // the signed-in account, if any
         modelContext.insert(location)
         try? modelContext.save()
+        AccountPrompt.noteSpotSaved()
         syncSpotsInBackground()
         dismiss()
     }
