@@ -33,21 +33,45 @@ extension LocalSpot {
     }
 }
 
-/// The account changed to `newUid`: spots stay with the account they were saved to, so every row
-/// owned by another uid leaves the watch, plus, when `includeLinked` (the links belonged to
-/// another account), every row with a cloudId. Soft-deleted rows included. They are safe in that
-/// account (or were never pushed to it) and come back if it signs in again. Rows saved while
-/// signed out (no cloudId, no ownerUid) stay and upload to the new account.
+/// The account changed to `newUid`. Spots stay with the account they were saved to (owner
+/// ruling, 23 Oct), so for each row owned by another uid:
+///  - synced (pendingSync false): removed. It is safe in that account and comes back when it
+///    signs in again;
+///  - not yet uploaded (pendingSync true, a new spot or a delete): kept but hidden
+///    (`isVisible(to:)`) and made inactive. It is never shown or uploaded to `newUid`, and
+///    uploads to its own account when that account signs back in.
+/// When `includeLinked` (the links belonged to another account), linked rows with no owner
+/// (written before owners were recorded) are removed too. Rows saved while signed out (no
+/// cloudId, no ownerUid) stay and upload to the new account. Rows owned by `newUid` are untouched.
 /// Twin of LocationDao.removeAccountSpots in Kotlin.
 /// Throws if the store can't be read or saved (rolled back): the caller must not sync on.
 @MainActor
 func removeAccountSpots(newUid: String, includeLinked: Bool, context: ModelContext) throws {
-    let rows = try context.fetch(FetchDescriptor<SavedLocation>()).filter { row in
-        (includeLinked && row.cloudId != nil) || (row.ownerUid != nil && row.ownerUid != newUid)
+    var changed = false
+    for row in try context.fetch(FetchDescriptor<SavedLocation>()) {
+        if let owner = row.ownerUid {
+            guard owner != newUid else { continue }
+            if !row.pendingSync {
+                context.delete(row); changed = true
+            } else if row.isActive {
+                row.isActive = false; changed = true
+            }
+        } else if includeLinked && row.cloudId != nil {
+            context.delete(row); changed = true
+        }
     }
-    guard !rows.isEmpty else { return }
-    for row in rows { context.delete(row) }
+    guard changed else { return }
     try saveOrRollback(context)
+}
+
+extension SavedLocation {
+    /// Shown on the watch: spots of `viewerUid` (the linked account, "sync.linkedUid") and those
+    /// saved while signed out. Another account's unsynced spots stay hidden until it signs back
+    /// in. Nil `viewerUid` (never signed in): all. Twin of LocationDao.getVisibleLocations.
+    func isVisible(to viewerUid: String?) -> Bool {
+        guard let viewerUid, let ownerUid else { return true }
+        return ownerUid == viewerUid
+    }
 }
 
 /// Spots saved before v2 come out of the store with `lastModifiedAt` at its epoch default.
@@ -65,15 +89,14 @@ func backfillLastModified(context: ModelContext) throws {
 
 /// The user removed a spot. Twin of SpotSyncService.deleteSpot in Kotlin.
 /// Signed out and never linked: it is simply gone. Otherwise it is soft-deleted and waits for its
-/// account (pushed when that account syncs, removed with the rest of that account's spots if
-/// another one signs in).
-/// Signed in (`sessionUid` set), the row is stamped with that account, and a Vision-owned spot is
-/// read-only, so nothing happens.
+/// account (pushed when that account syncs, kept hidden for it if another one signs in first).
+/// Signed in (`sessionUid` set), a Vision-owned spot is read-only, so nothing happens. A non-nil
+/// `ownerUid` (SyncServices.ownerForEdits()) is stamped on the row.
 @MainActor
-func deleteSpot(_ row: SavedLocation, sessionUid: String?, context: ModelContext) {
+func deleteSpot(_ row: SavedLocation, sessionUid: String?, ownerUid: String?, context: ModelContext) {
     let signedIn = sessionUid != nil
     if signedIn && row.origin == SpotOrigin.vision.rawValue { return }
-    if let sessionUid { row.ownerUid = sessionUid }
+    if let ownerUid { row.ownerUid = ownerUid }
     if signedIn || row.cloudId != nil {
         row.isDeleted = true
         row.pendingSync = true

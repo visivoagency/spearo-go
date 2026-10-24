@@ -33,11 +33,11 @@ import SwiftData
 // session a refresh 400 cleared) keeps every row and cloudId, so the same account signing back
 // in finds its spots linked and nothing is duplicated. Spots stay with the account they were
 // saved to (owner ruling, 23 Oct): when a DIFFERENT account syncs, removeAccountSpots runs
-// first and every row with a cloudId, or with an ownerUid other than the new account's, leaves
-// the watch (soft-deleted ones included). They are safe in that account (or were never pushed
-// to it) and come back if it signs in again. Rows saved while signed out (no cloudId, no
-// ownerUid) stay and upload to the new one. An active spot removed this way takes its isActive
-// with it, so the app falls back to "Use my location".
+// first. The other account's synced spots leave the watch (they are safe in it and come back
+// when it signs in again); its not-yet-uploaded ones stay, hidden (SavedLocation.isVisible) and
+// left out of every merge, until that account signs back in and they upload to it. Rows saved
+// while signed out (no cloudId, no ownerUid) stay and upload to the new one. An active spot
+// removed or hidden this way loses its isActive, so the app falls back to "Use my location".
 //
 // Local reads and writes go through the app's ModelContainer's mainContext on the main
 // actor: the same context the UI's @Query reads, so it never sees a stale row and the
@@ -214,7 +214,10 @@ actor SpotSyncService {
         let snapshot: [LocalSpot]
         do {
             snapshot = try await MainActor.run {
-                try container.mainContext.fetch(FetchDescriptor<SavedLocation>()).map { $0.toLocalSpot() }
+                // Another account's hidden spots are never merged into, pushed to or deleted from this one.
+                try container.mainContext.fetch(FetchDescriptor<SavedLocation>())
+                    .filter { $0.ownerUid == nil || $0.ownerUid == uid }
+                    .map { $0.toLocalSpot() }
             }
         } catch {
             print("[SpotSyncService] local read failed; applied nothing")
@@ -424,4 +427,13 @@ enum SyncServices {
     static let sync = SpotSyncService(auth: auth, firestore: firestore,
                                       container: SpearoGoApp.modelContainer, status: status)
     static func appleSignIn() -> AppleSignIn { AppleSignIn(auth: auth) }
+
+    /// The account a spot made or deleted now belongs to: the session's, unless the links still
+    /// belong to another account (signed in, but link(to:) hasn't run yet). Then none: the row
+    /// stays visible and goes to the session's account once it links. Twin of ownerForEdits().
+    static func ownerForEdits(defaults: UserDefaults = .standard) -> String? {
+        guard let uid = auth.session()?.uid else { return nil }
+        let linked = defaults.string(forKey: "sync.linkedUid")
+        return linked == nil || linked == uid ? uid : nil
+    }
 }

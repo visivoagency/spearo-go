@@ -15,10 +15,16 @@ interface SpotStore {
     /** Soft delete: hides the row and queues the delete for the next sync. A non-null [ownerUid] is stamped on it. */
     suspend fun markDeleted(id: String, now: Long, ownerUid: String?)
     /**
-     * The account changed to [newUid]: remove every spot that belongs to another account. That is
-     * each row whose ownerUid is set and is not [newUid], plus, when [includeLinked] (the links
-     * belonged to another account), every row with a cloudId. Soft-deleted rows included.
-     * Rows with no cloudId and no ownerUid (saved while signed out) stay.
+     * The account changed to [newUid]. Spots stay with the account they were saved to (owner
+     * ruling, 23 Oct), so for each row owned by another uid:
+     *  - synced (pendingSync false): removed. It is safe in that account and comes back when it
+     *    signs in again;
+     *  - not yet uploaded (pendingSync true, a new spot or a delete): kept but hidden and made
+     *    inactive. It is never shown to or uploaded to [newUid], and uploads to its own account
+     *    when that account signs back in.
+     * When [includeLinked] (the links belonged to another account), linked rows with no owner
+     * (written before owners were recorded) are removed too. Rows saved while signed out (no
+     * cloudId, no ownerUid) stay and upload to the new account. Rows owned by [newUid] are untouched.
      */
     suspend fun removeAccountSpots(newUid: String, includeLinked: Boolean)
 }

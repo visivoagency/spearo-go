@@ -7,8 +7,16 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LocationDao : SpotStore {
-    @Query("SELECT * FROM saved_locations WHERE isDeleted = 0 ORDER BY createdAt DESC")
-    fun getAllLocations(): Flow<List<SavedLocation>>
+    /**
+     * The spots shown on the watch: those of [viewerUid] (the account the watch is linked to) and
+     * those saved while signed out. Another account's unsynced spots stay hidden until it signs
+     * back in (see [SpotStore.removeAccountSpots]). Null [viewerUid] (never signed in): all.
+     */
+    @Query(
+        "SELECT * FROM saved_locations WHERE isDeleted = 0 " +
+            "AND (:viewerUid IS NULL OR ownerUid IS NULL OR ownerUid = :viewerUid) ORDER BY createdAt DESC"
+    )
+    fun getVisibleLocations(viewerUid: String?): Flow<List<SavedLocation>>
 
     @Query("SELECT * FROM saved_locations")
     override suspend fun getAllIncludingDeleted(): List<SavedLocation>
@@ -38,12 +46,23 @@ interface LocationDao : SpotStore {
     @Query("UPDATE saved_locations SET cloudId = :cloudId, ownerUid = :ownerUid WHERE id = :id AND cloudId IS NULL")
     override suspend fun linkCloudId(id: String, cloudId: String, ownerUid: String)
 
-    /** The account changed to [newUid]: every other account's spots leave the watch (see [SpotStore]). */
+    /** The account changed to [newUid]: other accounts' spots leave the watch or are hidden (see [SpotStore]). */
+    @Transaction
+    override suspend fun removeAccountSpots(newUid: String, includeLinked: Boolean) {
+        deleteOtherAccountsSyncedSpots(newUid, includeLinked)
+        deactivateOtherAccountsSpots(newUid)
+    }
+
+    /** Synced spots of another account (safe in it), plus linked rows with no owner when [includeLinked]. */
     @Query(
-        "DELETE FROM saved_locations WHERE (:includeLinked AND cloudId IS NOT NULL) " +
-            "OR (ownerUid IS NOT NULL AND ownerUid != :newUid)"
+        "DELETE FROM saved_locations WHERE (:includeLinked AND ownerUid IS NULL AND cloudId IS NOT NULL) " +
+            "OR (ownerUid IS NOT NULL AND ownerUid != :newUid AND pendingSync = 0)"
     )
-    override suspend fun removeAccountSpots(newUid: String, includeLinked: Boolean)
+    suspend fun deleteOtherAccountsSyncedSpots(newUid: String, includeLinked: Boolean)
+
+    /** The hidden ones left behind can't stay the active spot. */
+    @Query("UPDATE saved_locations SET isActive = 0 WHERE ownerUid IS NOT NULL AND ownerUid != :newUid")
+    suspend fun deactivateOtherAccountsSpots(newUid: String)
 
     @Query("UPDATE saved_locations SET isActive = 0")
     suspend fun deactivateAll()

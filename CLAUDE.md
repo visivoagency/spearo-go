@@ -131,11 +131,15 @@ Spec: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`
   23 Oct). Each spot records `ownerUid`, the account it was saved to (stamped
   when created or deleted signed in, and by every sync write). Sign-out keeps
   spots and links. Signing into a different account runs `removeAccountSpots`
-  first: every row with a cloudId, or owned by another uid (soft-deleted too),
-  leaves the watch and is never uploaded to the new account. Rows saved while
-  signed out (no cloudId, no ownerUid) stay and upload to the new account. If
-  that removal fails, the sign-in fails. Never copy one account's spots into
-  another, and never delete a signed-out spot because the account changed.
+  first (24 Oct rule): the other account's synced spots leave the watch; its
+  unsynced ones (`pendingSync`) stay, **hidden** (shown only for the linked
+  account) and out of every merge, until it signs back in and they upload to
+  it. Rows saved while signed out (no cloudId, no ownerUid) stay and upload to
+  the new account. If that removal fails, the sign-in fails. Never copy one
+  account's spots into another, never show or push a hidden spot, and never
+  delete a signed-out spot because the account changed.
+- **A one-time account prompt** follows the first saved spot when signed out
+  (`AccountPromptGate` / `AccountPrompt`). It never repeats.
 - **The merge (`SpotMerge`), the codec, `AuthClient` and `FirestoreClient`
   exist twice.** They are pinned by one fixture set in `fixtures/spot-sync/`.
   Kotlin tests read it; Swift runs it through `tools/spot-sync-harness/` (the

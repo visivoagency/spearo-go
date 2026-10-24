@@ -127,7 +127,7 @@ These change the design above. Where they disagree, this section wins.
   - Go persists `linkedUid`, the uid the local cloudIds belong to (Wear: SharedPreferences "sync", backed up with the spots database; Apple Watch: UserDefaults).
   - Sign-out, planned or a session cleared by a refresh 400, clears the auth store only. Every row and cloudId stays, so signing back into the same account duplicates nothing.
   - Each spot records the account it was saved to: `ownerUid` (Room v3 column, default NULL; SwiftData defaulted optional). It is stamped with the session uid when a spot is created or deleted while signed in, and with the syncing uid whenever a sync writes, links or pushes a row. A spot saved while signed out has none. `LocalSpot` and `planSync` don't carry it; the apply step stamps it.
-  - On sign-in, and at the start of every sync, a uid different from `linkedUid` runs `removeAccountSpots(newUid, includeLinked = linkedUid != null)` first (Kotlin `SpotStore.removeAccountSpots`, Room `DELETE WHERE (:includeLinked AND cloudId IS NOT NULL) OR (ownerUid IS NOT NULL AND ownerUid != :newUid)`; Swift `removeAccountSpots(newUid:includeLinked:context:)`). Every row with a cloudId leaves the watch, and so does every row owned by another uid, soft-deleted ones included. That covers a spot saved under the old account but not yet pushed (offline), and one whose PATCH reached the old account but whose link was never recorded. These spots belong to the old account; the linked ones are safe there and come back if that account signs in again. A spot that never reached the old account (saved offline under it) is lost: the owner's rule puts it with that account, and the watch is the only place it existed. Vision rows go the same way. Rows with neither a cloudId nor an ownerUid (saved while signed out) stay and upload to the new account under rule 3. Then `linkedUid` is set to the new uid and the sync runs as normal. No old-account tombstone is ever pushed.
+  - On sign-in, and at the start of every sync, a uid different from `linkedUid` runs `removeAccountSpots(newUid, includeLinked = linkedUid != null)` first (Kotlin `SpotStore.removeAccountSpots`, Room `DELETE WHERE (:includeLinked AND cloudId IS NOT NULL) OR (ownerUid IS NOT NULL AND ownerUid != :newUid)`; Swift `removeAccountSpots(newUid:includeLinked:context:)`). Every row with a cloudId leaves the watch, and so does every row owned by another uid, soft-deleted ones included. That covers a spot saved under the old account but not yet pushed (offline), and one whose PATCH reached the old account but whose link was never recorded. These spots belong to the old account; the linked ones are safe there and come back if that account signs in again. ~~A spot that never reached the old account (saved offline under it) is lost.~~ Superseded 24 Oct: such spots are kept hidden (see "Amendments (24 Oct)" below). Vision rows go the same way. Rows with neither a cloudId nor an ownerUid (saved while signed out) stay and upload to the new account under rule 3. Then `linkedUid` is set to the new uid and the sync runs as normal. No old-account tombstone is ever pushed.
   - On a switch, unsynced edits and signed-out deletes of the old account's spots are discarded with the rows, so a spot deleted while signed out reappears when that account signs in again.
   - If the active spot was removed, its `isActive` goes with the row, so the app falls back to "Use my location" (Wear: the view model re-runs `refresh()`, which finds no active row; Apple Watch: `ContentView` clears the override and refreshes).
   - If the removal fails, the sign-in fails ("Sync failed. Try again."). Go never syncs under the new account with the old account's links in place.
@@ -142,3 +142,29 @@ These change the design above. Where they disagree, this section wins.
   - Apnea's `AuthManager` does this. It would write under a uid that is not a Firebase uid.
   - Go stays signed out and shows an error instead.
 
+## Amendments (24 Oct)
+
+Owner decisions (Kevin), 24 Oct. Where they disagree with anything above, this section wins.
+
+- **A spot stays with the first account it was attached to, even before it uploads.** On a switch to a different account, `removeAccountSpots(newUid, includeLinked)` now does this:
+  - **Synced rows of another account** (`ownerUid != newUid`, `pendingSync` false) are removed. They are safe in that account and come back when it signs in again.
+  - **Unsynced rows of another account** (`pendingSync` true, i.e. a new spot or a pending delete) are **kept, hidden and made inactive**:
+    - they are left out of every merge and push under the new account;
+    - they show again, and upload to their own account, when it signs back in.
+  - **Linked rows with no owner** (written before owners were recorded) are removed when `includeLinked`, as before.
+  - **Rows saved signed out** (no ownerUid, no cloudId) stay and upload to the new account, as before.
+  - **Rows owned by `newUid`** are untouched. Before this change they were removed whenever `includeLinked` was set.
+  - Room implements this as one `@Transaction`: a DELETE, then an UPDATE that sets `isActive = 0`. Swift implements it as a loop over the rows.
+  - This also covers the case where a PATCH reached the old account but its link was never recorded. The row stays hidden, and the next push goes to the same doc, because the doc id is the row id.
+- **What the watch shows.** It shows spots owned by the linked account (`linkedUid`, which survives sign-out) and spots with no owner. With no `linkedUid`, it shows everything.
+  - Wear: `SpotSyncService.viewerUid` → `LocationDao.getVisibleLocations(viewerUid)`.
+  - Apple Watch: `@AppStorage("sync.linkedUid")` plus `SavedLocation.isVisible(to:)`.
+- **The account prompt.** "Save your spots to your Spearo account?" is offered right after the first spot is saved while signed out.
+  - Once answered (Sign in, Not now, Back, or swiping the sheet away), it is never shown again. If the app closes before an answer, it is offered after the next save. If the first save happens while signed in, the prompt is used up.
+  - "Not now" (and Back on Wear) leaves everything as it was. The Sign in row stays on Spots/Locations.
+  - Wear: `AccountPromptGate` (prefs "account_prompt"), shown in place of the Spots list. "Sign in with Google" starts the phone sign-in, which the Spots list then shows.
+  - Apple Watch: `AccountPrompt` (UserDefaults `accountPrompt.seen` / `.pending`). It is presented as a sheet once the save sheet closes, holds the Sign in with Apple button, and closes itself when the state leaves signed-out.
+  - Divers who upgrade with spots already saved see it after their next save.
+- **Who owns a new edit.** A spot made or deleted while signed in is stamped with the session's uid only when the links belong to that uid, or to no one yet (`ownerForEdits`). In the gap after a sign-in but before linking, the row gets no owner. That keeps it visible, and it goes to the session's account once that account links. Without this rule it would be hidden as a stranger's spot.
+- **Apple Watch active-spot fallback.** `ContentView` watches a value key for the active spot (id, place, name), not the array. A spot hidden on a switch only flips `isActive` in place, and an array of reference-typed models doesn't register that as a change.
+- **Deleting an account deletes its spots.** That happens on spearo.pro (data deletion) and in Firebase, not in Go. Hidden spots of a deleted account stay on that watch until the account signs in again, which can't happen after deletion. Go does not detect account deletion. Logged in BACKLOG.
