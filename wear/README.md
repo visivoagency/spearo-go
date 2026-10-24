@@ -150,4 +150,4 @@ composite = (weather × 0.30) + (marine × 0.30) + (tides × 0.15) + (solunar ×
 - **Package:** `com.spearotracker.spearogo`
 - **Standalone:** Yes (no phone companion required)
 - **Target:** Wear OS 3+ (Galaxy Watch 4+)
-- **Price:** $2.99
+- **Price:** $0.99

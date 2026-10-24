@@ -5,7 +5,7 @@
 ### Account sync: console setup, live E2E and store forms (added 2026-10-23)
 The code is built but never run against a live sign-in. Do `docs/ACCOUNT-SYNC-SETUP.md`
 (P1 to P5), then the E2E in the plan, then enter the new Data safety and App Privacy
-answers, then take signed-in screenshots. Also open: the $0.99 price, the More Spearo
+answers, then take signed-in screenshots. Also open: the More Spearo
 apps entry, and items 1, 2, 3 and 5 of `docs/HANDOFF-from-website-2026-10-23.md`.
 The hashed IP's own privacy-label type (Device ID) was confirmed by Kevin on 23 Oct.
 

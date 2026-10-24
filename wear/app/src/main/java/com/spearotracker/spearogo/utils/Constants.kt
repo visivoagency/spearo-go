@@ -41,6 +41,6 @@ object Constants {
     object App {
         const val NAME = "Spearo Go"
         const val VERSION = "2.2.0"   // Shown on the Info page; keep with build.gradle.kts versionName.
-        const val PRICE = "$2.99"
+        const val PRICE = "$0.99"
     }
 }

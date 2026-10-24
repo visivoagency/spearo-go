@@ -202,7 +202,7 @@ All colors are in `Assets.xcassets` — reference via `Brand.Colors.*` in code.
 
 ## App Store
 
-- **Price:** $2.99 (one-time, Tier 1)
+- **Price:** $0.99 (one-time, Tier 1)
 - **Category:** Sports / Weather
 - **Age Rating:** 4+
 - **Bundle ID:** `agency.visivo.SpearoGo`

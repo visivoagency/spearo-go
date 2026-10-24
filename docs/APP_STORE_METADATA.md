@@ -49,7 +49,7 @@ Sports
 Weather
 
 ## Price
-$2.99 (Tier 1)
+$0.99 (Tier 1)
 
 ## Content Rating
 4+ (No objectionable content)

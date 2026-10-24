@@ -48,7 +48,7 @@ Sports
 spearfishing, dive, swell, tides, solunar, fishing, marine, weather, ocean, watch
 
 ## Price
-$2.99
+$0.99
 
 ## Content Rating (IARC)
 Everyone / PEGI 3
@@ -197,7 +197,7 @@ redesigned verdict screen that names any reading it could not include.
 - [ ] Complete store listing (title, descriptions, screenshots)
 - [ ] Complete Data Safety form (see Data Safety Form Responses above)
 - [ ] Complete IARC content rating questionnaire
-- [ ] Set pricing ($2.99)
+- [ ] Set pricing ($0.99)
 - [ ] Add privacy policy URL
 - [ ] Verify spearotracker.com/privacy-policy covers Wear OS
 - [ ] Promote to Production track

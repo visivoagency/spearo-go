@@ -76,7 +76,7 @@ Apple Watch needs P3, P4 and P5.
    - **DECIDED by Kevin on 23 Oct: spots stay with the account they were saved to.** Sign-out keeps spots and their links. Signing into a different account removes every linked spot, and every spot saved under the old account but not yet pushed (`ownerUid`, Room v3), soft-deleted ones included, from the watch. They are not uploaded to the new account and no old-account delete is pushed. A spot saved under the old account while offline, never pushed, is therefore lost for good (the watch held its only copy); a later option is to hide such spots until that account signs in again. Spots saved while signed out upload to the new one. If the active spot leaves, or is deleted, the app falls back to "Use my location" on both watches. Merged from branch `feature/account-switch-keeps-spots` (`SpotSyncService.linkTo` / `link(to:)`, `removeAccountSpots` on both platforms).
    - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (the first account's spots leave the watch and are not uploaded; spots saved while signed out upload).
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
-5. The $0.99 price: the stores charge $0.99, the repo docs still say $2.99.
+5. ~~The $0.99 price~~ Done 24 Oct: the docs and both `Constants` now say $0.99 (neither constant is shown in the app).
 6. The More Spearo apps entry.
 7. The rest of `docs/HANDOFF-from-website-2026-10-23.md`: age 18+ (item 2), the safety disclaimer (item 3), the legal links (item 5). Item 4, the privacy disclosures, is done.
 
