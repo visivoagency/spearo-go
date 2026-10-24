@@ -463,6 +463,7 @@ Completed all App Store Connect submission forms step by step:
 
 #### Pricing & Availability
 - Price: **$2.99 USD** (Tier 1)
+  - *Changed later: the stores charge **$0.99** (owner, 23 Oct 2026). This entry is history.*
 - Availability: **All Countries and Regions**
 - Tax Category: default App Store Software
 

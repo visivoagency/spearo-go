@@ -3,7 +3,7 @@
 Written by the Spearo website session (`Spearo-Empire`). **Nothing else in this repo was changed**;
 these are directions for a Go session. Work one item at a time and confirm each with the owner.
 
-## 1. Price is $0.99 (owner, 23 Oct 2026)
+## 1. Price is $0.99 (owner, 23 Oct 2026) — DONE 24 Oct
 The live App Store and Google Play listings charge **$0.99** (checked by the website session on
 16 Oct). These repo docs still say **$2.99**. Update them to $0.99:
 - `README.md:202`

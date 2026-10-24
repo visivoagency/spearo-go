@@ -3,7 +3,7 @@
 ## Product overview
 **Spearo Go** is a standalone Apple Watch app (watchOS 10+) that gives spearfishers an instant, opinionated dive-day verdict — GO / MAYBE / SKETCHY / NO GO — by combining weather, marine, tide, and solunar data into a single weighted score.
 
-- **Price:** $2.99 one-time purchase
+- **Price:** $0.99 one-time purchase
 - **Platform:** Apple Watch (standalone, no iPhone dependency)
 - **Min OS:** watchOS 10
 - **Audience:** Global — all APIs must work internationally

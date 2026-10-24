@@ -46,7 +46,7 @@ enum Constants {
     enum App {
         static let name    = "Spearo Go"
         static let version = "1.2.0"
-        static let price   = "$2.99"
+        static let price   = "$0.99"
     }
 }
 
