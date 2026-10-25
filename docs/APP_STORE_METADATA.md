@@ -106,7 +106,7 @@ App Store Connect answers (Data Types you collect):
 - Data Used to Track You: none. `NSPrivacyTracking` is false and there are no tracking domains.
 - The IP hash is declared as Device ID. Confirmed by Kevin on 23 Oct.
 - Place-name search text goes to Open-Meteo geocoding and is not stored by Go; covered by the location rows.
-- Name and photos: not collected. Sign in with Apple requests the email scope only, and Wear's Google sign-in asks for `openid email` only (no `profile`), so neither provider returns a name or photo to Go.
+- Name and photos: not collected. Sign in with Apple requests the email scope only, and Wear's Google sign-in asks for `openid email` only (no `profile`), so neither provider returns a name or photo to Go. Since 25 Oct, signed in, the watch reads the diver's own `display_name` from their Spearo account (set on spearo.pro) and shows it as "Signed in as …". It stays on the watch, is never sent anywhere by Go, and is cleared on sign-out. Kevin to confirm this stays "not collected" before entering the form.
 - Required-reason API: UserDefaults (CA92.1), already declared.
 
 ## Age Rating Questionnaire

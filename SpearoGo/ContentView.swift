@@ -9,6 +9,7 @@ struct ContentView: View {
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var appState = AppState()
+    @State private var page = 0
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -38,8 +39,8 @@ struct ContentView: View {
     }
 
     private var mainContent: some View {
-        TabView {
-            VerdictPage()
+        TabView(selection: $page) {
+            VerdictPage(onOpenSettings: { withAnimation { page = 6 } })
                 .tag(0)
             TodayPage()
                 .tag(1)
@@ -51,6 +52,9 @@ struct ContentView: View {
                 .tag(4)
             FishActivityPage()
                 .tag(5)
+            // Spots, sign-in and About (Kevin, 25 Oct: a page, not a hidden long-press).
+            LocationsView(onDone: { withAnimation { page = 0 } })
+                .tag(6)
         }
         .tabViewStyle(.page)
         .background(Brand.Colors.background)

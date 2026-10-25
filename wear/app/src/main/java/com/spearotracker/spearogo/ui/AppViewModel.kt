@@ -321,6 +321,8 @@ class AppViewModel @Inject constructor(
     // sync can never delay or change the verdict.
 
     val syncState: StateFlow<SyncState> = syncService.state
+    /** Who the watch is signed in as (display name, else email), for the sync row. */
+    val accountName: StateFlow<String?> = syncService.accountName
 
     private val _signIn = MutableStateFlow<SignInUiState>(SignInUiState.Idle)
     val signIn: StateFlow<SignInUiState> = _signIn.asStateFlow()

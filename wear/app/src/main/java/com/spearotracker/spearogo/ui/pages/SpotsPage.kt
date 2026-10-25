@@ -70,6 +70,7 @@ fun SpotsPage(
     val uiState by viewModel.uiState.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
     val signIn by viewModel.signIn.collectAsState()
+    val accountName by viewModel.accountName.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -92,7 +93,7 @@ fun SpotsPage(
     ScrollingList {
         item {
             Text(
-                text = "SPOTS",
+                text = "SETTINGS",
                 style = Brand.Typography.sectionHeader,
                 color = Brand.Colors.textSecondary,
                 modifier = Modifier.padding(bottom = Brand.Spacing.item)
@@ -156,6 +157,7 @@ fun SpotsPage(
         syncRows(
             syncState = syncState,
             signIn = signIn,
+            accountName = accountName,
             onSignIn = { viewModel.signInWithGoogle() },
             onCancelSignIn = { viewModel.cancelSignIn() },
             onSync = { viewModel.syncSpots() },
@@ -277,7 +279,7 @@ private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: ((
 
 /**
  * Shown once, right after the first spot is saved while signed out (see AccountPromptGate).
- * Back counts as "Not now". Either way the Sign in row stays on the Spots list.
+ * Back counts as "Not now". Either way the Sign in row stays on Settings.
  */
 @Composable
 private fun AccountPrompt(onSignIn: () -> Unit, onNotNow: () -> Unit) {
@@ -311,7 +313,7 @@ private fun AccountPrompt(onSignIn: () -> Unit, onNotNow: () -> Unit) {
         item {
             TwoLineRow(
                 title = "Not now",
-                subtitle = "Sign in any time from Spots",
+                subtitle = "Sign in any time from Settings",
                 onClick = onNotNow
             )
         }
@@ -322,6 +324,7 @@ private fun AccountPrompt(onSignIn: () -> Unit, onNotNow: () -> Unit) {
 private fun androidx.compose.foundation.lazy.LazyListScope.syncRows(
     syncState: SyncState,
     signIn: SignInUiState,
+    accountName: String?,
     onSignIn: () -> Unit,
     onCancelSignIn: () -> Unit,
     onSync: () -> Unit,
@@ -354,6 +357,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.syncRows(
             else -> Unit
         }
     } else {
+        if (accountName != null) item { Hint("Signed in as $accountName") }
         item {
             var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
             LaunchedEffect(Unit) {

@@ -130,7 +130,7 @@ What the server keeps:
 Place-name search text is sent to Open-Meteo geocoding to find the place. It is not stored by Go. Covered by "Shared" for location above; no separate Play type.
 
 ### Data NOT collected
-- Name: not collected by Go. Google sign-in asks for `openid email` only (no `profile` scope), and Apple sign-in requests the email scope only, so no name or photo reaches Go.
+- Name: not collected by Go. Google sign-in asks for `openid email` only (no `profile` scope), and Apple sign-in requests the email scope only, so no name or photo comes from the sign-in. Since 25 Oct, signed in, the watch reads the diver's own `display_name` from their Spearo account (set on spearo.pro, which already declares it) and shows it as "Signed in as …". It is stored only on the watch, never sent anywhere by Go, and cleared on sign-out. Kevin to confirm this stays "not collected" before entering the form.
 - Financial info, health & fitness, messages, photos/videos, audio, files, calendar, contacts
 - App interactions, web browsing, diagnostics, advertising IDs
 

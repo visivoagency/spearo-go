@@ -105,6 +105,24 @@ func runFirestore() -> Never {
         return query(req, "currentDocument.exists").isEmpty ? nil : "precondition sent"
     }))
 
+    cases.append(("displayNameReadsOnlyThatField", {
+        StubProtocol.reset { _, _ in .http(200, #"{"fields":{"display_name":{"stringValue":"  Kevin G "}}}"#) }
+        let name: String?
+        do { name = try await client.getDisplayName(uid: "U1", token: "T") } catch { return "threw \(error)" }
+        guard let (req, _) = StubProtocol.lock.withLock({ StubProtocol.requests.first }) else { return "no request" }
+        if req.httpMethod != "GET" || !req.url!.path.hasSuffix("/documents/users/U1") { return "url \(req.url!)" }
+        if query(req, "mask.fieldPaths") != ["display_name"] { return "mask \(query(req, "mask.fieldPaths"))" }
+        return name == "Kevin G" ? nil : "name \(String(describing: name))"
+    }))
+
+    cases.append(("displayNameAbsentOrBlankIsNil", {
+        let blank: [String: Any] = ["fields": ["display_name": ["stringValue": "  "]]]
+        let wrongType: [String: Any] = ["fields": ["display_name": ["integerValue": "3"]]]
+        let none: [String: Any] = ["fields": [:] as [String: Any]]
+        for doc in [blank, wrongType, none] where FirestoreClient.displayName(from: doc) != nil { return "not nil for \(doc)" }
+        return FirestoreClient.displayName(from: nil) == nil ? nil : "not nil for nil"
+    }))
+
     cases.append(("httpErrorThrows", {
         StubProtocol.reset { _, _ in .http(403, #"{"error":{"code":403}}"#) }
         do { _ = try await client.listUserSpots(uid: "U1", token: "T"); return "did not throw" }

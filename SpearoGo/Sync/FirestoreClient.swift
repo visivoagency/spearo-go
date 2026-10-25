@@ -97,6 +97,24 @@ final class FirestoreClient: @unchecked Sendable {
         ]]]]
     }
 
+    /// The diver's name as spearo.pro shows it (`users/{uid}.display_name`), or nil when unset.
+    /// Reads only that one field (`mask.fieldPaths`). Twin of FirestoreClient.getDisplayName.
+    func getDisplayName(uid: String, token: String) async throws -> String? {
+        let query = [URLQueryItem(name: "mask.fieldPaths", value: Self.displayNamePath)]
+        let request = makeRequest(url: docURL("users/\(uid)", query: query), method: "GET", token: token)
+        return Self.displayName(from: try await send(request))
+    }
+
+    static let displayNamePath = "display_name"
+
+    /// `fields.display_name.stringValue`, trimmed; nil if absent, blank or not a string.
+    static func displayName(from doc: Any?) -> String? {
+        guard let fields = (doc as? [String: Any])?["fields"] as? [String: Any],
+              let value = (fields[displayNamePath] as? [String: Any])?["stringValue"] as? String else { return nil }
+        let name = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
+    }
+
     // MARK: - HTTP
 
     private func docURL(_ path: String, query: [URLQueryItem]) -> URL {

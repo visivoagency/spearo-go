@@ -57,13 +57,21 @@ enum SyncState: Equatable {
 @MainActor @Observable
 final class SyncStatus {
     var state: SyncState
-    init(state: SyncState) { self.state = state }
+    /// Who the watch is signed in as: the spearo.pro display name, else the sign-in email (not an
+    /// Apple relay address). Nil when signed out or neither is known.
+    var accountName: String?
+    init(state: SyncState, accountName: String? = nil) {
+        self.state = state
+        self.accountName = accountName
+    }
 }
 
 actor SpotSyncService {
     private static let markerKey = "sync.markerWrittenAt"
     /// The uid whose `users/{uid}/spots` docs the local cloudIds point at. Survives sign-out.
     private static let linkedUidKey = "sync.linkedUid"
+    /// The signed-in account's `display_name`, as last read. Cleared on sign-out.
+    static let displayNameKey = "sync.displayName"
     private static let markerInterval: TimeInterval = 24 * 60 * 60
     private static let unreachable = "Couldn't reach your account"
     private static let storeFailed = "Sync failed. Try again."
@@ -115,6 +123,9 @@ actor SpotSyncService {
                 return false
             }
             await service.writeMarker(uid: session.uid, token: session.idToken)
+            // Another account's name must not show while the first sync reads this one's.
+            service.defaults.removeObject(forKey: Self.displayNameKey)
+            await service.setAccountName(Self.accountLabel(displayName: nil, session: session))
             return true
         }
         if proceed { await sync() }
@@ -129,6 +140,8 @@ actor SpotSyncService {
 
     private func signedOut() async {
         defaults.removeObject(forKey: Self.markerKey)
+        defaults.removeObject(forKey: Self.displayNameKey)
+        await setAccountName(nil)
         await setState(.signedOut)
     }
 
@@ -169,6 +182,37 @@ actor SpotSyncService {
     private func setState(_ state: SyncState) async {
         let status = self.status
         await MainActor.run { status.state = state }
+    }
+
+    private func setAccountName(_ name: String?) async {
+        let status = self.status
+        await MainActor.run { status.accountName = name }
+    }
+
+    /// Best effort: a failed read keeps the last name and never fails the sync.
+    private func readDisplayName(uid: String, token: String) async {
+        let name: String?
+        do {
+            name = try await firestore.getDisplayName(uid: uid, token: token)
+        } catch let e as FirestoreError where e.code == 404 {
+            name = nil   // no users/{uid} yet; the website creates it
+        } catch {
+            #if DEBUG
+            print("[SpotSyncService] display name skipped (\(error))")
+            #endif
+            return
+        }
+        if let name { defaults.set(name, forKey: Self.displayNameKey) }
+        else { defaults.removeObject(forKey: Self.displayNameKey) }
+        await setAccountName(Self.accountLabel(displayName: name, session: auth.session()))
+    }
+
+    /// The display name, else the session's email unless it is an Apple relay address.
+    static func accountLabel(displayName: String?, session: Session?) -> String? {
+        guard let session else { return nil }
+        if let displayName { return displayName }
+        guard let email = session.email, !email.lowercased().hasSuffix("@privaterelay.appleid.com") else { return nil }
+        return email
     }
 
     private func runSync() async {
@@ -298,6 +342,7 @@ actor SpotSyncService {
         if last.map({ clock().timeIntervalSince1970 - $0 >= Self.markerInterval }) ?? true {
             await writeMarker(uid: uid, token: token)
         }
+        await readDisplayName(uid: uid, token: token)
 
         // 6.
         await setState(failed > 0
@@ -423,7 +468,11 @@ enum SyncServices {
         appHeaders: AuthClient.appHeaders()
     )
     static let firestore = FirestoreClient(baseURL: Constants.Firebase.firestoreBase, appHeaders: AuthClient.appHeaders())
-    static let status = SyncStatus(state: auth.session() == nil ? .signedOut : .idle)
+    static let status = SyncStatus(
+        state: auth.session() == nil ? .signedOut : .idle,
+        accountName: SpotSyncService.accountLabel(
+            displayName: UserDefaults.standard.string(forKey: SpotSyncService.displayNameKey),
+            session: auth.session()))
     static let sync = SpotSyncService(auth: auth, firestore: firestore,
                                       container: SpearoGoApp.modelContainer, status: status)
     static func appleSignIn() -> AppleSignIn { AppleSignIn(auth: auth) }
