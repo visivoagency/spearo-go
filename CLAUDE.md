@@ -147,6 +147,14 @@ Spec: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`
   delete a signed-out spot because the account changed.
 - **A one-time account prompt** follows the first saved spot when signed out
   (`AccountPromptGate` / `AccountPrompt`). It never repeats.
+- **Where sign-in lives** (Kevin, 25 Oct): onboarding page 4 of 5 ("Sync with
+  spearo.pro", skippable) and the Settings page, the last tab after Fish
+  Activity. Long-pressing the verdict jumps to Settings, but nothing on the
+  verdict screen points at sign-in. Don't add it back there.
+- **"Signed in as …"** reads only `users/{uid}.display_name` (`mask.fieldPaths`)
+  on each sync, best effort. Fallback is the sign-in email, never an Apple relay
+  address. It is kept only on the watch, never written or sent, and cleared on
+  sign-out. The store privacy answers ("Name: not collected") depend on that.
 - **The merge (`SpotMerge`), the codec, `AuthClient` and `FirestoreClient`
   exist twice.** They are pinned by one fixture set in `fixtures/spot-sync/`.
   Kotlin tests read it; Swift runs it through `tools/spot-sync-harness/` (the

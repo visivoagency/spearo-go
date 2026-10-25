@@ -91,6 +91,17 @@ class FirestoreClient(
     suspend fun patchMarker(uid: String, nowIso: String, token: String) =
         patch("users/$uid", markerFields(nowIso), listOf(MARKER_PATH), token, mustExist = true)
 
+    /**
+     * The diver's name as spearo.pro shows it (`users/{uid}.display_name`), or null when unset.
+     * Reads only that one field (`mask.fieldPaths`).
+     */
+    suspend fun getDisplayName(uid: String, token: String): String? {
+        val url = docUrl("users/$uid").newBuilder()
+            .addQueryParameter("mask.fieldPaths", DISPLAY_NAME)
+            .build()
+        return displayNameFrom(parse(send(request(url, token).get().build())))
+    }
+
     private fun docUrl(path: String): HttpUrl = baseUrl.toHttpUrl().newBuilder()
         .apply { path.split('/').filter { it.isNotEmpty() }.forEach { addPathSegment(it) } }
         .build()
@@ -115,6 +126,17 @@ class FirestoreClient(
     companion object {
         private const val PAGE_SIZE = 300
         private val JSON = "application/json; charset=utf-8".toMediaType()
+
+        const val DISPLAY_NAME = "display_name"
+
+        /** `fields.display_name.stringValue`, trimmed; null if absent, blank or not a string. */
+        fun displayNameFrom(doc: com.google.gson.JsonElement?): String? {
+            val fields = doc?.takeIf { it.isJsonObject }?.asJsonObject
+                ?.get("fields")?.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+            val value = fields.get(DISPLAY_NAME)?.takeIf { it.isJsonObject }?.asJsonObject
+                ?.get("stringValue")?.takeIf { it.isJsonPrimitive } ?: return null
+            return value.asString.trim().takeIf { it.isNotEmpty() }
+        }
 
         /** `fields` for PATCH users/{uid}?updateMask.fieldPaths=[MARKER_PATH]. */
         const val MARKER_PATH = "apps.go.last_seen_at"

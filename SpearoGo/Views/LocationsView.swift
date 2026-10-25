@@ -3,12 +3,14 @@ import SwiftData
 import CoreLocation
 import AuthenticationServices
 
-// Presented as a sheet from Verdict page long-press (Sprint 2 gesture).
-// For now accessible via Digital Crown or a dedicated navigation entry.
+// The Settings page: the last page of the pager (Kevin, 25 Oct), also reached by
+// long-pressing the verdict. Spots, the account rows and About.
 struct LocationsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self)  private var appState
     @Environment(\.dismiss)      private var dismiss
+    /// Set when shown as a page: picking a spot goes back to the verdict instead of dismissing.
+    var onDone: (() -> Void)? = nil
 
     @Query(filter: #Predicate<SavedLocation> { !$0.isDeleted },
            sort: \SavedLocation.createdAt, order: .reverse)
@@ -71,7 +73,7 @@ struct LocationsView: View {
             }
             .listStyle(.plain)
             .background(Brand.Colors.background)
-            .navigationTitle("Locations")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -151,14 +153,18 @@ struct LocationsView: View {
         location.isActive = true
         try? modelContext.save()
         Task { await appState.refresh() }
-        dismiss()
+        close()
     }
 
     private func deactivateAll() {
         for loc in locations { loc.isActive = false }
         try? modelContext.save()
         Task { await appState.refresh() }
-        dismiss()
+        close()
+    }
+
+    private func close() {
+        if let onDone { onDone() } else { dismiss() }
     }
 
     private func delete(at offsets: IndexSet) {
@@ -184,7 +190,7 @@ func syncSpotsInBackground() {
 
 /// The one-time "Save your spots to your Spearo account?" prompt (owner decision, 23 Oct):
 /// offered right after the first spot is saved while signed out, until it is answered, then never
-/// again. A first save while signed in uses it up. The Sign in row stays on the Locations list.
+/// again. A first save while signed in uses it up. The Sign in row stays on Settings.
 /// Twin of AccountPromptGate in Kotlin.
 enum AccountPrompt {
     private static let seenKey = "accountPrompt.seen"
@@ -229,7 +235,7 @@ struct AccountPromptView: View {
                 Button("Not now") { dismiss() }
                     .brandFont(Brand.Typography.itemLabel)
                     .foregroundStyle(Brand.Colors.textSecondary)
-                Text("Sign in any time from Locations.")
+                Text("Sign in any time from Settings.")
                     .captionStyle()
                     .multilineTextAlignment(.center)
             }
@@ -311,6 +317,9 @@ struct SyncRows: View {
 
     @ViewBuilder
     private var signedInRows: some View {
+        if let name = status.accountName {
+            Text("Signed in as \(name)").captionStyle()
+        }
         VStack(alignment: .leading, spacing: 1) {
             Text("Sync with spearo.pro")
                 .brandFont(Brand.Typography.personalityCopy)

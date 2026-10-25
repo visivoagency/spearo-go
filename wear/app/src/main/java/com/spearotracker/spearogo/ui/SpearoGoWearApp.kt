@@ -7,6 +7,7 @@ import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.HorizontalPagerScaffold
 import com.spearotracker.spearogo.ui.pages.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun SpearoGoWearApp(
@@ -29,6 +30,7 @@ fun SpearoGoWearApp(
     AppScaffold {
         if (!hasCompletedOnboarding) {
             OnboardingScreen(
+                viewModel = viewModel,
                 onRequestPermission = onRequestPermission,
                 onSkip = {
                     hasCompletedOnboarding = true
@@ -36,21 +38,15 @@ fun SpearoGoWearApp(
                 }
             )
         } else {
-            // Long-pressing the verdict used to open Info. It now opens Spots,
-            // which is the gesture watchOS already uses for the same thing and
-            // by far the more common need; Info moved to a row inside it.
-            var showSpots by remember { mutableStateOf(false) }
+            // Settings (spots, sign-in, About) is the last page, after Fish Activity
+            // (Kevin, 25 Oct). Long-pressing the verdict jumps there, the same gesture
+            // watchOS uses; Back from Settings returns to the verdict.
             var showInfo by remember { mutableStateOf(false) }
-            val pagerState = rememberPagerState(pageCount = { 6 })
+            val pagerState = rememberPagerState(pageCount = { 7 })
+            val scope = rememberCoroutineScope()
 
             if (showInfo) {
                 InfoPage(onDismiss = { showInfo = false })
-            } else if (showSpots) {
-                SpotsPage(
-                    viewModel = viewModel,
-                    onAbout = { showInfo = true },
-                    onDismiss = { showSpots = false }
-                )
             } else {
                 HorizontalPagerScaffold(
                     pagerState = pagerState,
@@ -60,7 +56,7 @@ fun SpearoGoWearApp(
                         0 -> VerdictPage(
                             uiState = uiState,
                             onRefresh = { viewModel.refresh() },
-                            onInfoTap = { showSpots = true },
+                            onInfoTap = { scope.launch { pagerState.animateScrollToPage(6) } },
                             viewModel = viewModel
                         )
                         1 -> TodayPage(uiState = uiState)
@@ -68,6 +64,11 @@ fun SpearoGoWearApp(
                         3 -> WaterPage(uiState = uiState)
                         4 -> TidesPage(uiState = uiState)
                         5 -> FishActivityPage(uiState = uiState)
+                        6 -> SpotsPage(
+                            viewModel = viewModel,
+                            onAbout = { showInfo = true },
+                            onDismiss = { scope.launch { pagerState.animateScrollToPage(0) } }
+                        )
                     }
                 }
             }

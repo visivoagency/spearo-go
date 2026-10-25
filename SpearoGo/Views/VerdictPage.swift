@@ -2,7 +2,8 @@ import SwiftUI
 
 struct VerdictPage: View {
     @Environment(AppState.self) private var appState
-    @State private var showLocations = false
+    /// Long-press: jump to the Settings page (spots, sign-in, About).
+    var onOpenSettings: () -> Void = {}
 
     var body: some View {
         ZStack {
@@ -121,11 +122,7 @@ struct VerdictPage: View {
             Task { await appState.refresh() }
         }
         .onLongPressGesture {
-            showLocations = true
-        }
-        .sheet(isPresented: $showLocations) {
-            LocationsView()
-                .environment(appState)
+            onOpenSettings()
         }
     }
 

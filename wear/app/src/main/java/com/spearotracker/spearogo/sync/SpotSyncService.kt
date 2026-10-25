@@ -23,13 +23,16 @@ sealed interface SyncState {
 
 /**
  * Sync bookkeeping kept apart from the auth store: when `users/{uid}.apps.go.last_seen_at` was
- * last written, and which account the spots' cloudIds belong to.
+ * last written, which account the spots' cloudIds belong to, and the signed-in account's name.
  */
 interface SyncMarkerStore {
     fun lastWrittenAt(): Long?
     fun setLastWrittenAt(ms: Long)
-    /** Forgets the marker time only. [linkedUid] survives sign-out, as the links do. */
+    /** Forgets the marker time and the name. [linkedUid] survives sign-out, as the links do. */
     fun clear()
+    /** The signed-in account's `display_name`, as last read. */
+    fun displayName(): String?
+    fun setDisplayName(name: String?)
     /** The uid whose `users/{uid}/spots` docs the local cloudIds point at; null before any sync. */
     fun linkedUid(): String?
     fun setLinkedUid(uid: String)
@@ -44,7 +47,9 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
     private val prefs = context.applicationContext.getSharedPreferences("sync", Context.MODE_PRIVATE)
     override fun lastWrittenAt(): Long? = if (prefs.contains(KEY)) prefs.getLong(KEY, 0L) else null
     override fun setLastWrittenAt(ms: Long) { prefs.edit().putLong(KEY, ms).apply() }
-    override fun clear() { prefs.edit().remove(KEY).apply() }
+    override fun clear() { prefs.edit().remove(KEY).remove(DISPLAY_NAME).apply() }
+    override fun displayName(): String? = prefs.getString(DISPLAY_NAME, null)
+    override fun setDisplayName(name: String?) { prefs.edit().putString(DISPLAY_NAME, name).apply() }
     override fun linkedUid(): String? = prefs.getString(LINKED_UID, null)
     override fun setLinkedUid(uid: String) {
         // Synchronous: the links written next must never outlive a lost uid.
@@ -53,6 +58,7 @@ class SharedPrefsSyncMarkerStore(context: Context) : SyncMarkerStore {
     private companion object {
         const val KEY = "marker_written_at"
         const val LINKED_UID = "linked_uid"
+        const val DISPLAY_NAME = "display_name"
     }
 }
 
@@ -114,6 +120,13 @@ class SpotSyncService(
      */
     val viewerUid: StateFlow<String?> = _viewerUid.asStateFlow()
 
+    private val _accountName = MutableStateFlow(accountLabel(markers.displayName()))
+    /**
+     * Who the watch is signed in as, for the sync row: the spearo.pro display name, else the
+     * sign-in email (not an Apple relay address). Null when signed out or neither is known.
+     */
+    val accountName: StateFlow<String?> = _accountName.asStateFlow()
+
     suspend fun sync() {
         try {
             mutex.withLock { runSync() }
@@ -146,6 +159,9 @@ class SpotSyncService(
                     return@withLock false
                 }
                 writeMarker(session.uid, session.idToken)
+                // Another account's name must not show while the first sync reads this one's.
+                markers.setDisplayName(null)
+                _accountName.value = accountLabel(null)
                 true
             }
         } catch (e: CancellationException) {
@@ -164,6 +180,7 @@ class SpotSyncService(
     suspend fun signOut() {
         auth.signOut()
         mutex.withLock { markers.clear() }
+        _accountName.value = null
         _state.value = SyncState.SignedOut
     }
 
@@ -339,6 +356,7 @@ class SpotSyncService(
         // Marker: best effort, at most once per 24 h.
         val last = markers.lastWrittenAt()
         if (last == null || clock() - last >= MARKER_INTERVAL_MS) writeMarker(uid, token)
+        readDisplayName(uid, token)
 
         // 6.
         _state.value = if (failed > 0) {
@@ -368,6 +386,25 @@ class SpotSyncService(
                 lastModifiedAt = r.lastModifiedAt ?: l.lastModifiedAt, isDeleted = false, pendingSync = false)
         }
         return plan.copy(upsertLocal = upsertLocal, deleteLocal = deleteLocal, pushUpsert = pushUpsert)
+    }
+
+    /** Best effort: a failed read keeps the last name and never fails the sync. */
+    private suspend fun readDisplayName(uid: String, token: String) {
+        val name = try {
+            firestore.getDisplayName(uid, token)
+        } catch (e: FirestoreException) {
+            // 404: no users/{uid} yet (the website creates it), so no name. Anything else: keep the last one.
+            if (e.code != 404) { debugLog("display name skipped (${e.message})"); return }
+            null
+        }
+        markers.setDisplayName(name)
+        _accountName.value = accountLabel(name)
+    }
+
+    private fun accountLabel(displayName: String?): String? {
+        val session = auth.session() ?: return null
+        return displayName
+            ?: session.email?.takeUnless { it.endsWith("@privaterelay.appleid.com", ignoreCase = true) }
     }
 
     private suspend fun writeMarker(uid: String, token: String) {

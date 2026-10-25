@@ -20,9 +20,13 @@ struct OnboardingView: View {
             safetyPage
                 .tag(2)
 
-            // Page 4: Location permission + go
-            locationPage
+            // Page 4: Optional sign-in
+            signInPage
                 .tag(3)
+
+            // Page 5: Location permission + go
+            locationPage
+                .tag(4)
         }
         .tabViewStyle(.page)
         .background(Brand.Colors.background)
@@ -122,7 +126,46 @@ struct OnboardingView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Page 4: Location + Start
+    // MARK: - Page 4: Sign in
+
+    // Sign-in is optional, so this page is skippable. Without it the only way in was a
+    // long-press on the verdict, which nobody found (Kevin, 25 Oct).
+    private var signInPage: some View {
+        ScrollView {
+            VStack(spacing: Brand.Spacing.section) {
+                Image(systemName: "icloud.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(Brand.Colors.secondary)
+
+                Text("Sync with spearo.pro")
+                    .brandFont(Brand.Typography.dataValue)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+                    .multilineTextAlignment(.center)
+
+                if SyncServices.status.state == .signedOut {
+                    Text("Optional. Keep your spots in your Spearo account.")
+                        .brandFont(Brand.Typography.caption)
+                        .foregroundStyle(Brand.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
+
+                    SyncRows(showsHeading: false)
+
+                    Button("Not now") { withAnimation { page = 4 } }
+                        .brandFont(Brand.Typography.itemLabel)
+                        .foregroundStyle(Brand.Colors.textSecondary)
+                } else {
+                    Text("You're signed in. Swipe →")
+                        .brandFont(Brand.Typography.caption)
+                        .foregroundStyle(Brand.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(Brand.Spacing.page)
+        }
+        .brandPage()
+    }
+
+    // MARK: - Page 5: Location + Start
 
     private var locationPage: some View {
         VStack(spacing: Brand.Spacing.section) {

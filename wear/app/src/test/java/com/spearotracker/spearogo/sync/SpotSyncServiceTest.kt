@@ -74,10 +74,12 @@ class FakeSpotStore(vararg initial: SavedLocation) : SpotStore, SpotTransactor {
     }
 }
 
-class InMemoryMarkerStore(var at: Long? = null, var linked: String? = null) : SyncMarkerStore {
+class InMemoryMarkerStore(var at: Long? = null, var linked: String? = null, var name: String? = null) : SyncMarkerStore {
     override fun lastWrittenAt(): Long? = at
     override fun setLastWrittenAt(ms: Long) { at = ms }
-    override fun clear() { at = null }
+    override fun clear() { at = null; name = null }
+    override fun displayName(): String? = name
+    override fun setDisplayName(name: String?) { this.name = name }
     override fun linkedUid(): String? = linked
     override fun setLinkedUid(uid: String) { linked = uid }
 }
@@ -105,6 +107,9 @@ class SpotSyncServiceTest {
     private var refreshCode = 503
     /** What the account marker PATCH answers. */
     private var markerCode = 200
+    /** GET users/U1 (the display-name read): the body, or null for 404. */
+    private var profileBody: String? = null
+    private var profileCode = 200
 
     private val http = OkHttpClient.Builder().readTimeout(2, TimeUnit.SECONDS).retryOnConnectionFailure(false).build()
     private val base get() = server.url("/v1/projects/p/databases/(default)/documents").toString()
@@ -164,6 +169,8 @@ class SpotSyncServiceTest {
                     }
                     request.method == "PATCH" && (path.endsWith("/users/U1") || path.endsWith("/users/U2")) ->
                         json(markerCode, "{}")
+                    request.method == "GET" && path.endsWith("/users/U1") ->
+                        profileBody?.let { json(profileCode, it) } ?: json(404, "{}")
                     else -> json(404, "{}")
                 }
             }
@@ -342,6 +349,61 @@ class SpotSyncServiceTest {
         markerCode = 200
         svc.sync()
         assertEquals(now, marker.at)
+    }
+
+    private fun profileWithName(name: String) =
+        """{"name":"projects/p/databases/(default)/documents/users/U1","fields":{"display_name":{"stringValue":"$name"}}}"""
+
+    @Test
+    fun syncReadsOnlyTheDisplayName() = runBlocking {
+        signedIn()
+        profileBody = profileWithName("  Kevin G ")
+        val svc = service(FakeSpotStore())
+        svc.sync()
+        assertEquals("Kevin G", svc.accountName.value)
+        assertEquals("Kevin G", marker.name)
+        val read = requests.single { it.method == "GET" && it.requestUrl!!.encodedPath.endsWith("/users/U1") }
+        assertEquals(listOf("display_name"), read.requestUrl!!.queryParameterValues("mask.fieldPaths"))
+    }
+
+    @Test
+    fun noDisplayNameFallsBackToEmailButNotAppleRelay() = runBlocking {
+        tokens.stored = Session("U1", "id-token", "refresh", now + 3_600_000L, "diver@example.com")
+        svc404().let { svc ->
+            svc.sync()
+            assertEquals(SyncState.Synced(now), svc.state.value)
+            assertEquals("diver@example.com", svc.accountName.value)
+        }
+        tokens.stored = Session("U1", "id-token", "refresh", now + 3_600_000L, "x1@privaterelay.appleid.com")
+        svc404().let { svc ->
+            svc.sync()
+            assertNull(svc.accountName.value)
+        }
+    }
+
+    private fun svc404(): SpotSyncService { profileBody = null; return service(FakeSpotStore()) }
+
+    @Test
+    fun failedNameReadKeepsLastNameAndSyncSucceeds() = runBlocking {
+        signedIn()
+        marker.name = "Kevin G"
+        profileBody = "{}"
+        profileCode = 500
+        val svc = service(FakeSpotStore())
+        svc.sync()
+        assertEquals(SyncState.Synced(now), svc.state.value)
+        assertEquals("Kevin G", svc.accountName.value)
+    }
+
+    @Test
+    fun signOutForgetsTheName() = runBlocking {
+        signedIn()
+        profileBody = profileWithName("Kevin G")
+        val svc = service(FakeSpotStore())
+        svc.sync()
+        svc.signOut()
+        assertNull(svc.accountName.value)
+        assertNull(marker.name)
     }
 
     @Test

@@ -5,9 +5,24 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-10-24
+## Start here — state as of 2026-10-25
 
 Read this block first. Everything below it is a change log.
+
+### 25 Oct: sign-in you can find, and who you are signed in as (branch `feat/visible-sign-in`)
+
+The first live test on Kevin's Galaxy Watch (the `.sideload` copy, 2.2.0) worked: Google sign-in through the phone, then "Synced". Kevin couldn't find the sign-in, though; it was behind a long-press. Changes, both watches:
+
+- **Onboarding gets a page 4 of 5, "Sync with spearo.pro":** Sign in with Google (Wear) or Sign in with Apple (watchOS), and Not now, which jumps to the location page. Once signed in it says "You're signed in. Swipe →".
+- **Settings is now a page:** the last tab, after Fish Activity. It is the old Spots / Locations screen (search, saved spots, sync, About), retitled Settings. Long-pressing the verdict jumps to it. Back from it (Wear), or picking a spot (watchOS), returns to the verdict. The old sheet / overlay is gone.
+- **"Signed in as …"** above the sync row. It shows the spearo.pro `display_name`, else the sign-in email (never an Apple relay address). It is read on each sync, by a GET of `users/{uid}` masked to that one field, best effort (a failed read keeps the last name and never fails the sync). It is stored on the watch only and cleared on sign-out.
+- A "Hold for spots and sign in" hint on the verdict screen was built, then removed at Kevin's request. The verdict screen is unchanged from main.
+- Privacy: the store docs' "Name: not collected" now explain the display-name read. Kevin should confirm the answer stays "not collected".
+- Verified:
+  - 107 Kotlin unit tests (4 new in SpotSyncServiceTest for the name) and the Wear debug build.
+  - The Swift harness: firestore 10/10 (2 new), auth 15/15, merge 39/39. The watch target builds.
+  - On Kevin's Galaxy Watch: the new onboarding page and sign-in, the Settings tab, and the right name in "Signed in as".
+- NOT RUN: any of it on Apple Watch or the watchOS simulator; Settings and the onboarding page at Wear Text size Largest; the spearo.pro side of the E2E (a spot showing on the website).
 
 ### 24 Oct: hidden spots and the account prompt (branch `feat/account-prompt-and-hidden-spots`)
 
@@ -69,7 +84,7 @@ Apple Watch needs P3, P4 and P5.
 ### Next steps
 
 1. ~~Console setup~~ Done 25 Oct: P1 to P5 are all complete (`docs/ACCOUNT-SYNC-SETUP.md`). P1's redirect URIs can take a few hours to apply. The `WEB_CLIENT_SECRET` lives only in Kevin's local `wear/local.properties`.
-2. Live E2E, both platforms. Then signed-in screenshots.
+2. Live E2E, both platforms. Then signed-in screenshots. 25 Oct: Wear sign-in and "Synced" passed on Kevin's Galaxy Watch (`.sideload`). Still to do: the spot appearing at spearo.pro, the rest of the device checklist, and all of Apple Watch.
 3. Enter the new Data safety and App Privacy answers in the consoles. For the owner:
    - CONFIRMED by Kevin on 23 Oct: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).
    - **Revised 24 Oct:** a spot saved under the old account but not yet pushed is now kept, hidden, for that account (see the 24 Oct block above). The rest of this bullet is otherwise current.
