@@ -63,12 +63,12 @@ The full device checklist is in `docs/BACKLOG.md` under "Account sync".
 
 ### Console prerequisites
 
-Kevin does these. See `docs/ACCOUNT-SYNC-SETUP.md` (P1 to P5). Wear needs P1 and P2.
+Done 25 Oct. See `docs/ACCOUNT-SYNC-SETUP.md` (P1 to P5). Wear needs P1 and P2.
 Apple Watch needs P3, P4 and P5.
 
 ### Next steps
 
-1. Console setup (`docs/ACCOUNT-SYNC-SETUP.md`).
+1. ~~Console setup~~ Done 25 Oct: P1 to P5 are all complete (`docs/ACCOUNT-SYNC-SETUP.md`). P1's redirect URIs can take a few hours to apply. The `WEB_CLIENT_SECRET` lives only in Kevin's local `wear/local.properties`.
 2. Live E2E, both platforms. Then signed-in screenshots.
 3. Enter the new Data safety and App Privacy answers in the consoles. For the owner:
    - CONFIRMED by Kevin on 23 Oct: the hashed IP is declared as its own type (Play Device or other IDs, Apple Device ID, not linked, up to about two hours).

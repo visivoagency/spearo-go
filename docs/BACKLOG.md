@@ -3,8 +3,8 @@
 ## Open
 
 ### Account sync: console setup, live E2E and store forms (added 2026-10-23)
-The code is built but never run against a live sign-in. Do `docs/ACCOUNT-SYNC-SETUP.md`
-(P1 to P5), then the E2E in the plan, then enter the new Data safety and App Privacy
+The code is built but never run against a live sign-in. Console setup P1 to P5 was done on
+25 Oct (`docs/ACCOUNT-SYNC-SETUP.md`). Next is the E2E in the plan, then enter the new Data safety and App Privacy
 answers, then take signed-in screenshots. Kevin also needs to set the 18+ store ratings and
 the new legal URLs in both consoles (steps in the two metadata docs, 25 Oct). (The More
 Spearo apps entry was dropped by Kevin on 25 Oct; Go won't promote the other apps.)
@@ -30,6 +30,7 @@ Device checks before release. Each one is something the tests could not reach:
 
 ### Account sync: small follow-ups from review (added 2026-10-23)
 None of these blocks the release.
+- (25 Oct) The two Firebase API keys Go shares with Apnea and Tracker have no application restrictions. Google flags this. Restricting them means listing every app's package, bundle ID and SHA-1 at once, so it is a cross-app job for Kevin and not something one app should do alone.
 - (24 Oct) A deleted account's hidden spots stay on the watch indefinitely. Go cannot tell that an account was deleted, and the account can't sign in again to collect them. Possible fix: show a "N spots saved for another account" row with a remove option.
 - (24 Oct) Swift `removeAccountSpots` and `isVisible(to:)` have no automated test (no Swift test target, and the harness is Foundation-only).
 - (24 Oct) Apple Watch: the Locations list follows `@AppStorage("sync.linkedUid")`, which SpotSyncService writes from its actor. The KVO update may arrive off the main thread. If it is ever missed, an open Locations sheet keeps the old filter until it reopens. Fix if seen: mirror linkedUid into `SyncStatus`.
