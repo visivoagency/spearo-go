@@ -13,13 +13,13 @@ The live App Store and Google Play listings charge **$0.99** (checked by the web
 - `docs/SPRINT_PLAN.md:6`
 - `docs/SESSION_SUMMARY.md:465` (a history note: add a line saying it changed, rather than rewriting it)
 
-## 2. Adults only, 18+ (owner, 23 Oct 2026)
+## 2. Adults only, 18+ (owner, 23 Oct 2026) — DONE 25 Oct (in-app notice; the console ratings are Kevin's)
 Every Spearo product is now **18+**. The new Terms, EULA and Privacy Policy say so (website draft PR
 #61, published once the owner's lawyer signs off). Go has no age check. Decide with the owner:
 - raising the store age rating (App Store age rating / Play content rating questionnaire), and
 - whether Go needs an in-app age confirmation. It has no account, so the store rating may be enough.
 
-## 3. A safety disclaimer for the verdict
+## 3. A safety disclaimer for the verdict — DONE 25 Oct
 I found no disclaimer text in the app. The new Terms (§7.2) say: "A GO verdict does not mean it is
 safe to dive." Add a short line where the verdict is first shown (onboarding or an info screen),
 on both watchOS and Wear OS, for example: "Forecast only. A GO verdict doesn't mean it's safe. Check
@@ -46,6 +46,6 @@ the website Privacy Policy, which now says:
 
 If the in-app privacy text (`PrivacyPolicyView.swift`) says anything different, align it too.
 
-## 5. Legal links
+## 5. Legal links — DONE 25 Oct (shown as text on About; store docs updated)
 Once PR #61 is merged, the canonical pages are https://spearo.pro/terms, /privacy, /eula and
 /data-deletion. Point the store listings and any in-app links there.

@@ -43,4 +43,12 @@ object Constants {
         const val VERSION = "2.2.0"   // Shown on the Info page; keep with build.gradle.kts versionName.
         const val PRICE = "$0.99"
     }
+
+    // Same text as Swift's Constants.Legal.
+    object Legal {
+        /** Terms §7.2: a GO verdict does not mean it is safe to dive. */
+        const val DISCLAIMER = "Forecast only. A GO verdict doesn't mean it's safe. Check conditions yourself and never dive alone."
+        const val AGE_NOTICE = "Spearo Go is for adults 18 and over."
+        const val LINKS = "Terms: spearo.pro/terms\nPrivacy: spearo.pro/privacy\nEULA: spearo.pro/eula\nDelete your data: spearo.pro/data-deletion"
+    }
 }

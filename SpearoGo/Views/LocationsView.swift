@@ -48,11 +48,11 @@ struct LocationsView: View {
                         PrivacyPolicyView()
                     } label: {
                         HStack(spacing: Brand.Spacing.item) {
-                            Image(systemName: "hand.raised.fill")
+                            Image(systemName: "info.circle.fill")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Brand.Colors.textSecondary)
                                 .frame(width: 18)
-                            Text("Privacy Policy")
+                            Text("About")
                                 .brandFont(Brand.Typography.personalityCopy)
                                 .foregroundStyle(Brand.Colors.textSecondary)
                         }

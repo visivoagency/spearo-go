@@ -4,8 +4,13 @@ struct PrivacyPolicyView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Brand.Spacing.section) {
-                Text("PRIVACY POLICY")
+                Text("ABOUT")
                     .brandSectionHeader()
+
+                policySection(
+                    title: "Safety",
+                    body: "\(Constants.Legal.disclaimer) \(Constants.Legal.ageNotice)"
+                )
 
                 policySection(
                     title: "Location Data",
@@ -37,14 +42,19 @@ struct PrivacyPolicyView: View {
                     body: "Questions? Reach us at https://spearotracker.com/contact"
                 )
 
-                Text("Effective: January 2025")
+                policySection(
+                    title: "Legal",
+                    body: Constants.Legal.links
+                )
+
+                Text("Effective: October 2026")
                     .brandFont(Brand.Typography.caption)
                     .foregroundStyle(Brand.Colors.textSecondary)
             }
             .padding(Brand.Spacing.page)
         }
         .background(Brand.Colors.background)
-        .navigationTitle("Privacy")
+        .navigationTitle("About")
     }
 
     private func policySection(title: String, body: String) -> some View {

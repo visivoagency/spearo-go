@@ -51,7 +51,12 @@ spearfishing, dive, swell, tides, solunar, fishing, marine, weather, ocean, watc
 $0.99
 
 ## Content Rating (IARC)
-Everyone / PEGI 3
+The IARC questionnaire gives Everyone / PEGI 3. That stays, because nothing in the app is mature content.
+
+## Target audience (App content)
+18 and over only. Every Spearo product is for adults 18 and over (Terms, 23 Oct 2026). Under
+Policy → App content → Target audience and content, tick only "18 and over". In the app,
+onboarding and the About page say so too.
 
 ## Copyright
 © 2026 Visivo Agency
@@ -61,7 +66,11 @@ Everyone / PEGI 3
 - Website: https://spearotracker.com
 
 ## Privacy Policy URL
-https://spearotracker.com/privacy-policy
+https://spearo.pro/privacy
+
+## Account deletion URL (Data safety)
+https://spearo.pro/data-deletion. This page explains how to delete a Spearo account and its
+data, Go's spots included.
 
 ---
 
@@ -128,7 +137,7 @@ Place-name search text is sent to Open-Meteo geocoding to find the place. It is 
 ### Security practices
 - Data encrypted in transit (HTTPS)
 - No data sold, none used for advertising
-- Signed-in data: a spot the diver deletes on the watch is marked deleted in the account and hidden everywhere. Full removal of the data happens through account deletion, which goes through the Spearo website; the exact page is set in the later legal-links stage (see `docs/HANDOFF-from-website-2026-10-23.md`, item 5).
+- Signed-in data: a spot the diver deletes on the watch is marked deleted in the account and hidden everywhere. Full removal of the data happens through account deletion, which goes through the Spearo website; the page is https://spearo.pro/data-deletion.
 - Signed out: nothing is stored on a Spearo server except the cache and hash above, which expire.
 
 ### Targeting
@@ -197,9 +206,10 @@ redesigned verdict screen that names any reading it could not include.
 - [ ] Complete store listing (title, descriptions, screenshots)
 - [ ] Complete Data Safety form (see Data Safety Form Responses above)
 - [ ] Complete IARC content rating questionnaire
+- [ ] Set Target audience to 18 and over only
 - [ ] Set pricing ($0.99)
-- [ ] Add privacy policy URL
-- [ ] Verify spearotracker.com/privacy-policy covers Wear OS
+- [ ] Add privacy policy URL (https://spearo.pro/privacy)
+- [ ] Add the account deletion URL (https://spearo.pro/data-deletion)
 - [ ] Promote to Production track
 - [ ] Submit for review (typically 1-3 days)
 

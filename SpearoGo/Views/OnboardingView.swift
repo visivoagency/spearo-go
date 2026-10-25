@@ -16,9 +16,13 @@ struct OnboardingView: View {
             howItWorksPage
                 .tag(1)
 
-            // Page 3: Location permission + go
-            locationPage
+            // Page 3: Safety, and the 18+ rule
+            safetyPage
                 .tag(2)
+
+            // Page 4: Location permission + go
+            locationPage
+                .tag(3)
         }
         .tabViewStyle(.page)
         .background(Brand.Colors.background)
@@ -87,7 +91,38 @@ struct OnboardingView: View {
         .accessibilityLabel("How it works. Weather, swell, tides, and solunar data combined into one score from 0 to 10.")
     }
 
-    // MARK: - Page 3: Location + Start
+    // MARK: - Page 3: Safety
+
+    // Terms §7.2: "A GO verdict does not mean it is safe to dive." The verdict
+    // is a forecast; this page says so before the first one is shown.
+    private var safetyPage: some View {
+        ScrollView {
+            VStack(spacing: Brand.Spacing.section) {
+                Image(systemName: "exclamationmark.shield.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(Brand.Colors.secondary)
+
+                Text("Before You Dive")
+                    .brandFont(Brand.Typography.dataValue)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+
+                Text(Constants.Legal.disclaimer)
+                    .brandFont(Brand.Typography.caption)
+                    .foregroundStyle(Brand.Colors.textSecondary)
+                    .multilineTextAlignment(.center)
+
+                Text(Constants.Legal.ageNotice)
+                    .brandFont(Brand.Typography.caption)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(Brand.Spacing.page)
+        }
+        .brandPage()
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Page 4: Location + Start
 
     private var locationPage: some View {
         VStack(spacing: Brand.Spacing.section) {

@@ -48,6 +48,14 @@ enum Constants {
         static let version = "1.2.0"
         static let price   = "$0.99"
     }
+
+    // MARK: - Legal (same text as Wear's Constants.Legal)
+    enum Legal {
+        /// Terms §7.2: a GO verdict does not mean it is safe to dive.
+        static let disclaimer = "Forecast only. A GO verdict doesn't mean it's safe. Check conditions yourself and never dive alone."
+        static let ageNotice  = "Spearo Go is for adults 18 and over."
+        static let links      = "Terms: spearo.pro/terms\nPrivacy: spearo.pro/privacy\nEULA: spearo.pro/eula\nDelete your data: spearo.pro/data-deletion"
+    }
 }
 
 // MARK: - Color(hex:) — kept for legacy use & API validation spike only.
