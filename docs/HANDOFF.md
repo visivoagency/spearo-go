@@ -77,7 +77,7 @@ Apple Watch needs P3, P4 and P5.
    - Live E2E should include: sign out and back into the same account (no duplicates), and sign into a second account (the first account's spots leave the watch and are not uploaded; spots saved while signed out upload).
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
 5. ~~The $0.99 price~~ Done 24 Oct: the docs and both `Constants` now say $0.99 (neither constant is shown in the app).
-6. The More Spearo apps entry.
+6. ~~The More Spearo apps entry~~ Dropped by Kevin on 25 Oct: a watch is no place to promote the other apps, so Go won't list them. Go's job is to stay in sync with the dashboard, with Firebase as the source of truth. Item 4 of `Spearo-Empire/docs/HANDOFF-apps-2026-10-21.md` does not apply to Go.
 7. The rest of `docs/HANDOFF-from-website-2026-10-23.md`: age 18+ (item 2), the safety disclaimer (item 3), the legal links (item 5). Item 4, the privacy disclosures, is done.
 
 ---
