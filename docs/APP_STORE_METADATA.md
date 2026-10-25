@@ -52,7 +52,9 @@ Weather
 $0.99 (Tier 1)
 
 ## Content Rating
-4+ (No objectionable content)
+18+. Every Spearo product is for adults 18 and over (Terms, 23 Oct 2026). The questionnaire
+answers below would give 4+, so set the rating with the questionnaire's "Override to a higher
+age rating" option, choosing 18+. In the app, onboarding and the About page say so too.
 
 ## Copyright
 © 2026 Visivo Agency
@@ -61,7 +63,11 @@ $0.99 (Tier 1)
 https://spearotracker.com/contact
 
 ## Privacy Policy URL
-https://spearotracker.com/privacy-policy
+https://spearo.pro/privacy
+
+## License Agreement (EULA)
+Custom EULA: https://spearo.pro/eula. Terms: https://spearo.pro/terms. Both are also listed
+on the app's About page.
 
 ## App Privacy (nutrition label)
 

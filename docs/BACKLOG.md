@@ -5,9 +5,9 @@
 ### Account sync: console setup, live E2E and store forms (added 2026-10-23)
 The code is built but never run against a live sign-in. Do `docs/ACCOUNT-SYNC-SETUP.md`
 (P1 to P5), then the E2E in the plan, then enter the new Data safety and App Privacy
-answers, then take signed-in screenshots. Also open: items 2, 3 and 5 of
-`docs/HANDOFF-from-website-2026-10-23.md`. (The More Spearo apps entry was dropped
-by Kevin on 25 Oct; Go won't promote the other apps.)
+answers, then take signed-in screenshots. Kevin also needs to set the 18+ store ratings and
+the new legal URLs in both consoles (steps in the two metadata docs, 25 Oct). (The More
+Spearo apps entry was dropped by Kevin on 25 Oct; Go won't promote the other apps.)
 The hashed IP's own privacy-label type (Device ID) was confirmed by Kevin on 23 Oct.
 
 Device checks before release. Each one is something the tests could not reach:
@@ -26,6 +26,7 @@ Device checks before release. Each one is something the tests could not reach:
 13. Every sync-row state at Wear Text size Largest and at the largest watchOS Dynamic Type.
 14. In the Firestore console, a Go doc has exactly the 12 snake_case keys, `is_private: true`, and no `isDeleted` or `lastModifiedAt`.
 15. The account prompt (24 Oct). On a fresh install, signed out, save a first spot: the prompt appears once (Wear: in place of the Spots list; Apple Watch: after the save sheet closes). "Not now" and Back dismiss it; after that a second save does not bring it back. "Sign in" starts the sign-in, and on Apple Watch the prompt closes once signed in. Check it at Wear Text size Largest.
+16. Safety and legal (25 Oct). On a fresh install, onboarding shows "Before You Dive" (the disclaimer and the 18+ line) as page 3 of 4 on both watches. About shows Safety first and Legal last. Check both at Wear Text size Largest and at the largest watchOS Dynamic Type, which wasn't run on a screen.
 
 ### Account sync: small follow-ups from review (added 2026-10-23)
 None of these blocks the release.

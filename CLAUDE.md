@@ -76,6 +76,13 @@ Where logic can be centralised server-side instead of duplicated, prefer that �
 it is why the tide design puts the NOAA/WorldTides choice in a Cloud Function
 rather than in both clients.
 
+## Safety and legal text
+
+The verdict is a forecast, not a safety call (Terms §7.2), and Go is 18+. The wording is
+in `Constants.Legal` on both platforms. It's shown on the "Before You Dive" onboarding
+page and on About. Keep the two copies word for word, and don't add a verdict screen
+or a store listing that drops the disclaimer.
+
 ## Astronomy is testable — test it
 
 Solunar and tide maths must be checked against independently computed ground

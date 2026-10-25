@@ -19,13 +19,14 @@ import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.R
 import com.spearotracker.spearogo.ui.components.ScrollingPage
 import com.spearotracker.spearogo.ui.theme.Brand
+import com.spearotracker.spearogo.utils.Constants
 
 @Composable
 fun OnboardingScreen(
     onRequestPermission: () -> Unit,
     onSkip: () -> Unit
 ) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
 
     HorizontalPager(state = pagerState) { page ->
         Box(
@@ -37,7 +38,8 @@ fun OnboardingScreen(
             when (page) {
                 0 -> WelcomePage()
                 1 -> HowItWorksPage()
-                2 -> LocationPage(onRequestPermission = onRequestPermission)
+                2 -> SafetyPage()
+                3 -> LocationPage(onRequestPermission = onRequestPermission)
             }
         }
     }
@@ -105,6 +107,42 @@ private fun HowItWorksPage() {
             VerdictBadge("SKETCHY", Brand.Colors.sketchy)
             VerdictBadge("NO GO", Brand.Colors.noGo)
         }
+    }
+}
+
+// Terms §7.2: "A GO verdict does not mean it is safe to dive." The verdict is a
+// forecast; this page says so before the first one is shown.
+@Composable
+private fun SafetyPage() {
+    ScrollingPage {
+        Text(text = "\u26A0\uFE0F", fontSize = 24.sp)
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "Before You Dive",
+            style = Brand.Typography.dataValue,
+            color = Brand.Colors.textPrimary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = Constants.Legal.DISCLAIMER,
+            style = Brand.Typography.caption,
+            color = Brand.Colors.textSecondary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = Constants.Legal.AGE_NOTICE,
+            style = Brand.Typography.caption,
+            color = Brand.Colors.textPrimary,
+            textAlign = TextAlign.Center
+        )
     }
 }
 

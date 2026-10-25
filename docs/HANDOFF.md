@@ -78,7 +78,11 @@ Apple Watch needs P3, P4 and P5.
 4. Hand `~/Documents/Spearo-Empire/docs/HANDOFF-from-go-2026-10-23.md` to the website session.
 5. ~~The $0.99 price~~ Done 24 Oct: the docs and both `Constants` now say $0.99 (neither constant is shown in the app).
 6. ~~The More Spearo apps entry~~ Dropped by Kevin on 25 Oct: a watch is no place to promote the other apps, so Go won't list them. Go's job is to stay in sync with the dashboard, with Firebase as the source of truth. Item 4 of `Spearo-Empire/docs/HANDOFF-apps-2026-10-21.md` does not apply to Go.
-7. The rest of `docs/HANDOFF-from-website-2026-10-23.md`: age 18+ (item 2), the safety disclaimer (item 3), the legal links (item 5). Item 4, the privacy disclosures, is done.
+7. ~~The rest of `docs/HANDOFF-from-website-2026-10-23.md`~~ Done 25 Oct, on both watches. The text lives once per platform, in `Constants.Legal`.
+   - **Safety (item 3):** onboarding has a new "Before You Dive" page before the location page. It says: "Forecast only. A GO verdict doesn't mean it's safe. Check conditions yourself and never dive alone." The About page (Apple Watch: Locations → About, formerly "Privacy Policy"; Wear: Spots → About) opens with a Safety section saying the same.
+   - **18+ (item 2):** both places say "Spearo Go is for adults 18 and over." My call: there's no in-app age check. The store rating does the gating. Kevin sets it in the consoles: App Store 18+ (using the questionnaire's override), and Play Target audience "18 and over" only. Steps are in `docs/APP_STORE_METADATA.md` and `docs/GOOGLE_PLAY_METADATA.md`.
+   - **Legal links (item 5):** the About page lists spearo.pro/terms, /privacy, /eula and /data-deletion as text, since a watch can't open them. All four returned 200 on 25 Oct. The store docs and README now point there, and Play gets /data-deletion as its account deletion URL.
+   - Existing installs that are already past onboarding see the disclaimer only on About. Wear also skips onboarding when location permission is already granted.
 
 ---
 

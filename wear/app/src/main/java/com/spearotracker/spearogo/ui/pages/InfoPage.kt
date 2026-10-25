@@ -17,12 +17,17 @@ fun InfoPage(onDismiss: () -> Unit) {
 
     ScrollingPage(modifier = Modifier.clickable { onDismiss() }) {
         Text(
-            text = "PRIVACY",
+            text = "ABOUT",
             style = Brand.Typography.sectionHeader,
             color = Brand.Colors.textSecondary
         )
 
         Spacer(modifier = Modifier.height(Brand.Spacing.section))
+
+        PolicySection(
+            title = "Safety",
+            body = "${Constants.Legal.DISCLAIMER} ${Constants.Legal.AGE_NOTICE}"
+        )
 
         PolicySection(
             title = "Location Data",
@@ -42,6 +47,11 @@ fun InfoPage(onDismiss: () -> Unit) {
         PolicySection(
             title = "APIs",
             body = "Weather and marine data from Open-Meteo. Solunar calculated on-device. Tides from NOAA or WorldTides via Spearo's tide service."
+        )
+
+        PolicySection(
+            title = "Legal",
+            body = Constants.Legal.LINKS
         )
 
         Spacer(modifier = Modifier.height(Brand.Spacing.section))

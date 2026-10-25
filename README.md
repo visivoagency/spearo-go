@@ -196,7 +196,8 @@ All colors are in `Assets.xcassets` — reference via `Brand.Colors.*` in code.
 - No analytics, no tracking, no ads
 - Open-Meteo APIs are free and keyless — no API secrets in the codebase
 - Privacy manifest (`PrivacyInfo.xcprivacy`) declares UserDefaults API usage
-- Full privacy policy at [spearotracker.com/privacy-policy](https://spearotracker.com/privacy-policy)
+- Full privacy policy at [spearo.pro/privacy](https://spearo.pro/privacy); terms at [spearo.pro/terms](https://spearo.pro/terms), EULA at [spearo.pro/eula](https://spearo.pro/eula), data deletion at [spearo.pro/data-deletion](https://spearo.pro/data-deletion)
+- For adults 18 and over. The verdict is a forecast, not a safety call
 
 ---
 
