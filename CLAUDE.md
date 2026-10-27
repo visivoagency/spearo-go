@@ -151,6 +151,8 @@ Spec: `docs/superpowers/specs/2026-10-23-go-account-spot-sync-design.md`
   spearo.pro", skippable) and the Settings page, the last tab after Fish
   Activity. Long-pressing the verdict jumps to Settings, but nothing on the
   verdict screen points at sign-in. Don't add it back there.
+- **Long-press on a saved spot opens its detail page** (Kevin, 27 Oct). Deleting
+  from there always asks first. Never put a delete straight onto long-press again.
 - **"Signed in as …"** reads only `users/{uid}.display_name` (`mask.fieldPaths`)
   on each sync, best effort. Fallback is the sign-in email, never an Apple relay
   address. It is kept only on the watch, never written or sent, and cleared on
