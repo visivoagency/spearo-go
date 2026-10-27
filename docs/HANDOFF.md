@@ -15,6 +15,7 @@ Kevin asked for a new version on both stores, after the spot detail page merged 
 - Versions: Wear 2.2.1 (18), watchOS 1.2.1 (5), including `Constants` VERSION on both.
 - **watchOS 1.2.1 (5) is uploaded to App Store Connect** (`xcodebuild -exportArchive`, `destination=upload`, `manageAppVersionAndBuildNumber=false`). The archive's Info.plists read 1.2.1 (5), and the watch app carries the Sign in with Apple entitlement.
 - **Wear AAB built:** `build/release-2026-10-27/spearo-go-2.2.1-18.aab` (4.2 MB, gitignored), signed with the upload key, and its manifest reads 2.2.1. It's small enough for the Chrome file-upload tool.
+- Release notes for 2.2.1 (18) and 1.2.1 (5) are in the two metadata docs (Play: 435 of 500 characters).
 - Still to do in the consoles: the Play Data safety form, the 18+ Target audience and the legal URLs; then upload the AAB to Production and submit. In App Store Connect: create version 1.2.1, enter the App Privacy answers, the age rating and the URLs, attach build 5, and submit. Every answer is in `docs/GOOGLE_PLAY_METADATA.md` and `docs/APP_STORE_METADATA.md`.
 
 ### 27 Oct: spot detail page (branch `feat/spot-detail`)
@@ -39,7 +40,7 @@ The first live test on Kevin's Galaxy Watch (the `.sideload` copy, 2.2.0) worked
 - **Settings is now a page:** the last tab, after Fish Activity. It is the old Spots / Locations screen (search, saved spots, sync, About), retitled Settings. Long-pressing the verdict jumps to it. Back from it (Wear), or picking a spot (watchOS), returns to the verdict. The old sheet / overlay is gone.
 - **"Signed in as …"** above the sync row. It shows the spearo.pro `display_name`, else the sign-in email (never an Apple relay address). It is read on each sync, by a GET of `users/{uid}` masked to that one field, best effort (a failed read keeps the last name and never fails the sync). It is stored on the watch only and cleared on sign-out.
 - A "Hold for spots and sign in" hint on the verdict screen was built, then removed at Kevin's request. The verdict screen is unchanged from main.
-- Privacy: the store docs' "Name: not collected" now explain the display-name read. Kevin should confirm the answer stays "not collected".
+- Privacy: the store docs' "Name: not collected" now explain the display-name read. Settled on 27 Oct: it stays "not collected", because Go only reads the name and never sends it (see the metadata docs).
 - Verified:
   - 107 Kotlin unit tests (4 new in SpotSyncServiceTest for the name) and the Wear debug build.
   - The Swift harness: firestore 10/10 (2 new), auth 15/15, merge 39/39. The watch target builds.

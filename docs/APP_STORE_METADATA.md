@@ -106,7 +106,7 @@ App Store Connect answers (Data Types you collect):
 - Data Used to Track You: none. `NSPrivacyTracking` is false and there are no tracking domains.
 - The IP hash is declared as Device ID. Confirmed by Kevin on 23 Oct.
 - Place-name search text goes to Open-Meteo geocoding and is not stored by Go; covered by the location rows.
-- Name and photos: not collected. Sign in with Apple requests the email scope only, and Wear's Google sign-in asks for `openid email` only (no `profile`), so neither provider returns a name or photo to Go. Since 25 Oct, signed in, the watch reads the diver's own `display_name` from their Spearo account (set on spearo.pro) and shows it as "Signed in as …". It stays on the watch, is never sent anywhere by Go, and is cleared on sign-out. Kevin to confirm this stays "not collected" before entering the form.
+- Name and photos: not collected. Sign in with Apple requests the email scope only, and Wear's Google sign-in asks for `openid email` only (no `profile`), so neither provider returns a name or photo to Go. Since 25 Oct, signed in, the watch reads the diver's own `display_name` from their Spearo account (set on spearo.pro) and shows it as "Signed in as …". It stays on the watch, is never sent anywhere by Go, and is cleared on sign-out. Reviewed 27 Oct (Kevin left the call to this review): both stores count data as collected only when the app sends it off the device. The name travels the other way, from the account to the watch, and Go never sends it, so the answer stays "not collected".
 - Required-reason API: UserDefaults (CA92.1), already declared.
 
 ## Age Rating Questionnaire
@@ -119,6 +119,15 @@ App Store Connect answers (Data Types you collect):
 - Horror/Fear Themes: No
 - Alcohol/Tobacco/Drug References: No
 - Sexual Content/Nudity: No
+
+## What's New (Version 1.2.1)
+
+Your spots, on your watch and in your Spearo account.
+
+• Optional Sign in with Apple syncs your saved spots with your Spearo account and spearo.pro, both ways. Spearo Go still works fully without an account.
+• A new Settings tab at the end, with your spots, sign-in, and who you're signed in as.
+• Long-press a spot to see its details, switch to it, or delete it. Deletes ask first.
+• A safety note and the 18+ notice in onboarding and About.
 
 ## What's New (Version 1.1.0)
 
