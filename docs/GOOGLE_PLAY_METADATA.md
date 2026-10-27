@@ -130,7 +130,7 @@ What the server keeps:
 Place-name search text is sent to Open-Meteo geocoding to find the place. It is not stored by Go. Covered by "Shared" for location above; no separate Play type.
 
 ### Data NOT collected
-- Name: not collected by Go. Google sign-in asks for `openid email` only (no `profile` scope), and Apple sign-in requests the email scope only, so no name or photo comes from the sign-in. Since 25 Oct, signed in, the watch reads the diver's own `display_name` from their Spearo account (set on spearo.pro, which already declares it) and shows it as "Signed in as …". It is stored only on the watch, never sent anywhere by Go, and cleared on sign-out. Kevin to confirm this stays "not collected" before entering the form.
+- Name: not collected by Go. Google sign-in asks for `openid email` only (no `profile` scope), and Apple sign-in requests the email scope only, so no name or photo comes from the sign-in. Since 25 Oct, signed in, the watch reads the diver's own `display_name` from their Spearo account (set on spearo.pro, which already declares it) and shows it as "Signed in as …". It is stored only on the watch, never sent anywhere by Go, and cleared on sign-out. Reviewed 27 Oct (Kevin left the call to this review): both stores count data as collected only when the app sends it off the device. The name travels the other way, from the account to the watch, and Go never sends it, so the answer stays "not collected".
 - Financial info, health & fitness, messages, photos/videos, audio, files, calendar, contacts
 - App interactions, web browsing, diagnostics, advertising IDs
 
@@ -163,6 +163,15 @@ Place-name search text is sent to Open-Meteo geocoding to find the place. It is 
 ---
 
 ## Release Notes
+
+### 2.2.1 (18)
+
+Your spots, on your watch and in your Spearo account.
+
+• Optional sign-in syncs your saved spots with your Spearo account and spearo.pro, both ways. Spearo Go still works fully without an account.
+• A new Settings tab at the end, with your spots, sign-in, and who you're signed in as.
+• Long-press a spot to see its details, switch to it, or delete it. Deletes now ask first.
+• A safety note and the 18+ notice in onboarding and About.
 
 ### 2.1.1 (16)
 
