@@ -28,6 +28,7 @@ Device checks before release. Each one is something the tests could not reach:
 15. The account prompt (24 Oct). On a fresh install, signed out, save a first spot: the prompt appears once (Wear: in place of the Spots list; Apple Watch: after the save sheet closes). "Not now" and Back dismiss it (its footnote now says "Sign in any time from Settings"); after that a second save does not bring it back. "Sign in" starts the sign-in, and on Apple Watch the prompt closes once signed in. Check it at Wear Text size Largest.
 16. Safety and legal (25 Oct). On a fresh install, onboarding shows "Before You Dive" (the disclaimer and the 18+ line) as page 3 of 5 on both watches. About shows Safety first and Legal last. Check both at Wear Text size Largest and at the largest watchOS Dynamic Type, which wasn't run on a screen.
 17. Sign-in entry points (25 Oct). On a fresh install, onboarding page 4 of 5 is "Sync with spearo.pro": Sign in works, Not now jumps to the location page. Settings is the last tab on both watches; long-press on the verdict jumps there; Back (Wear) and picking a spot (watchOS) return to the verdict. "Signed in as …" shows the spearo.pro display name, the email when there is none, nothing for an Apple relay email, and clears on sign-out. Passed on the Galaxy Watch on 25 Oct, except Text size Largest. Not run on Apple Watch.
+18. Spot detail (27 Oct). Long-press a saved spot in Settings: the name, coordinates, date saved and source show, plus "Use this spot" or "Showing now". Delete asks "Delete <name>?"; Cancel and Back keep the spot. Signed in, a Vision spot can't be deleted. Passed on the Galaxy Watch on 27 Oct, including the delete reaching spearo.pro. Not run at Text size Largest or on Apple Watch.
 
 ### Account sync: small follow-ups from review (added 2026-10-23)
 None of these blocks the release.
@@ -69,11 +70,16 @@ bound the user's size. Decide deliberately; if the cap goes, the watchOS pages
 need the same round-screen viewport treatment as `ScrollingPage.kt`.
 
 ### Release blockers
-See `docs/RELEASE-READINESS.md`. Three: enable the Firestore TTL policies
-(`gcloud` was unavailable when the backend was deployed), update the Play Data
-Safety and App Store privacy answers now that location reaches a Spearo server
-(the docs were rewritten 2026-10-23; the console forms still need entering),
-and set the WorldTides daily ceiling against the real credit balance.
+See `docs/RELEASE-READINESS.md`. The Firestore TTL policies and the WorldTides
+daily ceiling were done on 2026-09-01. One blocker is left: enter the Play Data
+safety and App Store privacy answers in the consoles (the docs were rewritten
+on 2026-10-23).
+
+### Spot detail: show the website's description and depth (added 2026-10-27)
+The detail page shows only what the watch keeps. spearo.pro spots also carry a
+description and a depth. Showing them needs both clients to read those fields,
+and a Room migration and a SwiftData change to store them. Kevin chose to do
+this later (option 2 of 26 Oct).
 
 ### ~~A landlocked spot still gets a dive verdict~~ — fixed 2026-08-31
 Now says "No sea here" when both marine and tide report no coverage — which is

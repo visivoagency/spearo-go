@@ -5,9 +5,23 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-10-25
+## Start here — state as of 2026-10-27
 
 Read this block first. Everything below it is a change log.
+
+### 27 Oct: spot detail page (branch `feat/spot-detail`)
+
+The live Wear E2E with spearo.pro passed on 26 Oct: a watch spot showed on the website, a website spot showed on the watch, and deletes went both ways. Kevin then asked for a detail page, because long-press on Wear deleted a spot at once with no confirmation. Changes, both watches:
+
+- **Long-press a saved spot in Settings to open its details.** They show the name, coordinates ("38.7223° N, 9.1393° W"), the date saved, and where it came from: this watch, your Spearo account, or Vision. They also show "Showing now", or a "Use this spot" row.
+- **Delete sits behind a confirmation**: "Delete <name>?", then Yes, delete or Cancel. The subtitle says whether the delete also reaches the account. Signed in, a Vision spot shows "Saved in Vision. Delete it in Vision." and has no delete button. The Wear hint now reads "Long-press a spot for details". Swipe-to-delete on watchOS is unchanged.
+- The details use only what the watch keeps. Kevin chose option 1: showing the website's description and depth is a follow-up and needs a DB migration on both platforms. It's in the BACKLOG.
+- Verified:
+  - 111 Kotlin unit tests (4 new in SpotDetailTextTest), and the watchOS target builds.
+  - On Kevin's Galaxy Watch (`.sideload`), the detail page and the delete work. The delete reached spearo.pro.
+- NOT RUN: Apple Watch on a screen; Wear Text size Largest.
+
+**Next:** release Wear 2.2.0 (17) to Google Play. Internal testing first is recommended. Before uploading, enter the Data safety answers, the 18+ audience and the legal URLs in the Play Console.
 
 ### 25 Oct: sign-in you can find, and who you are signed in as (branch `feat/visible-sign-in`)
 

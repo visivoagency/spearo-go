@@ -18,6 +18,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
@@ -28,6 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import java.text.DateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.wear.compose.material3.Text
 import androidx.wear.input.RemoteInputIntentHelper
 import com.spearotracker.spearogo.models.GeocodedPlace
@@ -63,12 +67,29 @@ fun SpotsPage(
         return
     }
 
+    val saved by viewModel.savedLocations.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
+
+    // Long-press a saved spot: its detail page (Kevin, 25 Oct). Looked up by id, so a spot that a
+    // sync removes meanwhile closes the page instead of showing a stale copy.
+    var detailId by remember { mutableStateOf<String?>(null) }
+    val detail = detailId?.let { id -> saved.firstOrNull { it.id == id } }
+    if (detail != null) {
+        SpotDetail(
+            location = detail,
+            canDelete = !(detail.origin == "VISION" && syncState !is SyncState.SignedOut),
+            signedOut = syncState is SyncState.SignedOut,
+            onUse = { viewModel.setActiveLocation(detail); detailId = null },
+            onDelete = { viewModel.deleteLocation(detail); detailId = null },
+            onClose = { detailId = null }
+        )
+        return
+    }
+
     BackHandler { onDismiss() }
 
-    val saved by viewModel.savedLocations.collectAsState()
     val search by viewModel.search.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-    val syncState by viewModel.syncState.collectAsState()
     val signIn by viewModel.signIn.collectAsState()
     val accountName by viewModel.accountName.collectAsState()
 
@@ -137,15 +158,12 @@ fun SpotsPage(
                 SavedRow(
                     location = location,
                     onSelect = { viewModel.setActiveLocation(location) },
-                    // Signed in, a Vision-owned spot is read-only here: no long-press delete.
-                    // Signed out it can be removed from the watch (Vision still owns it).
-                    onDelete = if (location.origin == "VISION" && syncState !is SyncState.SignedOut) null
-                    else ({ viewModel.deleteLocation(location) })
+                    onDetails = { detailId = location.id }
                 )
             }
             item {
                 Text(
-                    text = "Long-press a spot to remove it",
+                    text = "Long-press a spot for details",
                     style = Brand.Typography.caption,
                     color = Brand.Colors.textSecondary,
                     textAlign = TextAlign.Center,
@@ -235,7 +253,7 @@ private fun PlaceRow(place: GeocodedPlace, onSelect: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: (() -> Unit)?) {
+private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDetails: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Brand.Spacing.item),
@@ -248,7 +266,7 @@ private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: ((
                 ),
                 RoundedCornerShape(Brand.Radius.card)
             )
-            .combinedClickable(onClick = onSelect, onLongClick = onDelete)
+            .combinedClickable(onClick = onSelect, onLongClick = onDetails)
             .padding(horizontal = Brand.Spacing.item, vertical = 10.dp)
     ) {
         Text(
@@ -275,6 +293,89 @@ private fun SavedRow(location: SavedLocation, onSelect: () -> Unit, onDelete: ((
             }
         }
     }
+}
+
+/**
+ * A saved spot's details, from what the watch keeps: name, position, date saved and where it came
+ * from. Use it, or delete it behind a confirmation. Signed in, a Vision-owned spot is read-only
+ * (Vision owns it); signed out it can be removed from the watch. Twin of SpotDetailView in Swift.
+ */
+@Composable
+private fun SpotDetail(
+    location: SavedLocation,
+    canDelete: Boolean,
+    signedOut: Boolean,
+    onUse: () -> Unit,
+    onDelete: () -> Unit,
+    onClose: () -> Unit
+) {
+    var confirming by remember(location.id) { mutableStateOf(false) }
+    BackHandler { if (confirming) confirming = false else onClose() }
+
+    ScrollingList {
+        item {
+            Text(
+                text = location.name,
+                style = Brand.Typography.personalityCopy,
+                color = Brand.Colors.textPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = Brand.Spacing.micro)
+            )
+        }
+        item { Hint(spotCoordinates(location.latitude, location.longitude)) }
+        item { Hint("Saved ${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(location.createdAt))}") }
+        item { Hint(spotSource(location.origin)) }
+
+        if (confirming) {
+            item {
+                Text(
+                    text = "Delete ${location.name}?",
+                    style = Brand.Typography.personalityCopy,
+                    color = Brand.Colors.textPrimary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Brand.Spacing.item)
+                )
+            }
+            item {
+                TwoLineRow(
+                    title = "Yes, delete",
+                    subtitle = if (signedOut) "Removes it from this watch" else "Removes it here and from your Spearo account",
+                    onClick = onDelete
+                )
+            }
+            item { TwoLineRow(title = "Cancel", subtitle = "Keep this spot", onClick = { confirming = false }) }
+        } else {
+            if (location.isActive) {
+                item { Hint("Showing now") }
+            } else {
+                item { TwoLineRow(title = "Use this spot", subtitle = "Show its conditions", onClick = onUse) }
+            }
+            if (canDelete) {
+                item {
+                    TwoLineRow(
+                        title = "Delete spot",
+                        subtitle = "You'll be asked to confirm",
+                        onClick = { confirming = true }
+                    )
+                }
+            } else {
+                item { Hint("Saved in Vision. Delete it in Vision.") }
+            }
+        }
+    }
+}
+
+/** "38.7223° N, 9.1393° W". */
+internal fun spotCoordinates(lat: Double, lon: Double): String =
+    String.format(Locale.US, "%.4f° %s, %.4f° %s",
+        kotlin.math.abs(lat), if (lat >= 0) "N" else "S",
+        kotlin.math.abs(lon), if (lon >= 0) "E" else "W")
+
+/** Where a spot came from, by its SpotOrigin. Twin of spotSource in Swift. */
+internal fun spotSource(origin: String): String = when (origin) {
+    "VISION" -> "Saved in Vision"
+    "ACCOUNT" -> "From your Spearo account"
+    else -> "Saved on this watch"
 }
 
 /**

@@ -23,6 +23,8 @@ struct LocationsView: View {
     @State private var showingAddSheet = false
     @State private var showingSearchSheet = false
     @State private var showingAccountPrompt = false
+    /// Long-press a saved spot: its detail page (Kevin, 25 Oct).
+    @State private var detail: SavedLocation?
 
     var body: some View {
         NavigationStack {
@@ -34,7 +36,9 @@ struct LocationsView: View {
                 ForEach(locations) { location in
                     LocationRow(location: location, isActive: location.isActive)
                         .onTapGesture { activate(location) }
+                        .onLongPressGesture { detail = location }
                         .accessibilityAddTraits(.isButton)
+                        .accessibilityAction(named: "Details") { detail = location }
                         // Signed in, a Vision-owned spot is read-only here: no swipe-to-delete.
                         // Signed out it can be removed from the watch (Vision still owns it).
                         .deleteDisabled(location.origin == "VISION" && SyncServices.status.state != .signedOut)
@@ -73,6 +77,15 @@ struct LocationsView: View {
             }
             .listStyle(.plain)
             .background(Brand.Colors.background)
+            .navigationDestination(item: $detail) { location in
+                SpotDetailView(
+                    location: location,
+                    // Signed in, a Vision-owned spot is read-only (Vision owns it).
+                    canDelete: !(location.origin == "VISION" && SyncServices.status.state != .signedOut),
+                    onUse: { detail = nil; activate(location) },
+                    onDelete: { detail = nil; delete([location]) }
+                )
+            }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -168,10 +181,13 @@ struct LocationsView: View {
     }
 
     private func delete(at offsets: IndexSet) {
-        // Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs.
+        delete(offsets.map { locations[$0] })
+    }
+
+    /// Signed out and never linked: removed outright. Otherwise soft-deleted until its account syncs.
+    private func delete(_ rows: [SavedLocation]) {
         let sessionUid = SyncServices.auth.session()?.uid
         let ownerUid = SyncServices.ownerForEdits()
-        let rows = offsets.map { locations[$0] }
         for row in rows { deleteSpot(row, sessionUid: sessionUid, ownerUid: ownerUid, context: modelContext) }
         try? modelContext.save()
         syncSpotsInBackground()
@@ -362,6 +378,67 @@ struct SyncRows: View {
 }
 
 // MARK: - Location row
+
+/// A saved spot's details, from what the watch keeps: name, position, date saved and where it came
+/// from. Use it, or delete it behind a confirmation. Twin of SpotDetail in Kotlin.
+struct SpotDetailView: View {
+    let location: SavedLocation
+    let canDelete: Bool
+    let onUse: () -> Void
+    let onDelete: () -> Void
+    @State private var confirming = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Brand.Spacing.item) {
+                Text(location.name)
+                    .brandFont(Brand.Typography.personalityCopy)
+                    .foregroundStyle(Brand.Colors.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text(spotCoordinates(location.latitude, location.longitude)).captionStyle()
+                Text("Saved \(location.createdAt.formatted(date: .abbreviated, time: .omitted))").captionStyle()
+                Text(spotSource(location.origin)).captionStyle()
+
+                if location.isActive {
+                    Text("Showing now").captionStyle()
+                } else {
+                    Button("Use this spot", action: onUse)
+                }
+                if canDelete {
+                    Button("Delete spot", role: .destructive) { confirming = true }
+                } else {
+                    Text("Saved in Vision. Delete it in Vision.")
+                        .captionStyle()
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(Brand.Spacing.page)
+        }
+        .brandPage()
+        .confirmationDialog("Delete \(location.name)?", isPresented: $confirming, titleVisibility: .visible) {
+            Button("Yes, delete", role: .destructive, action: onDelete)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(SyncServices.status.state == .signedOut
+                 ? "Removes it from this watch"
+                 : "Removes it here and from your Spearo account")
+        }
+    }
+}
+
+/// "38.7223° N, 9.1393° W". Twin of spotCoordinates in Kotlin.
+func spotCoordinates(_ lat: Double, _ lon: Double) -> String {
+    String(format: "%.4f° %@, %.4f° %@", abs(lat), lat >= 0 ? "N" : "S", abs(lon), lon >= 0 ? "E" : "W")
+}
+
+/// Where a spot came from, by its origin. Twin of spotSource in Kotlin.
+func spotSource(_ origin: String) -> String {
+    switch origin {
+    case "VISION": return "Saved in Vision"
+    case "ACCOUNT": return "From your Spearo account"
+    default: return "Saved on this watch"
+    }
+}
 
 struct LocationRow: View {
     let location: SavedLocation
