@@ -9,6 +9,14 @@ underneath are a change log, not a status report.
 
 Read this block first. Everything below it is a change log.
 
+### 27 Oct: release 2.2.1 (18) / 1.2.1 (5) (branch `chore/release-2.2.1`)
+
+Kevin asked for a new version on both stores, after the spot detail page merged (PR #17) and internal testing finished.
+- Versions: Wear 2.2.1 (18), watchOS 1.2.1 (5), including `Constants` VERSION on both.
+- **watchOS 1.2.1 (5) is uploaded to App Store Connect** (`xcodebuild -exportArchive`, `destination=upload`, `manageAppVersionAndBuildNumber=false`). The archive's Info.plists read 1.2.1 (5), and the watch app carries the Sign in with Apple entitlement.
+- **Wear AAB built:** `build/release-2026-10-27/spearo-go-2.2.1-18.aab` (4.2 MB, gitignored), signed with the upload key, and its manifest reads 2.2.1. It's small enough for the Chrome file-upload tool.
+- Still to do in the consoles: the Play Data safety form, the 18+ Target audience and the legal URLs; then upload the AAB to Production and submit. In App Store Connect: create version 1.2.1, enter the App Privacy answers, the age rating and the URLs, attach build 5, and submit. Every answer is in `docs/GOOGLE_PLAY_METADATA.md` and `docs/APP_STORE_METADATA.md`.
+
 ### 27 Oct: spot detail page (branch `feat/spot-detail`)
 
 The live Wear E2E with spearo.pro passed on 26 Oct: a watch spot showed on the website, a website spot showed on the watch, and deletes went both ways. Kevin then asked for a detail page, because long-press on Wear deleted a spot at once with no confirmation. Changes, both watches:
