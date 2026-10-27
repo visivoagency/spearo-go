@@ -41,6 +41,8 @@ Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's ow
 
 Standalone Wear OS app — no phone companion required. Works on Galaxy Watch 4, 5, 6, 7 and all Wear OS 3+ watches.
 
+Forecast only. A GO verdict doesn't mean it's safe. Check conditions yourself and never dive alone. Spearo Go is for adults 18 and over. Terms: spearo.pro/terms. Privacy: spearo.pro/privacy.
+
 ## Category
 Sports
 

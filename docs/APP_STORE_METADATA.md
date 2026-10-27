@@ -39,6 +39,8 @@ FEATURES
 
 Spearo Go uses free Open-Meteo APIs for weather and marine data, and Spearo's own tide service, which sources predictions from NOAA tide stations in US waters and WorldTides elsewhere. Solunar periods are computed on the watch using Meeus orbital math. Your position is used only to fetch conditions. The tide service rounds it to about a kilometre and keeps that point for up to 24 hours so the same spot is not looked up repeatedly, and keeps a one-way hash of your IP address for up to about two hours to limit abuse; neither is linked to you. There are no ads and no analytics. Signing in to a Spearo account is optional; if you do, your email and saved spots are kept in it, private and never shared, so you can see them at spearo.pro. If you search for a place by name, the text you type goes to Open-Meteo's geocoding service. Where a location has no marine or tide coverage, the app says so rather than estimating.
 
+Forecast only. A GO verdict doesn't mean it's safe. Check conditions yourself and never dive alone. Spearo Go is for adults 18 and over. Terms: spearo.pro/terms. Privacy: spearo.pro/privacy.
+
 ## Keywords (100 chars max, comma-separated)
 spearfishing,dive,swell,tides,solunar,fishing,marine,weather,surf,ocean,watch,score,conditions,wind
 
