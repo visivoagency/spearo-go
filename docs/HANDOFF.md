@@ -9,6 +9,30 @@ underneath are a change log, not a status report.
 
 Read this block first. Everything below it is a change log.
 
+### Where to pick up (27 Oct, end of session)
+
+**Both stores are in review. Nothing is waiting on code.**
+
+| Store | Build | Status on 27 Oct |
+|---|---|---|
+| Google Play, Wear OS Production | 2.2.1 (18) | In review (Google says up to 7 days). It went with the new privacy URL, Data safety and the new full description. |
+| App Store, Apple Watch | 1.2.1 (5) | Waiting for Review (up to 48 h). It releases automatically once approved. |
+
+`main` holds everything that shipped: PRs #16 to #19, plus #20 (docs) once merged.
+
+Next, in order:
+1. **Watch both reviews.** On a rejection, read the message, fix it on a branch, bump the build number only (Wear 19, watchOS 6), and resubmit.
+   - Likely Apple questions: Sign in with Apple, or the 18+ override. The review notes already explain the optional sign-in.
+   - Likely Google question: account access. "Sign in details" says not restricted, because sign-in is optional and any Google account works. If Google pushes back, switch it to "restricted" with instructions. There are no credentials to give.
+2. **Once live, install the Play build on the Galaxy Watch and sign in** (BACKLOG device check 1). Play re-signs the app, so this is the first time the Play signing key meets the API keys. A 403 `*_APP_BLOCKED` means the Play SHA-1 must be added to the key restrictions.
+3. **Apple Watch E2E**: sign in with Apple, spots both ways, deletes, the detail page. It has never been run on a screen. The checklist is in BACKLOG ("Device checks before release", items 3, 13, 15 to 18).
+4. **Follow-ups** are in BACKLOG: the website's description and depth on the watch, a custom EULA on the App Store, and Play native debug symbols.
+
+How the release was done (reuse next time):
+- **watchOS upload:** `xcodebuild -exportArchive` with `destination=upload` and `manageAppVersionAndBuildNumber=false`. There's no API key; it uses Xcode's signed-in account.
+- **Wear upload:** the AAB is about 4 MB, under the 10 MB limit of the Chrome file-upload tool. Use the hidden `input[type=file]` on the release page.
+- **Wireless adb** to the Galaxy Watch: when `adb mdns` finds nothing, ask Kevin for the pairing code and port, then the connect port; `adb connect` the last known port too. A weak network (pings of 300+ ms) drops the link, so keep the watch on its charger with "Stay awake" on.
+
 ### 27 Oct: release 2.2.1 (18) / 1.2.1 (5) (branch `chore/release-2.2.1`)
 
 Kevin asked for a new version on both stores, after the spot detail page merged (PR #17) and internal testing finished.
@@ -28,7 +52,7 @@ Kevin asked for a new version on both stores, after the spot detail page merged 
   - **Age rating:** overridden to 18+ (it was 4+). A new questionnaire item, "Social Media Disabled for Users Under 13", is answered No, since the app has no social media.
   - **Version copy:** the description is the doc text. The old one said tides were "calculated offline" and "no account required". What's New and the review notes (sign-in is optional, any Apple ID works) are set too.
   - Not changed: the License Agreement is still Apple's standard EULA. A custom EULA needs the full text pasted in, and the description links the Terms.
-- **Play store listing:** the full description had the same stale claims. The doc text, with the safety line, is saved as a **draft**, waiting on Kevin's AI asset declaration before it can be sent for review.
+- **Play store listing:** the full description had the same stale claims. The doc text, with the safety line, replaced it. Kevin answered the AI asset declaration and submitted it; it's in review with the release.
 - Both store descriptions now end with the safety and 18+ line (CLAUDE.md: no store listing without the disclaimer).
 
 ### 27 Oct: spot detail page (branch `feat/spot-detail`)
@@ -43,7 +67,7 @@ The live Wear E2E with spearo.pro passed on 26 Oct: a watch spot showed on the w
   - On Kevin's Galaxy Watch (`.sideload`), the detail page and the delete work. The delete reached spearo.pro.
 - NOT RUN: Apple Watch on a screen; Wear Text size Largest.
 
-**Next:** release Wear 2.2.0 (17) to Google Play. Internal testing first is recommended. Before uploading, enter the Data safety answers, the 18+ audience and the legal URLs in the Play Console.
+Shipped as 2.2.1 (18) / 1.2.1 (5); see the release entry above.
 
 ### 25 Oct: sign-in you can find, and who you are signed in as (branch `feat/visible-sign-in`)
 

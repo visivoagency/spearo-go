@@ -2,13 +2,11 @@
 
 ## Open
 
-### Account sync: console setup, live E2E and store forms (added 2026-10-23)
-The code is built but never run against a live sign-in. Console setup P1 to P5 was done on
-25 Oct (`docs/ACCOUNT-SYNC-SETUP.md`). Next is the E2E in the plan, then enter the new Data safety and App Privacy
-answers, then take signed-in screenshots. Kevin also needs to set the 18+ store ratings and
-the new legal URLs in both consoles (steps in the two metadata docs, 25 Oct). (The More
-Spearo apps entry was dropped by Kevin on 25 Oct; Go won't promote the other apps.)
-The hashed IP's own privacy-label type (Device ID) was confirmed by Kevin on 23 Oct.
+### Account sync: device checks after release (added 2026-10-23, updated 2026-10-27)
+Console setup (25 Oct), the live Wear E2E with spearo.pro (26 Oct), and the store forms, legal URLs and 18+ ratings in both
+consoles (27 Oct) are all done. Wear 2.2.1 (18) and watchOS 1.2.1 (5) are in store review. What's left are
+the device checks below that no test could reach. Check 1 needs the live Play build. (The More Spearo apps entry was dropped
+by Kevin on 25 Oct.) The hashed IP's privacy-label type (Device ID) was confirmed by Kevin on 23 Oct.
 
 Device checks before release. Each one is something the tests could not reach:
 1. A release AAB with `WEB_CLIENT_SECRET` set. The first REST call is not a 403 `*_APP_BLOCKED`, so the API keys allow the Play signing SHA-1.
@@ -69,11 +67,17 @@ scale, which is unchanged, but the two platforms now differ in whether they
 bound the user's size. Decide deliberately; if the cap goes, the watchOS pages
 need the same round-screen viewport treatment as `ScrollingPage.kt`.
 
-### Release blockers
-See `docs/RELEASE-READINESS.md`. The Firestore TTL policies and the WorldTides
-daily ceiling were done on 2026-09-01. One blocker is left: enter the Play Data
-safety and App Store privacy answers in the consoles (the docs were rewritten
-on 2026-10-23).
+### ~~Release blockers~~ — cleared 2026-10-27
+The TTL policies and the WorldTides ceiling were done on 2026-09-01. The Play Data safety and App Store privacy answers
+were entered and submitted with 2.2.1 (18) and 1.2.1 (5) on 27 Oct.
+
+### Store follow-ups from the 27 Oct release
+- App Store License Agreement is Apple's standard EULA. The docs name a custom EULA at spearo.pro/eula, but App Store
+  Connect needs its full text pasted in. The description links the Terms. Decide whether to paste it.
+- Play warns the AAB has native code without debug symbols. Uploading the symbol file (or setting
+  `ndk.debugSymbolLevel`) would make native crash reports readable. It doesn't block review.
+- The Play full description says "Six detailed pages: Verdict, Conditions, Water, Tides, Fish Activity, Info". The pager
+  now ends with Settings; check the list against the app and fix it in the next listing edit.
 
 ### Spot detail: show the website's description and depth (added 2026-10-27)
 The detail page shows only what the watch keeps. spearo.pro spots also carry a
