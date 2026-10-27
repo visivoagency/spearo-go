@@ -16,7 +16,13 @@ Kevin asked for a new version on both stores, after the spot detail page merged 
 - **watchOS 1.2.1 (5) is uploaded to App Store Connect** (`xcodebuild -exportArchive`, `destination=upload`, `manageAppVersionAndBuildNumber=false`). The archive's Info.plists read 1.2.1 (5), and the watch app carries the Sign in with Apple entitlement.
 - **Wear AAB built:** `build/release-2026-10-27/spearo-go-2.2.1-18.aab` (4.2 MB, gitignored), signed with the upload key, and its manifest reads 2.2.1. It's small enough for the Chrome file-upload tool.
 - Release notes for 2.2.1 (18) and 1.2.1 (5) are in the two metadata docs (Play: 435 of 500 characters).
-- Still to do in the consoles: the Play Data safety form, the 18+ Target audience and the legal URLs; then upload the AAB to Production and submit. In App Store Connect: create version 1.2.1, enter the App Privacy answers, the age rating and the URLs, attach build 5, and submit. Every answer is in `docs/GOOGLE_PLAY_METADATA.md` and `docs/APP_STORE_METADATA.md`.
+- **Google Play: submitted for review on 27 Oct.** Wear OS Production release 18 (2.2.1), with the release notes. Three changes went with it:
+  - **Privacy policy URL:** was `spearotracker.com/privacy-policy`, now `https://spearo.pro/privacy`.
+  - **Data safety, account questions:** account creation is now OAuth, and the delete-account URL is `https://spearo.pro/data-deletion`.
+  - **Data safety, data types:** added Precise location, Email address, User IDs, Other user-generated content and Device or other IDs, as in the doc. Approximate location was wrong and is fixed: it now says shared, and not processed ephemerally.
+  - Target audience was already 18+ only. Sign in details stays "not restricted", because every feature works without an account and sync takes any Google account.
+  - Play's only warning was the missing native debug symbols, which doesn't block review.
+- Still to do in App Store Connect (it needs Kevin's sign-in): create version 1.2.1, enter the App Privacy answers, the age rating and the URLs, attach build 5, and submit.
 
 ### 27 Oct: spot detail page (branch `feat/spot-detail`)
 
