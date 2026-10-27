@@ -22,7 +22,14 @@ Kevin asked for a new version on both stores, after the spot detail page merged 
   - **Data safety, data types:** added Precise location, Email address, User IDs, Other user-generated content and Device or other IDs, as in the doc. Approximate location was wrong and is fixed: it now says shared, and not processed ephemerally.
   - Target audience was already 18+ only. Sign in details stays "not restricted", because every feature works without an account and sync takes any Google account.
   - Play's only warning was the missing native debug symbols, which doesn't block review.
-- Still to do in App Store Connect (it needs Kevin's sign-in): create version 1.2.1, enter the App Privacy answers, the age rating and the URLs, attach build 5, and submit.
+- **App Store: 1.2.1 (5) submitted on 27 Oct**, and it's Waiting for Review. What changed in the console:
+  - **App Privacy (published):** added Email Address, Other User Content and User ID (linked), Coarse Location (not linked) and Device ID (not linked, Other purposes). Precise Location is now linked. Nothing is used for tracking.
+  - **Privacy URLs:** Privacy Policy is now `spearo.pro/privacy` and User Privacy Choices is `spearo.pro/data-deletion`. Both used to point at spearotracker.com.
+  - **Age rating:** overridden to 18+ (it was 4+). A new questionnaire item, "Social Media Disabled for Users Under 13", is answered No, since the app has no social media.
+  - **Version copy:** the description is the doc text. The old one said tides were "calculated offline" and "no account required". What's New and the review notes (sign-in is optional, any Apple ID works) are set too.
+  - Not changed: the License Agreement is still Apple's standard EULA. A custom EULA needs the full text pasted in, and the description links the Terms.
+- **Play store listing:** the full description had the same stale claims. The doc text, with the safety line, is saved as a **draft**, waiting on Kevin's AI asset declaration before it can be sent for review.
+- Both store descriptions now end with the safety and 18+ line (CLAUDE.md: no store listing without the disclaimer).
 
 ### 27 Oct: spot detail page (branch `feat/spot-detail`)
 
