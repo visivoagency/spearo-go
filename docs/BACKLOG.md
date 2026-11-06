@@ -2,6 +2,18 @@
 
 ## Open
 
+### From the 6 Nov session (added 2026-11-06)
+- **Play review of Wear 2.2.2 (19)** (sent 6 Nov). Once it's live, install the Play build on the Galaxy Watch and sign in
+  (device check 1 below still applies to the Play signing key).
+- **watchOS:** the rating one-line fix (`ConditionsPage.swift`, `lineLimit(1)` + `minimumScaleFactor(0.55)`) is on `main` but
+  ships only with the next watchOS release, and hasn't been run on a screen.
+- **No real Wear OS 5 watch has run 2.2.2.** The Wear OS 5 emulator and a Wear OS 6 watch passed.
+- **Play trader status for the other six apps** (deadline 1 Feb 2027): `docs/HANDOFF-trader-status-other-apps-2026-11-06.md`.
+- **Wear, no-location state:** on the emulator with no location fix, the verdict stayed on "Consulting the fish..." Check
+  that a missing location ends in a message, not an endless spinner (part of the planned Wear review).
+- **Compose BOM** 2024.12.01 sits next to wear-compose 1.5.6, which pulls foundation 1.8.0. Gradle resolves it, but align
+  the BOM in a later dependency pass.
+
 ### Account sync: device checks after release (added 2026-10-23, updated 2026-10-27)
 Console setup (25 Oct), the live Wear E2E with spearo.pro (26 Oct), and the store forms, legal URLs and 18+ ratings in both
 consoles (27 Oct) are all done. Wear 2.2.1 (18) and watchOS 1.2.1 (5) are in store review. What's left are

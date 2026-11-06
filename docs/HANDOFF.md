@@ -7,7 +7,9 @@ underneath are a change log, not a status report.
 
 ## Start here — state as of 2026-11-06
 
-- **Both store builds are live:** Play shows 2.2.1 (18) last published on 3 Nov.
+**Next conversation:** a full review of the Wear OS app only. Start from `docs/HANDOFF-next-wear-review-2026-11-06.md`.
+
+- **Both store builds are live:** Play shows 2.2.1 (18) last published on 3 Nov. 2.2.2 (19) is in review (below).
 - **Play trader status: done for the account and for Go.** The Visivo Studio account was declared a trader on 6 Nov.
   Go's app-level step (Terms `https://spearo.pro/terms`) was sent for review the same day. The other six apps on the
   account still need their own step: `docs/HANDOFF-trader-status-other-apps-2026-11-06.md`.

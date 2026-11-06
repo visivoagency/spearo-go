@@ -61,6 +61,13 @@ size — the second time for that guideline. Two rules came out of it:
   default size and fails review at "Largest". Check any layout change at
   Settings → Display → Text size → Largest, on the emulator or the watch.
 
+## Test on Wear OS 5, not only Kevin's watch
+
+Kevin's Galaxy Watch runs Wear OS 6 (API 36). Two crashes that only happen on Wear OS 5 (API 34) with targetSdk 35 shipped
+because of that: wear-compose 1.4.1 reading `reduce_motion` at launch, and wear-phone-interactions 1.0.1. Before a Wear
+release, run the store configuration on the `WearOS5_SpearoGo` emulator (API 34) as well as the watch. Stay on stable
+wear-compose (1.5.x): its `HorizontalPagerScaffold` takes a `HorizontalPager` whose pages go through `AnimatedPage`.
+
 ## Two languages, one behaviour
 
 `SpearoGo/` (Swift) and `wear/` (Kotlin) are the same app twice. The two
