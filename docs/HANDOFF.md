@@ -22,9 +22,13 @@ underneath are a change log, not a status report.
   through all 7 pages works, and the page dots show. Tapping Sign in with Google shows "Keep your phone nearby" (the
   emulator has no phone, `RemoteAuth error 1`), with no crash. At Text size Largest (1.24) the verdict, Today and
   Settings fit. All 111 unit tests pass.
-- NOT RUN: a full sign-in through a real phone, and the other pages at Largest with live data (the emulator had no
-  location fix).
-- Next: sideload on the Galaxy Watch, sign in, swipe every page, then bump to 2.2.2 (19) and release.
+- **Galaxy Watch Ultra (SM-L705F, API 36 / Wear OS 6), sideload build, 6 Nov:** all 7 pages work with live data
+  (Cefalù). Sign out, then Sign in with Google through the phone, worked twice: "Signed in as Kevin Geraci",
+  "Synced · just now". Wear OS 6 never showed either crash, which is why the old backlog note thought real watches were safe.
+- Found on the watch, and also on `main` (so already live): Fish Activity "Excellent" wraps as "Excellen / t" at
+  the default text size.
+- NOT RUN: a real Wear OS 5 watch (none available); the other pages at Largest with live data.
+- Next: bump to 2.2.2 (19), build the release AAB, merge PR #21, upload to Play.
 
 ## State as of 2026-10-27
 
