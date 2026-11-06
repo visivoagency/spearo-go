@@ -49,15 +49,11 @@ None of these blocks the release.
 - The unused androidTest dependency `kotlinx-coroutines-test`.
 - `generate_xcodeproj.py` makes new random UUIDs on every run, so each regeneration rewrites the whole pbxproj.
 
-### Wear crashes at launch on the API 34 emulator image with targetSdk 35
-`androidx.wear.compose:compose-foundation:1.4.1` reads `Settings.Global`
-`reduce_motion`, which the API 34 settings provider refuses to apps targeting
-35: `SecurityException: Settings key: <reduce_motion> is only readable to apps
-with targetSdkVersion lower than or equal to: 34`. Physical Wear OS 5/6 watches
-are fine (the Play build was reviewed on one). Blocks emulator testing of the
-store configuration; the 2026-09-07 session built with `targetSdk = 34`
-locally to work around it. Check whether a newer wear-compose guards the read,
-and whether any real device with the same settings provider exists.
+### ~~Wear crashes at launch on the API 34 emulator image with targetSdk 35~~ (fixed 2026-11-06)
+`wear-compose 1.4.1` / `material3 1.0.0-alpha32` read `Settings.Global reduce_motion`, which Wear OS 5
+refuses to apps targeting 35, and crashed at launch. Moving to wear-compose **1.5.6** (stable material3)
+fixed it: the read is now caught and logged as a warning. This was a real-device risk too, not only the
+emulator, since Wear OS 5 watches have the same settings provider. Branch `fix/wear-phone-interactions-1.1`.
 
 ### watchOS caps Dynamic Type at accessibility2
 `SpearoGoApp.swift` applies `.dynamicTypeSize(...accessibility2)`. The Wear

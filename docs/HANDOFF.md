@@ -13,10 +13,18 @@ underneath are a change log, not a status report.
   account still need their own step: `docs/HANDOFF-trader-status-other-apps-2026-11-06.md`.
 - **SDK note from Play (4 Nov):** `wear-phone-interactions:1.0.1` can throw a SecurityException on Wear OS 5 (API 34)
   when the app targets API 35, and Go targets 35. That library runs the phone-browser sign-in (`RemoteAuthSignIn.kt`).
-  Branch `fix/wear-phone-interactions-1.1` moves it to **1.1.1**. Gradle resolves 1.1.1, the debug build passes, and all
-  111 unit tests pass. It has not been tested on a watch, and the version has not been bumped yet. Wear OS only:
-  watchOS doesn't use this library.
-- Next: sign in through the phone on a Wear OS 5 watch or emulator with this build, then release 2.2.2 (19).
+  Branch `fix/wear-phone-interactions-1.1` (PR #21) moves it to **1.1.1**. Wear OS only: watchOS doesn't use it.
+- **A bigger Wear OS 5 problem, fixed on the same branch:** on the Wear OS 5 emulator the store configuration crashed
+  **at launch** (the old BACKLOG item: wear-compose 1.4.1 / material3 alpha32 read `reduce_motion`). Wear-compose is now
+  **1.5.6** (stable material3). Stable 1.5 no longer gives the pager scaffold a pager, so `SpearoGoWearApp.kt` wraps the
+  pages in `HorizontalPager` + `AnimatedPage`.
+- Verified on 6 Nov, Wear OS 5 emulator (API 34), sideload debug build: the app launches with no crash, swiping
+  through all 7 pages works, and the page dots show. Tapping Sign in with Google shows "Keep your phone nearby" (the
+  emulator has no phone, `RemoteAuth error 1`), with no crash. At Text size Largest (1.24) the verdict, Today and
+  Settings fit. All 111 unit tests pass.
+- NOT RUN: a full sign-in through a real phone, and the other pages at Largest with live data (the emulator had no
+  location fix).
+- Next: sideload on the Galaxy Watch, sign in, swipe every page, then bump to 2.2.2 (19) and release.
 
 ## State as of 2026-10-27
 

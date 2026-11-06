@@ -118,9 +118,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Wear OS specific
-    implementation("androidx.wear.compose:compose-material3:1.0.0-alpha32")
-    implementation("androidx.wear.compose:compose-foundation:1.4.1")
-    implementation("androidx.wear.compose:compose-navigation:1.4.1")
+    implementation("androidx.wear.compose:compose-material3:1.5.6")
+    implementation("androidx.wear.compose:compose-foundation:1.5.6")
+    implementation("androidx.wear.compose:compose-navigation:1.5.6")
 
     // Wear OS Tiles
     implementation("androidx.wear.tiles:tiles:1.4.1")
