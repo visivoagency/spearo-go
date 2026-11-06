@@ -93,8 +93,12 @@ struct ConditionItem: View {
                 .itemLabelStyle()
 
             HStack(alignment: .lastTextBaseline, spacing: 1) {
+                // One line that shrinks to fit, never a mid-word wrap ("Excellen / t").
+                // Same as the Wear ConditionItem (auto-size, 12 sp floor).
                 Text(value)
                     .dataValueStyle()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
                 if !unit.isEmpty {
                     Text(unit).unitStyle()
                 }

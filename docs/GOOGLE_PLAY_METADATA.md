@@ -166,6 +166,14 @@ Place-name search text is sent to Open-Meteo geocoding to find the place. It is 
 
 ## Release Notes
 
+### 2.2.2 (19)
+
+Fixes for watches running Wear OS 5.
+
+• Fixes a crash at launch on some Wear OS 5 watches.
+• Fixes a possible crash when signing in through your phone on Wear OS 5.
+• Fish Activity: the rating no longer breaks onto two lines.
+
 ### 2.2.1 (18)
 
 Your spots, on your watch and in your Spearo account.

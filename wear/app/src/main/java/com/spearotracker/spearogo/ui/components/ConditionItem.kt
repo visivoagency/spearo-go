@@ -3,11 +3,14 @@ package com.spearotracker.spearogo.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material3.Text
 import com.spearotracker.spearogo.ui.theme.Brand
 
@@ -58,11 +61,21 @@ fun RowScope.ConditionItem(icon: String, label: String, value: String, unit: Str
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(1.dp)
         ) {
-            Text(
+            // One line that shrinks to fit: a word value ("Excellent") wrapped mid-word
+            // ("Excellen / t") on a 1.0 text size. Sizes are sp, so the user's text size
+            // still applies; it only shrinks when the column is too narrow. Same as the
+            // watchOS ConditionItem (lineLimit 1 + minimumScaleFactor).
+            BasicText(
                 text = value,
-                style = Brand.Typography.dataValue,
-                color = Brand.Colors.textPrimary,
-                textAlign = TextAlign.Center
+                style = Brand.Typography.dataValue.copy(
+                    color = Brand.Colors.textPrimary,
+                    textAlign = TextAlign.Center
+                ),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 12.sp,
+                    maxFontSize = Brand.Typography.dataValue.fontSize
+                )
             )
             if (unit.isNotEmpty()) {
                 Text(

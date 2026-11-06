@@ -3,7 +3,9 @@ package com.spearotracker.spearogo.ui
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material3.AnimatedPage
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.HorizontalPagerScaffold
 import com.spearotracker.spearogo.ui.pages.*
@@ -51,24 +53,31 @@ fun SpearoGoWearApp(
                 HorizontalPagerScaffold(
                     pagerState = pagerState,
                     modifier = Modifier.fillMaxSize()
-                ) { page ->
-                    when (page) {
-                        0 -> VerdictPage(
-                            uiState = uiState,
-                            onRefresh = { viewModel.refresh() },
-                            onInfoTap = { scope.launch { pagerState.animateScrollToPage(6) } },
-                            viewModel = viewModel
-                        )
-                        1 -> TodayPage(uiState = uiState)
-                        2 -> ConditionsPage(uiState = uiState)
-                        3 -> WaterPage(uiState = uiState)
-                        4 -> TidesPage(uiState = uiState)
-                        5 -> FishActivityPage(uiState = uiState)
-                        6 -> SpotsPage(
-                            viewModel = viewModel,
-                            onAbout = { showInfo = true },
-                            onDismiss = { scope.launch { pagerState.animateScrollToPage(0) } }
-                        )
+                ) {
+                    // wear-compose 1.5: the scaffold no longer owns the pager. Each page
+                    // goes through AnimatedPage, which gives the same swipe animation the
+                    // alpha scaffold drew for us.
+                    HorizontalPager(state = pagerState) { page ->
+                        AnimatedPage(pageIndex = page, pagerState = pagerState) {
+                            when (page) {
+                                0 -> VerdictPage(
+                                    uiState = uiState,
+                                    onRefresh = { viewModel.refresh() },
+                                    onInfoTap = { scope.launch { pagerState.animateScrollToPage(6) } },
+                                    viewModel = viewModel
+                                )
+                                1 -> TodayPage(uiState = uiState)
+                                2 -> ConditionsPage(uiState = uiState)
+                                3 -> WaterPage(uiState = uiState)
+                                4 -> TidesPage(uiState = uiState)
+                                5 -> FishActivityPage(uiState = uiState)
+                                6 -> SpotsPage(
+                                    viewModel = viewModel,
+                                    onAbout = { showInfo = true },
+                                    onDismiss = { scope.launch { pagerState.animateScrollToPage(0) } }
+                                )
+                            }
+                        }
                     }
                 }
             }

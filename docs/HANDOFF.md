@@ -5,7 +5,38 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-10-27
+## Start here — state as of 2026-11-06
+
+- **Both store builds are live:** Play shows 2.2.1 (18) last published on 3 Nov.
+- **Play trader status: done for the account and for Go.** The Visivo Studio account was declared a trader on 6 Nov.
+  Go's app-level step (Terms `https://spearo.pro/terms`) was sent for review the same day. The other six apps on the
+  account still need their own step: `docs/HANDOFF-trader-status-other-apps-2026-11-06.md`.
+- **SDK note from Play (4 Nov):** `wear-phone-interactions:1.0.1` can throw a SecurityException on Wear OS 5 (API 34)
+  when the app targets API 35, and Go targets 35. That library runs the phone-browser sign-in (`RemoteAuthSignIn.kt`).
+  Branch `fix/wear-phone-interactions-1.1` (PR #21) moves it to **1.1.1**. Wear OS only: watchOS doesn't use it.
+- **A bigger Wear OS 5 problem, fixed on the same branch:** on the Wear OS 5 emulator the store configuration crashed
+  **at launch** (the old BACKLOG item: wear-compose 1.4.1 / material3 alpha32 read `reduce_motion`). Wear-compose is now
+  **1.5.6** (stable material3). Stable 1.5 no longer gives the pager scaffold a pager, so `SpearoGoWearApp.kt` wraps the
+  pages in `HorizontalPager` + `AnimatedPage`.
+- Verified on 6 Nov, Wear OS 5 emulator (API 34), sideload debug build: the app launches with no crash, swiping
+  through all 7 pages works, and the page dots show. Tapping Sign in with Google shows "Keep your phone nearby" (the
+  emulator has no phone, `RemoteAuth error 1`), with no crash. At Text size Largest (1.24) the verdict, Today and
+  Settings fit. All 111 unit tests pass.
+- **Galaxy Watch Ultra (SM-L705F, API 36 / Wear OS 6), sideload build, 6 Nov:** all 7 pages work with live data
+  (Cefalù). Sign out, then Sign in with Google through the phone, worked twice: "Signed in as Kevin Geraci",
+  "Synced · just now". Wear OS 6 never showed either crash, which is why the old backlog note thought real watches were safe.
+- Found on the watch, and also on `main` (so already live): Fish Activity "Excellent" wraps as "Excellen / t" at
+  the default text size.
+- NOT RUN: a real Wear OS 5 watch (none available); the other pages at Largest with live data.
+- **Fixed in the same branch:** condition values are one line and shrink to fit (Wear: `BasicText` auto-size, 12 sp floor;
+  watchOS: `lineLimit(1)` + `minimumScaleFactor(0.55)`). On the Galaxy Watch, "Excellent" fits at text size 1.0 and at
+  Largest (1.24). The watchOS target builds; it hasn't been run on a screen, and it only ships with the next watchOS release.
+- **Wear 2.2.2 (19)** (versionCode, versionName and `Constants.VERSION`). Release AAB:
+  `build/release-2026-11-06/spearo-go-2.2.2-19.aab` (4.2 MB, gitignored). `jarsigner` verifies it, and its manifest
+  reads 2.2.2 with the Play package id. Release notes are in GOOGLE_PLAY_METADATA.md. 111 unit tests pass.
+- Next: merge PR #21, then upload the AAB to Wear OS Production and send it for review.
+
+## State as of 2026-10-27
 
 Read this block first. Everything below it is a change log.
 
