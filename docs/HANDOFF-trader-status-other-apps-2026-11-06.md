@@ -33,5 +33,5 @@ Service" > **Start declaration**:
 | VidBid - Video Estimates | (see console) | not a Spearo app | the app's own Terms page |
 | Wisefam: Family Organizer | (see console) | not a Spearo app | the app's own Terms page |
 
-The account-level warning says that without a trader declaration the profile **and all apps** are
+Play's notification gives the deadline as **1 February 2027**. The account-level warning says that without a trader declaration the profile **and all apps** are
 removed, so don't leave these for long.
