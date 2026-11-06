@@ -28,7 +28,13 @@ underneath are a change log, not a status report.
 - Found on the watch, and also on `main` (so already live): Fish Activity "Excellent" wraps as "Excellen / t" at
   the default text size.
 - NOT RUN: a real Wear OS 5 watch (none available); the other pages at Largest with live data.
-- Next: bump to 2.2.2 (19), build the release AAB, merge PR #21, upload to Play.
+- **Fixed in the same branch:** condition values are one line and shrink to fit (Wear: `BasicText` auto-size, 12 sp floor;
+  watchOS: `lineLimit(1)` + `minimumScaleFactor(0.55)`). On the Galaxy Watch, "Excellent" fits at text size 1.0 and at
+  Largest (1.24). The watchOS target builds; it hasn't been run on a screen, and it only ships with the next watchOS release.
+- **Wear 2.2.2 (19)** (versionCode, versionName and `Constants.VERSION`). Release AAB:
+  `build/release-2026-11-06/spearo-go-2.2.2-19.aab` (4.2 MB, gitignored). `jarsigner` verifies it, and its manifest
+  reads 2.2.2 with the Play package id. Release notes are in GOOGLE_PLAY_METADATA.md. 111 unit tests pass.
+- Next: merge PR #21, then upload the AAB to Wear OS Production and send it for review.
 
 ## State as of 2026-10-27
 
