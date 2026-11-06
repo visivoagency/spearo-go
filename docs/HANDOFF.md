@@ -34,7 +34,13 @@ underneath are a change log, not a status report.
 - **Wear 2.2.2 (19)** (versionCode, versionName and `Constants.VERSION`). Release AAB:
   `build/release-2026-11-06/spearo-go-2.2.2-19.aab` (4.2 MB, gitignored). `jarsigner` verifies it, and its manifest
   reads 2.2.2 with the Play package id. Release notes are in GOOGLE_PLAY_METADATA.md. 111 unit tests pass.
-- Next: merge PR #21, then upload the AAB to Wear OS Production and send it for review.
+- **Submitted 6 Nov:** PR #21 merged (main 27190bc). Wear OS Production release 19 (2.2.2) uploaded with the notes and
+  **sent for review** (full rollout). Play's only warning was the usual missing native debug symbols. Supported watches stay
+  at 82, with none lost. Go's trader-status change has already been published.
+- Play notifications seen on 6 Nov: the account-level trader deadline is **1 Feb 2027**, and "6 apps: complete your app-level
+  trader status declaration" (see the trader handoff).
+- Next: watch the review. Once it's live, install from Play on the Galaxy Watch and sign in (BACKLOG device check 1 still
+  applies). The watchOS half of the rating fix waits for the next watchOS release.
 
 ## State as of 2026-10-27
 
