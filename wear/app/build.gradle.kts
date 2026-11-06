@@ -177,7 +177,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
     // RemoteAuth: Google sign-in runs in the phone's browser. On-watch GoogleSignIn
     // fails with 12501 on Wear, so it is never used.
-    implementation("androidx.wear:wear-phone-interactions:1.0.1")
+    implementation("androidx.wear:wear-phone-interactions:1.1.1")
 
     // Splash screen
     implementation("androidx.core:core-splashscreen:1.0.1")

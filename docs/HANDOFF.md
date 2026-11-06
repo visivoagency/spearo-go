@@ -5,7 +5,20 @@ underneath are a change log, not a status report.
 
 ---
 
-## Start here — state as of 2026-10-27
+## Start here — state as of 2026-11-06
+
+- **Both store builds are live:** Play shows 2.2.1 (18) last published on 3 Nov.
+- **Play trader status: done for the account and for Go.** The Visivo Studio account was declared a trader on 6 Nov.
+  Go's app-level step (Terms `https://spearo.pro/terms`) was sent for review the same day. The other six apps on the
+  account still need their own step: `docs/HANDOFF-trader-status-other-apps-2026-11-06.md`.
+- **SDK note from Play (4 Nov):** `wear-phone-interactions:1.0.1` can throw a SecurityException on Wear OS 5 (API 34)
+  when the app targets API 35, and Go targets 35. That library runs the phone-browser sign-in (`RemoteAuthSignIn.kt`).
+  Branch `fix/wear-phone-interactions-1.1` moves it to **1.1.1**. Gradle resolves 1.1.1, the debug build passes, and all
+  111 unit tests pass. It has not been tested on a watch, and the version has not been bumped yet. Wear OS only:
+  watchOS doesn't use this library.
+- Next: sign in through the phone on a Wear OS 5 watch or emulator with this build, then release 2.2.2 (19).
+
+## State as of 2026-10-27
 
 Read this block first. Everything below it is a change log.
 
